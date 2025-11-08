@@ -5,9 +5,10 @@ import type { CreateSectionResponse } from '@/functions/axios/responses';
 interface SectionCardProps {
   section: CreateSectionResponse;
   onEdit: (sectionId: number) => void;
+  canEdit?: boolean;
 }
 
-const SectionCard: React.FC<SectionCardProps> = ({ section, onEdit }) => (
+const SectionCard: React.FC<SectionCardProps> = ({ section, onEdit, canEdit = true }) => (
   <div className="bg-white rounded-lg p-4 border border-gray-200">
     <div className="flex items-start gap-3">
       <div className="flex-1">
@@ -30,9 +31,11 @@ const SectionCard: React.FC<SectionCardProps> = ({ section, onEdit }) => (
           </div>
         </div>
       </div>
-      <button onClick={() => onEdit(section.id)} className="p-2 text-gray-400 hover:text-blue-600">
-        <Edit3 size={18} />
-      </button>
+      {canEdit && (
+        <button onClick={() => onEdit(section.id)} className="p-2 text-gray-400 hover:text-blue-600">
+          <Edit3 size={18} />
+        </button>
+      )}
     </div>
   </div>
 );

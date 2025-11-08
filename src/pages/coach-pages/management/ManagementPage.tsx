@@ -284,6 +284,7 @@ const ManagementPage: React.FC = () => {
               sections={sections}
               onEdit={editSection}
               onAdd={addSection}
+              editableClubIds={ownedClubs.map((c) => c.id)}
             />
           )}
         </div>

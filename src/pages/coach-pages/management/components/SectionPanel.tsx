@@ -9,7 +9,8 @@ export const SectionsPanel: React.FC<{
   sections: CreateSectionResponse[];
   onEdit: (id: number) => void;
   onAdd: () => void;
-}> = ({ sections, onEdit, onAdd }) => {
+  editableClubIds?: number[];
+}> = ({ sections, onEdit, onAdd, editableClubIds = [] }) => {
   const { t } = useI18n();
   const [filters, setFilters] = useState<{ club: string; coach: string }>({
     club: "all",
@@ -73,7 +74,12 @@ export const SectionsPanel: React.FC<{
       <div className="mb-3 text-sm text-gray-600">{filteredSections.length} секций</div>
       <div className="space-y-4">
         {filteredSections.map((sec) => (
-          <SectionCard key={sec.id} section={sec} onEdit={onEdit} />
+          <SectionCard
+            key={sec.id}
+            section={sec}
+            onEdit={onEdit}
+            canEdit={editableClubIds.includes(sec.club_id)}
+          />
         ))}
         <button onClick={onAdd} className="fixed bottom-28 right-4 bg-blue-500 p-4 rounded-full shadow-lg text-white hover:bg-blue-600 transition-colors">
           <Plus size={20} /> 
