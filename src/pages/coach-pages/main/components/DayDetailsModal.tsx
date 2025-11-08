@@ -1,5 +1,5 @@
 import type { Lesson } from "@/functions/axios/responses";
-import { Clock, MapPin, Users, X, Pencil, BadgeCheck } from "lucide-react";
+import { Clock, MapPin, Users, X, Pencil, BadgeCheck, Building2 } from "lucide-react";
 import { useI18n } from "@/i18n/i18n";
 
 export const DayDetailsModal: React.FC<{
@@ -76,16 +76,19 @@ export const DayDetailsModal: React.FC<{
                     })()}
                   </div>
                   <div className="flex items-center gap-2 mb-1">
+                    <Building2 size={14} className="text-gray-500" />
+                    <span className="text-sm text-gray-600">
+                      {clubNameBySectionId?.[t.group.section_id] || '—'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 mb-1">
                     <MapPin size={14} className="text-gray-500" />
                     <span className="text-sm text-gray-600">{t.location || '—'}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Users size={14} className="text-gray-500" />
                     <span className="text-sm text-gray-600">
-                      {t.coach.first_name} {t.coach.last_name}
-                      {` • ${clubNameBySectionId?.[t.group.section_id] ?? ''}`}
-                      {clubNameBySectionId?.[t.group.section_id] ? ' • ' : ' • '}
-                      {t.group.name}
+                      {t.coach.first_name} {t.coach.last_name} • {t.group.name}
                     </span>
                   </div>
                 </div>
