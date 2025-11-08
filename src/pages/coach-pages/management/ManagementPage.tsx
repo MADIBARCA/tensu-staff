@@ -336,22 +336,17 @@ const ManagementPage: React.FC = () => {
             )}
             {activeTab === "sections" && (
               <>
-                <div className="px-0 pb-2">
-                  {/*
-                  Section filters under tab selection, similar to StaffFilter
-                */}
-                  <SectionFilter
-                    search={sectionSearch}
-                    onSearchChange={setSectionSearch}
-                    filterClub={sectionFilters.club}
-                    filterCoach={sectionFilters.coach}
-                    clubOptions={sectionClubOptions}
-                    coachOptions={sectionCoachOptions}
-                    onFiltersChange={(next) =>
-                      setSectionFilters((prev) => ({ ...prev, ...next }))
-                    }
-                  />
-                </div>
+                <SectionFilter
+                  search={sectionSearch}
+                  onSearchChange={setSectionSearch}
+                  filterClub={sectionFilters.club}
+                  filterCoach={sectionFilters.coach}
+                  clubOptions={sectionClubOptions}
+                  coachOptions={sectionCoachOptions}
+                  onFiltersChange={(next) =>
+                    setSectionFilters((prev) => ({ ...prev, ...next }))
+                  }
+                />
                 <SectionsPanel
                   sections={filteredSectionsForPanel}
                   onEdit={editSection}
