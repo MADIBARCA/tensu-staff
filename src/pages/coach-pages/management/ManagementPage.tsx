@@ -76,7 +76,10 @@ const ManagementPage: React.FC = () => {
   const [activeSection, setActiveSection] = useState<
     CreateSectionResponse | undefined
   >(undefined);
-  const ownerAdminClubIds = useMemo(() => ownedClubs.map((c) => c.id), [ownedClubs]);
+  const ownerAdminClubIds = useMemo(
+    () => ownedClubs.map((c) => c.id),
+    [ownedClubs]
+  );
   const visibleSections = useMemo(
     () =>
       sections.filter(
@@ -85,21 +88,42 @@ const ManagementPage: React.FC = () => {
     [sections, ownerAdminClubIds, userId]
   );
   const [sectionSearch, setSectionSearch] = useState<string>("");
-  const [sectionFilters, setSectionFilters] = useState<{ club: string; coach: string }>({ club: "all", coach: "all" });
+  const [sectionFilters, setSectionFilters] = useState<{
+    club: string;
+    coach: string;
+  }>({ club: "all", coach: "all" });
   const sectionClubOptions = useMemo(() => {
-    return Array.from(new Set(visibleSections.map(s => s.club?.name).filter((v): v is string => Boolean(v))));
+    return Array.from(
+      new Set(
+        visibleSections
+          .map((s) => s.club?.name)
+          .filter((v): v is string => Boolean(v))
+      )
+    );
   }, [visibleSections]);
   const sectionCoachOptions = useMemo(() => {
-    return Array.from(new Set(visibleSections.map(s => `${s.coach.first_name}${s.coach.last_name ? " " + s.coach.last_name : ""}`.trim())));
+    return Array.from(
+      new Set(
+        visibleSections.map((s) =>
+          `${s.coach.first_name}${
+            s.coach.last_name ? " " + s.coach.last_name : ""
+          }`.trim()
+        )
+      )
+    );
   }, [visibleSections]);
   const filteredSectionsForPanel = useMemo(() => {
     const sLower = sectionSearch.trim().toLowerCase();
-    return visibleSections.filter(s => {
-      const coachName = `${s.coach.first_name}${s.coach.last_name ? " " + s.coach.last_name : ""}`.trim();
+    return visibleSections.filter((s) => {
+      const coachName = `${s.coach.first_name}${
+        s.coach.last_name ? " " + s.coach.last_name : ""
+      }`.trim();
       const clubName = s.club?.name || "";
       const matchesSearch = !sLower || s.name.toLowerCase().includes(sLower);
-      const coachOk = sectionFilters.coach === "all" || coachName === sectionFilters.coach;
-      const clubOk = sectionFilters.club === "all" || clubName === sectionFilters.club;
+      const coachOk =
+        sectionFilters.coach === "all" || coachName === sectionFilters.coach;
+      const clubOk =
+        sectionFilters.club === "all" || clubName === sectionFilters.club;
       return matchesSearch && coachOk && clubOk;
     });
   }, [visibleSections, sectionSearch, sectionFilters]);
@@ -292,7 +316,9 @@ const ManagementPage: React.FC = () => {
       <div className="min-h-screen bg-gray-50 pb-50">
         <div className="bg-white sticky top-0 z-10 shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
           <div className="px-4 py-3">
-            <h1 className="text-xl font-semibold text-gray-900 mb-4">{t('management.title')}</h1>
+            <h1 className="text-xl font-semibold text-gray-900 mb-4">
+              {t("management.title")}
+            </h1>
             <TabNavigation activeTab={activeTab} onChange={setActiveTab} />
             {activeTab === "staff" && (
               <StaffFilter
@@ -304,33 +330,37 @@ const ManagementPage: React.FC = () => {
           </div>
         </div>
         <div className="bg-white sticky top-0 z-10 shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
-          {activeTab === "staff" && (
-            <StaffPanel staff={filteredStaff} onAdd={addStaff} />
-          )}
-          {activeTab === "sections" && (
-            <>
-              <div className="px-0 pb-2">
-                {/*
+          <div className="px-4 py-3">
+            {activeTab === "staff" && (
+              <StaffPanel staff={filteredStaff} onAdd={addStaff} />
+            )}
+            {activeTab === "sections" && (
+              <>
+                <div className="px-0 pb-2">
+                  {/*
                   Section filters under tab selection, similar to StaffFilter
                 */}
-                <SectionFilter
-                  search={sectionSearch}
-                  onSearchChange={setSectionSearch}
-                  filterClub={sectionFilters.club}
-                  filterCoach={sectionFilters.coach}
-                  clubOptions={sectionClubOptions}
-                  coachOptions={sectionCoachOptions}
-                  onFiltersChange={(next) => setSectionFilters((prev) => ({ ...prev, ...next }))}
+                  <SectionFilter
+                    search={sectionSearch}
+                    onSearchChange={setSectionSearch}
+                    filterClub={sectionFilters.club}
+                    filterCoach={sectionFilters.coach}
+                    clubOptions={sectionClubOptions}
+                    coachOptions={sectionCoachOptions}
+                    onFiltersChange={(next) =>
+                      setSectionFilters((prev) => ({ ...prev, ...next }))
+                    }
+                  />
+                </div>
+                <SectionsPanel
+                  sections={filteredSectionsForPanel}
+                  onEdit={editSection}
+                  onAdd={addSection}
+                  editableClubIds={ownedClubs.map((c) => c.id)}
                 />
-              </div>
-              <SectionsPanel
-                sections={filteredSectionsForPanel}
-                onEdit={editSection}
-                onAdd={addSection}
-                editableClubIds={ownedClubs.map((c) => c.id)}
-              />
-            </>
-          )}
+              </>
+            )}
+          </div>
         </div>
 
         <BottomNav page="management" />
