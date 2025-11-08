@@ -5,7 +5,7 @@ import { scheduleApi, teamApi, staffApi } from "@/functions/axios/axiosFunctions
 import { EditLessonModal } from "./EditLessonModal";
 import { Filter, ChevronLeft, ChevronRight } from "lucide-react";
 import { AddTrainingModal } from "./AddTrainingModal";
-import { Skeleton } from "@/components/ui";
+import { Skeleton, Select } from "@/components/ui";
 import { useI18n } from "@/i18n/i18n";
 
 export const CalendarSection: React.FC<{ token: string | null; refreshKey?: number }> = ({
@@ -186,74 +186,31 @@ export const CalendarSection: React.FC<{ token: string | null; refreshKey?: numb
 
         {showFilters && (
           <div className="space-y-3 p-3 bg-gray-50 rounded-lg mb-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t('filters.coaches')}
-              </label>
-              <div className="flex flex-wrap gap-1">
-                <button
-                  onClick={() =>
-                    setCalendarFilters((prev) => ({ ...prev, coach: "all" }))
-                  }
-                  className={`px-2 py-1 text-xs rounded-full ${
-                    calendarFilters.coach === "all"
-                      ? "bg-blue-100 text-blue-800"
-                      : "bg-white text-gray-600 border"
-                  }`}
-                >
-                  {t('filters.allCoaches')}
-                </button>
-                {(isLoadingCoaches ? ["Загрузка…"] : coaches).map((coach) => (
-                  <button
-                    key={coach}
-                    onClick={() =>
-                      setCalendarFilters((prev) => ({ ...prev, coach }))
-                    }
-                    className={`px-2 py-1 text-xs rounded-full ${
-                      calendarFilters.coach === coach
-                        ? "bg-blue-100 text-blue-800"
-                        : "bg-white text-gray-600 border"
-                    }`}
-                  >
-                    {coach}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t('filters.clubs')}
-              </label>
-              <div className="flex flex-wrap gap-1">
-                <button
-                  onClick={() =>
-                    setCalendarFilters((prev) => ({ ...prev, club: "all" }))
-                  }
-                  className={`px-2 py-1 text-xs rounded-full ${
-                    calendarFilters.club === "all"
-                      ? "bg-blue-100 text-blue-800"
-                      : "bg-white text-gray-600 border"
-                  }`}
-                >
-                  {t('filters.allClubs')}
-                </button>
-                {(isLoadingCoaches ? ["Загрузка…"] : clubNames).map((club) => (
-                  <button
-                    key={club}
-                    onClick={() =>
-                      setCalendarFilters((prev) => ({ ...prev, club }))
-                    }
-                    className={`px-2 py-1 text-xs rounded-full ${
-                      calendarFilters.club === club
-                        ? "bg-blue-100 text-blue-800"
-                        : "bg-white text-gray-600 border"
-                    }`}
-                  >
-                    {club}
-                  </button>
-                ))}
-              </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Select
+                label={t('filters.coaches')}
+                value={calendarFilters.coach}
+                onChange={(e) =>
+                  setCalendarFilters((prev) => ({ ...prev, coach: e.target.value }))
+                }
+                options={[
+                  { value: "all", label: t('filters.allCoaches') },
+                  ...coaches.map((c) => ({ value: c, label: c })),
+                ]}
+                disabled={isLoadingCoaches}
+              />
+              <Select
+                label={t('filters.clubs')}
+                value={calendarFilters.club}
+                onChange={(e) =>
+                  setCalendarFilters((prev) => ({ ...prev, club: e.target.value }))
+                }
+                options={[
+                  { value: "all", label: t('filters.allClubs') },
+                  ...clubNames.map((c) => ({ value: c, label: c })),
+                ]}
+                disabled={isLoadingCoaches}
+              />
             </div>
           </div>
         )}
