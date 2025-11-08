@@ -69,12 +69,20 @@ const ManagementPage: React.FC = () => {
 
   const [clubsRaw, setClubsRaw] = useState<CreateClubResponse[]>([]);
   const [ownedClubs, setOwnedClubs] = useState<CreateClubResponse[]>([]);
+  const [allowedClubIds, setAllowedClubIds] = useState<number[]>([]);
 
   const [staff, setStaff] = useState<Staff[]>([]);
   const [sections, setSections] = useState<CreateSectionResponse[]>([]);
   const [activeSection, setActiveSection] = useState<
     CreateSectionResponse | undefined
   >(undefined);
+  const userSections = useMemo(
+    () =>
+      sections.filter(
+        (s) => allowedClubIds.includes(s.club_id) || s.coach_id === userId
+      ),
+    [sections, allowedClubIds, userId]
+  );
 
   const [sectionCreateAllowed, setSectionCreateAllowed] = useState(false);
   const [staffCreateAllowed, setStaffCreateAllowed] = useState(false);
@@ -146,6 +154,11 @@ const ManagementPage: React.FC = () => {
           clubRes.data.clubs
             .filter((w) => w.role === "owner" || w.role === "admin")
             .map((w) => w.club)
+        );
+        setAllowedClubIds(
+          clubRes.data.clubs
+            .filter((w) => w.role === "owner" || w.role === "admin" || w.role === "coach")
+            .map((w) => w.club.id)
         );
 
         setSections(secRes.data);
@@ -281,7 +294,7 @@ const ManagementPage: React.FC = () => {
           )}
           {activeTab === "sections" && (
             <SectionsPanel
-              sections={sections}
+              sections={userSections}
               onEdit={editSection}
               onAdd={addSection}
               editableClubIds={ownedClubs.map((c) => c.id)}
