@@ -1,5 +1,5 @@
 import React from 'react';
-import { ExternalLink, Edit3 } from 'lucide-react';
+import { Edit3 } from 'lucide-react';
 import type { CreateSectionResponse } from '@/functions/axios/responses';
 
 interface SectionCardProps {
@@ -14,11 +14,15 @@ const SectionCard: React.FC<SectionCardProps> = ({ section, onEdit }) => (
         <h3 className="font-semibold text-gray-900 mb-1">{section.name}</h3>
         {/* <p className="text-sm text-gray-600 mb-3">{section.description}</p> */}
         <div className="space-y-2">
-          <div className="flex items-center gap-2">
+          {/* <div className="flex items-center gap-2">
             <ExternalLink size={14} className="text-blue-600" />
-            {/* <a href={section} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:text-blue-800">
+            <a href={section} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:text-blue-800">
               Телеграм Группа
-            </a> */}
+            </a>
+          </div> */}
+          <div>
+            <span className="text-sm font-medium text-gray-700">Клуб: </span>
+            <span className="text-sm text-gray-600">{section.club?.name || '—'}</span>
           </div>
           <div>
             <span className="text-sm font-medium text-gray-700">Тренера: </span>
