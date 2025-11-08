@@ -327,6 +327,19 @@ const ManagementPage: React.FC = () => {
                 onChange={(f) => setFilters((prev) => ({ ...prev, ...f }))}
               />
             )}
+            {activeTab === "sections" && (
+              <SectionFilter
+                search={sectionSearch}
+                onSearchChange={setSectionSearch}
+                filterClub={sectionFilters.club}
+                filterCoach={sectionFilters.coach}
+                clubOptions={sectionClubOptions}
+                coachOptions={sectionCoachOptions}
+                onFiltersChange={(next) =>
+                  setSectionFilters((prev) => ({ ...prev, ...next }))
+                }
+              />
+            )}
           </div>
         </div>
         <div className="bg-white sticky top-0 z-10 shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
@@ -335,25 +348,12 @@ const ManagementPage: React.FC = () => {
               <StaffPanel staff={filteredStaff} onAdd={addStaff} />
             )}
             {activeTab === "sections" && (
-              <>
-                <SectionFilter
-                  search={sectionSearch}
-                  onSearchChange={setSectionSearch}
-                  filterClub={sectionFilters.club}
-                  filterCoach={sectionFilters.coach}
-                  clubOptions={sectionClubOptions}
-                  coachOptions={sectionCoachOptions}
-                  onFiltersChange={(next) =>
-                    setSectionFilters((prev) => ({ ...prev, ...next }))
-                  }
-                />
-                <SectionsPanel
-                  sections={filteredSectionsForPanel}
-                  onEdit={editSection}
-                  onAdd={addSection}
-                  editableClubIds={ownedClubs.map((c) => c.id)}
-                />
-              </>
+              <SectionsPanel
+                sections={filteredSectionsForPanel}
+                onEdit={editSection}
+                onAdd={addSection}
+                editableClubIds={ownedClubs.map((c) => c.id)}
+              />
             )}
           </div>
         </div>
