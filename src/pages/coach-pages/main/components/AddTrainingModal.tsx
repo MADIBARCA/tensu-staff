@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { groupsApi, scheduleApi } from '@/functions/axios/axiosFunctions';
+import { groupsApi, scheduleApi, teamApi } from '@/functions/axios/axiosFunctions';
 import type { CreateManualLessonRequest } from '@/functions/axios/requests';
 import type { GetMyGroupResponse } from '@/functions/axios/responses';
 import { X } from 'lucide-react';
@@ -13,10 +13,22 @@ export const AddTrainingModal: React.FC<{ onClose: () => void; token: string | n
   const [selectedSectionId, setSelectedSectionId] = useState<number | ''>('');
   const [selectedGroupId, setSelectedGroupId] = useState<number | ''>('');
   const [selectedCoachId, setSelectedCoachId] = useState<number | ''>('');
+  const [clubIdToName, setClubIdToName] = useState<Record<number, string>>({});
 
   useEffect(() => {
     if (!token) return;
-    groupsApi.getMy(token).then(res => setUserGroups(res.data)).catch(console.error);
+    Promise.all([groupsApi.getMy(token), teamApi.get(token)])
+      .then(([groupsRes, teamRes]) => {
+        setUserGroups(groupsRes.data);
+        const mapping: Record<number, string> = {};
+        (teamRes.data.current_user_clubs || []).forEach(c => {
+          if (typeof c.club_id === 'number' && c.club_name) {
+            mapping[c.club_id] = c.club_name;
+          }
+        });
+        setClubIdToName(mapping);
+      })
+      .catch(console.error);
   }, [token]);
 
   useEffect(() => {
@@ -118,7 +130,7 @@ export const AddTrainingModal: React.FC<{ onClose: () => void; token: string | n
               className="w-full border border-gray-200 rounded-lg p-2"
             >
               <option value="">Выбрать клуб</option>
-              {clubOptions.map(id => <option key={id} value={id}>Club {id}</option>)}
+              {clubOptions.map(id => <option key={id} value={id}>{clubIdToName[id] ?? `Club ${id}`}</option>)}
             </select>
           </div>
 
