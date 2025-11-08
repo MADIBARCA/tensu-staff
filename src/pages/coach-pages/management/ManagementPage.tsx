@@ -20,6 +20,7 @@ import type {
   Invitation,
 } from "@/functions/axios/responses";
 import { SectionsPanel } from "./components/SectionPanel";
+import SectionFilter from "./components/SectionFilter";
 import { useI18n } from "@/i18n/i18n";
 import { StaffPanel } from "./components/StaffPanel";
 
@@ -83,6 +84,25 @@ const ManagementPage: React.FC = () => {
       ),
     [sections, ownerAdminClubIds, userId]
   );
+  const [sectionSearch, setSectionSearch] = useState<string>("");
+  const [sectionFilters, setSectionFilters] = useState<{ club: string; coach: string }>({ club: "all", coach: "all" });
+  const sectionClubOptions = useMemo(() => {
+    return Array.from(new Set(visibleSections.map(s => s.club?.name).filter((v): v is string => Boolean(v))));
+  }, [visibleSections]);
+  const sectionCoachOptions = useMemo(() => {
+    return Array.from(new Set(visibleSections.map(s => `${s.coach.first_name}${s.coach.last_name ? " " + s.coach.last_name : ""}`.trim())));
+  }, [visibleSections]);
+  const filteredSectionsForPanel = useMemo(() => {
+    const sLower = sectionSearch.trim().toLowerCase();
+    return visibleSections.filter(s => {
+      const coachName = `${s.coach.first_name}${s.coach.last_name ? " " + s.coach.last_name : ""}`.trim();
+      const clubName = s.club?.name || "";
+      const matchesSearch = !sLower || s.name.toLowerCase().includes(sLower);
+      const coachOk = sectionFilters.coach === "all" || coachName === sectionFilters.coach;
+      const clubOk = sectionFilters.club === "all" || clubName === sectionFilters.club;
+      return matchesSearch && coachOk && clubOk;
+    });
+  }, [visibleSections, sectionSearch, sectionFilters]);
 
   const [sectionCreateAllowed, setSectionCreateAllowed] = useState(false);
   const [staffCreateAllowed, setStaffCreateAllowed] = useState(false);
@@ -288,12 +308,28 @@ const ManagementPage: React.FC = () => {
             <StaffPanel staff={filteredStaff} onAdd={addStaff} />
           )}
           {activeTab === "sections" && (
-            <SectionsPanel
-              sections={visibleSections}
-              onEdit={editSection}
-              onAdd={addSection}
-              editableClubIds={ownedClubs.map((c) => c.id)}
-            />
+            <>
+              <div className="px-0 pb-2">
+                {/*
+                  Section filters under tab selection, similar to StaffFilter
+                */}
+                <SectionFilter
+                  search={sectionSearch}
+                  onSearchChange={setSectionSearch}
+                  filterClub={sectionFilters.club}
+                  filterCoach={sectionFilters.coach}
+                  clubOptions={sectionClubOptions}
+                  coachOptions={sectionCoachOptions}
+                  onFiltersChange={(next) => setSectionFilters((prev) => ({ ...prev, ...next }))}
+                />
+              </div>
+              <SectionsPanel
+                sections={filteredSectionsForPanel}
+                onEdit={editSection}
+                onAdd={addSection}
+                editableClubIds={ownedClubs.map((c) => c.id)}
+              />
+            </>
           )}
         </div>
 
