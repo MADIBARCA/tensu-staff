@@ -8,7 +8,8 @@ export const DayDetailsModal: React.FC<{
   trainings: Lesson[];
   onSelectLesson?: (lesson: Lesson) => void;
   onCreateForDay?: (day: string) => void;
-}> = ({ day, onClose, trainings, onSelectLesson, onCreateForDay }) => {
+  clubNameBySectionId?: Record<number, string>;
+}> = ({ day, onClose, trainings, onSelectLesson, onCreateForDay, clubNameBySectionId }) => {
   const { t } = useI18n();
   const getTemporalStatus = (t: Lesson) => {
     if (t.status === 'cancelled') {
@@ -81,7 +82,10 @@ export const DayDetailsModal: React.FC<{
                   <div className="flex items-center gap-2">
                     <Users size={14} className="text-gray-500" />
                     <span className="text-sm text-gray-600">
-                      {t.coach.first_name} {t.coach.last_name} • {t.group.name}
+                      {t.coach.first_name} {t.coach.last_name}
+                      {` • ${clubNameBySectionId?.[t.group.section_id] ?? ''}`}
+                      {clubNameBySectionId?.[t.group.section_id] ? ' • ' : ' • '}
+                      {t.group.name}
                     </span>
                   </div>
                 </div>

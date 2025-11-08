@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { DayDetailsModal } from "./DayDetailsModal";
 import type { DaySchedule, Lesson } from "@/functions/axios/responses";
-import { scheduleApi, teamApi, staffApi } from "@/functions/axios/axiosFunctions";
+import { scheduleApi, teamApi, staffApi, groupsApi } from "@/functions/axios/axiosFunctions";
 import { EditLessonModal } from "./EditLessonModal";
 import { Filter, ChevronLeft, ChevronRight } from "lucide-react";
 import { AddTrainingModal } from "./AddTrainingModal";
@@ -118,13 +118,14 @@ export const CalendarSection: React.FC<{ token: string | null; refreshKey?: numb
   const [coaches, setCoaches] = useState<string[]>([]);
   const [isLoadingCoaches, setIsLoadingCoaches] = useState<boolean>(false);
   const [clubNames, setClubNames] = useState<string[]>([]);
+  const [sectionIdToClubName, setSectionIdToClubName] = useState<Record<number, string>>({});
   const { t } = useI18n();
 
   useEffect(() => {
     if (!token) return;
     setIsLoadingCoaches(true);
-    Promise.all([teamApi.get(token), staffApi.getMe(token)])
-      .then(([teamRes, meRes]) => {
+    Promise.all([teamApi.get(token), staffApi.getMe(token), groupsApi.getMy(token)])
+      .then(([teamRes, meRes, groupsRes]) => {
         const currentClubs = teamRes.data.current_user_clubs || [];
         const allowedClubIds = currentClubs
           .filter((c) => c.user_role === "owner" || c.user_role === "admin")
@@ -157,6 +158,21 @@ export const CalendarSection: React.FC<{ token: string | null; refreshKey?: numb
           new Set((currentClubs || []).map((c) => c.club_name).filter(Boolean))
         );
         setClubNames(names);
+
+        // Build section_id -> club_name mapping from groups + team clubs
+        const clubIdToName = new Map<number, string>(
+          (currentClubs || []).map((c) => [c.club_id, c.club_name])
+        );
+        const mapping: Record<number, string> = {};
+        (groupsRes.data || []).forEach((g) => {
+          const secId = g.section?.id;
+          const clubId = g.section?.club_id;
+          if (typeof secId === "number" && typeof clubId === "number") {
+            const clubName = clubIdToName.get(clubId);
+            if (clubName) mapping[secId] = clubName;
+          }
+        });
+        setSectionIdToClubName(mapping);
       })
       .catch(console.error)
       .finally(() => setIsLoadingCoaches(false));
@@ -305,6 +321,7 @@ export const CalendarSection: React.FC<{ token: string | null; refreshKey?: numb
             day={selectedDay}
             onClose={() => setSelectedDay(null)}
             trainings={getLessonsForDate(selectedDay)}
+            clubNameBySectionId={sectionIdToClubName}
             onSelectLesson={(lesson) => setEditingLesson(lesson)}
             onCreateForDay={isPastDate(selectedDay) ? undefined : (dayStr) => {
               if (isPastDate(dayStr)) return;
