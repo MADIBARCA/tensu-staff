@@ -303,7 +303,7 @@ const ManagementPage: React.FC = () => {
             )}
           </div>
         </div>
-        <div className="px-4 py-2">
+        <div className="bg-white sticky top-0 z-10 shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
           {activeTab === "staff" && (
             <StaffPanel staff={filteredStaff} onAdd={addStaff} />
           )}
