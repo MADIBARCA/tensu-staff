@@ -7,7 +7,7 @@ import { useI18n } from '@/i18n/i18n';
 
 export const AddTrainingModal: React.FC<{ onClose: () => void; token: string | null; onSuccess?: () => void; defaultDate?: string }> = ({ onClose, token, onSuccess, defaultDate }) => {
   const { t } = useI18n();
-  const [newTraining, setNewTraining] = useState({ date: '', time: '', endTime: '' });
+  const [newTraining, setNewTraining] = useState({ date: '', time: '', duration: '' });
   const [userGroups, setUserGroups] = useState<GetMyGroupResponse[]>([]);
   const [selectedClubId, setSelectedClubId] = useState<number | ''>('');
   const [selectedSectionId, setSelectedSectionId] = useState<number | ''>('');
@@ -46,13 +46,10 @@ export const AddTrainingModal: React.FC<{ onClose: () => void; token: string | n
 
   const invalidDate = isPastDate(newTraining.date);
   const invalidStartTime = isPastTimeToday(newTraining.time);
-  const invalidEndTime = (() => {
-    if (!newTraining.time || !newTraining.endTime) return false;
-    const [sh, sm] = newTraining.time.split(':').map(Number);
-    const [eh, em] = newTraining.endTime.split(':').map(Number);
-    const startMin = (sh || 0) * 60 + (sm || 0);
-    const endMin = (eh || 0) * 60 + (em || 0);
-    return endMin <= startMin;
+  const invalidDuration = (() => {
+    if (!newTraining.duration) return false;
+    const dur = Number(newTraining.duration);
+    return !Number.isFinite(dur) || dur <= 0;
   })();
 
   // Derive dropdown options
@@ -76,12 +73,8 @@ export const AddTrainingModal: React.FC<{ onClose: () => void; token: string | n
 
   const handleSave = async () => {
     if (!selectedGroupId || !selectedCoachId) return;
-    const start = new Date(`1970-01-01T${newTraining.time}:00`);
-    const end = new Date(`1970-01-01T${newTraining.endTime}:00`);
-    if (end <= start) {
-        end.setDate(end.getDate() + 1);
-    }
-    const duration = (end.getTime() - start.getTime()) / 60000;
+    const duration = Number(newTraining.duration || 0);
+    if (!Number.isFinite(duration) || duration <= 0) return;
 
 
     const payload: CreateManualLessonRequest = {
@@ -194,10 +187,13 @@ export const AddTrainingModal: React.FC<{ onClose: () => void; token: string | n
               disabled={invalidDate}
             />
             <input
-              type="time"
-              className={`border rounded-lg p-2 ${invalidEndTime ? 'border-red-500' : 'border-gray-200'}`}
-              value={newTraining.endTime}
-              onChange={e => setNewTraining(prev => ({ ...prev, endTime: e.target.value }))}
+              type="number"
+              min={1}
+              step={5}
+              placeholder="Длительность (мин)"
+              className={`border rounded-lg p-2 ${invalidDuration ? 'border-red-500' : 'border-gray-200'}`}
+              value={newTraining.duration}
+              onChange={e => setNewTraining(prev => ({ ...prev, duration: e.target.value }))}
               disabled={invalidDate}
             />
           </div>
@@ -206,7 +202,7 @@ export const AddTrainingModal: React.FC<{ onClose: () => void; token: string | n
           <button
             onClick={handleSave}
             disabled={
-              !selectedClubId || !selectedSectionId || !selectedGroupId || !selectedCoachId || !newTraining.date || !newTraining.time || !newTraining.endTime || invalidDate || invalidStartTime || invalidEndTime
+              !selectedClubId || !selectedSectionId || !selectedGroupId || !selectedCoachId || !newTraining.date || !newTraining.time || !newTraining.duration || invalidDate || invalidStartTime || invalidDuration
             }
             className="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 disabled:bg-gray-300 transition-colors"
           >
