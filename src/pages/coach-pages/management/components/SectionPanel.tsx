@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from "react";
 import type { CreateSectionResponse } from "@/functions/axios/responses";
-import { Plus } from "lucide-react";
+import { Plus, Filter } from "lucide-react";
 import SectionCard from "./SectionCard";
-import { Select } from "@/components/ui";
+import { Select, Input } from "@/components/ui";
 import { useI18n } from "@/i18n/i18n";
 
 export const SectionsPanel: React.FC<{
@@ -16,6 +16,8 @@ export const SectionsPanel: React.FC<{
     club: "all",
     coach: "all",
   });
+  const [search, setSearch] = useState<string>("");
+  const [showFilters, setShowFilters] = useState<boolean>(false);
 
   const clubs = useMemo(() => {
     return Array.from(
@@ -38,38 +40,58 @@ export const SectionsPanel: React.FC<{
   }, [sections]);
 
   const filteredSections = useMemo(() => {
+    const sLower = search.trim().toLowerCase();
     return (sections || []).filter((s) => {
       const coachName = `${s.coach.first_name}${s.coach.last_name ? " " + s.coach.last_name : ""}`.trim();
       const clubName = s.club?.name || "";
+      const matchesSearch = !sLower || s.name.toLowerCase().includes(sLower);
       const coachOk = filters.coach === "all" || coachName === filters.coach;
       const clubOk = filters.club === "all" || clubName === filters.club;
-      return coachOk && clubOk;
+      return matchesSearch && coachOk && clubOk;
     });
-  }, [sections, filters]);
+  }, [sections, filters, search]);
 
   return (
     <>
+      <div className="flex items-center justify-between mb-3">
+        <div />
+        <button
+          onClick={() => setShowFilters((f) => !f)}
+          className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+        >
+          <Filter size={20} />
+        </button>
+      </div>
       <div className="space-y-3 mb-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Select
-            label={t('filters.clubs')}
-            value={filters.club}
-            onChange={(e) => setFilters((prev) => ({ ...prev, club: e.target.value }))}
-            options={[
-              { value: "all", label: t('filters.allClubs') },
-              ...clubs.map((c) => ({ value: c, label: c })),
-            ]}
-          />
-          <Select
-            label={t('filters.coaches')}
-            value={filters.coach}
-            onChange={(e) => setFilters((prev) => ({ ...prev, coach: e.target.value }))}
-            options={[
-              { value: "all", label: t('filters.allCoaches') },
-              ...coaches.map((c) => ({ value: c, label: c })),
-            ]}
-          />
-        </div>
+        <Input
+          placeholder="Найти секцию"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        {showFilters && (
+          <div className="space-y-3 p-3 bg-gray-50 rounded-lg">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Select
+                label={t('filters.clubs')}
+                value={filters.club}
+                onChange={(e) => setFilters((prev) => ({ ...prev, club: e.target.value }))}
+                options={[
+                  { value: "all", label: t('filters.allClubs') },
+                  ...clubs.map((c) => ({ value: c, label: c })),
+                ]}
+              />
+              <Select
+                label={t('filters.coaches')}
+                value={filters.coach}
+                onChange={(e) => setFilters((prev) => ({ ...prev, coach: e.target.value }))}
+                options={[
+                  { value: "all", label: t('filters.allCoaches') },
+                  ...coaches.map((c) => ({ value: c, label: c })),
+                ]}
+              />
+            </div>
+          </div>
+        )}
       </div>
       <div className="mb-3 text-sm text-gray-600">{filteredSections.length} секций</div>
       <div className="space-y-4">
