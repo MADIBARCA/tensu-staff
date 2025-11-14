@@ -109,8 +109,8 @@ export const AddTrainingModal: React.FC<{ onClose: () => void; token: string | n
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-50 border border-gray-200 bg-opacity-50 z-50 flex items-end">
-      <div className="bg-white w-full max-h-[80vh] rounded-t-2xl overflow-hidden">
+    <div className="fixed inset-0 bg-gray-50 border border-gray-200 bg-opacity-50 z-50 flex items-center justify-center">
+      <div className="bg-white w-full h-full overflow-hidden">
         <div className="sticky top-0 bg-white border border-gray-200 px-4 py-3 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900">{t('day.modal.add')}</h2>
           <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600">
