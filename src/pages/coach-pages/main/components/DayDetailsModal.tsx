@@ -9,7 +9,8 @@ export const DayDetailsModal: React.FC<{
   onSelectLesson?: (lesson: Lesson) => void;
   onCreateForDay?: (day: string) => void;
   clubNameBySectionId?: Record<number, string>;
-}> = ({ day, onClose, trainings, onSelectLesson, onCreateForDay, clubNameBySectionId }) => {
+  canEdit?: (lesson: Lesson) => boolean;
+}> = ({ day, onClose, trainings, onSelectLesson, onCreateForDay, clubNameBySectionId, canEdit }) => {
   const { t } = useI18n();
   const getTemporalStatus = (t: Lesson) => {
     if (t.status === 'cancelled') {
@@ -93,13 +94,15 @@ export const DayDetailsModal: React.FC<{
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-2">
-                  <button
-                    onClick={() => onSelectLesson?.(t)}
-                    className="p-2 rounded-lg bg-white text-gray-700 border border-gray-200 hover:bg-gray-100 active:scale-[0.98] transition"
-                    aria-label="Редактировать тренировку"
-                  >
-                    <Pencil size={18} />
-                  </button>
+                  {(canEdit ? canEdit(t) : true) && (
+                    <button
+                      onClick={() => onSelectLesson?.(t)}
+                      className="p-2 rounded-lg bg-white text-gray-700 border border-gray-200 hover:bg-gray-100 active:scale-[0.98] transition"
+                      aria-label="Редактировать тренировку"
+                    >
+                      <Pencil size={18} />
+                    </button>
+                  )}
                 </div>
               </div>
               {/* Progress or extra info can be placed here if needed */}

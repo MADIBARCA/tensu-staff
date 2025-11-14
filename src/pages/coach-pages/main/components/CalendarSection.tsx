@@ -322,6 +322,14 @@ export const CalendarSection: React.FC<{ token: string | null; refreshKey?: numb
             onClose={() => setSelectedDay(null)}
             trainings={getLessonsForDate(selectedDay)}
             clubNameBySectionId={sectionIdToClubName}
+            canEdit={(lesson) => {
+              const start = new Date(`${lesson.planned_date}T${lesson.planned_start_time.slice(0,5)}:00`);
+              const end = new Date(start.getTime() + (lesson.duration_minutes || 0) * 60000);
+              const now = new Date();
+              const isLive = now >= start && now <= end;
+              const isFinished = now > end || lesson.status === 'completed';
+              return !(isLive || isFinished);
+            }}
             onSelectLesson={(lesson) => setEditingLesson(lesson)}
             onCreateForDay={isPastDate(selectedDay) ? undefined : (dayStr) => {
               if (isPastDate(dayStr)) return;
