@@ -1,5 +1,5 @@
 import type { Lesson } from "@/functions/axios/responses";
-import { Clock, MapPin, Users, X, Pencil, BadgeCheck, Building2 } from "lucide-react";
+import { Clock, MapPin, Users, X, Pencil, BadgeCheck, Building2, Dumbbell, Timer } from "lucide-react";
 import { useI18n } from "@/i18n/i18n";
 
 export const DayDetailsModal: React.FC<{
@@ -9,8 +9,9 @@ export const DayDetailsModal: React.FC<{
   onSelectLesson?: (lesson: Lesson) => void;
   onCreateForDay?: (day: string) => void;
   clubNameBySectionId?: Record<number, string>;
+  sectionNameBySectionId?: Record<number, string>;
   canEdit?: (lesson: Lesson) => boolean;
-}> = ({ day, onClose, trainings, onSelectLesson, onCreateForDay, clubNameBySectionId, canEdit }) => {
+}> = ({ day, onClose, trainings, onSelectLesson, onCreateForDay, clubNameBySectionId, sectionNameBySectionId, canEdit }) => {
   const { t } = useI18n();
   const getTemporalStatus = (t: Lesson) => {
     if (t.status === 'cancelled') {
@@ -51,63 +52,94 @@ export const DayDetailsModal: React.FC<{
         </div>
 
         <div className="overflow-y-auto p-3 space-y-3">
-          {trainings.map((t) => (
-            <div key={t.id} className="bg-gray-50 rounded-xl p-3">
-              <div className="flex items-start justify-between gap-3 mb-2">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Clock size={14} className="text-gray-500" />
-                    <span className="font-semibold text-gray-900">
-                      {t.planned_start_time.slice(0,5)} - {(() => {
-                        const [h, m] = t.planned_start_time.split(":").map(Number);
-                        const start = new Date(1970, 0, 1, h, m || 0);
-                        const end = new Date(start.getTime() + t.duration_minutes * 60000);
-                        const hh = String(end.getHours()).padStart(2, '0');
-                        const mm = String(end.getMinutes()).padStart(2, '0');
-                        return `${hh}:${mm}`;
-                      })()}
-                    </span>
-                    {(() => {
-                      const s = getTemporalStatus(t);
-                      return (
-                        <span className={`ml-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${s.color}`}>
-                          <BadgeCheck size={12} /> {s.label}
+          {trainings.map((tr) => {
+            const status = getTemporalStatus(tr);
+            const endTime = (() => {
+              const [h, m] = tr.planned_start_time.split(":").map(Number);
+              const start = new Date(1970, 0, 1, h, m || 0);
+              const end = new Date(start.getTime() + tr.duration_minutes * 60000);
+              return `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`;
+            })();
+            
+            return (
+              <div 
+                key={tr.id} 
+                className={`rounded-xl p-3 transition-all ${
+                  status.key === 'cancelled' 
+                    ? 'bg-red-50 border border-red-200' 
+                    : status.key === 'live'
+                    ? 'bg-orange-50 border border-orange-200'
+                    : 'bg-gray-50 border border-gray-100'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 space-y-2">
+                    {/* Time and Status Row */}
+                    <div className="flex items-center flex-wrap gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <Clock size={14} className="text-gray-500" />
+                        <span className="font-semibold text-gray-900">
+                          {tr.planned_start_time.slice(0,5)} - {endTime}
                         </span>
-                      );
-                    })()}
+                      </div>
+                      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${status.color}`}>
+                        <BadgeCheck size={10} /> {status.label}
+                      </span>
+                    </div>
+                    
+                    {/* Section & Group */}
+                    <div className="flex items-center gap-2">
+                      <Dumbbell size={14} className="text-gray-500 flex-shrink-0" />
+                      <span className="text-sm text-gray-700 font-medium">
+                        {sectionNameBySectionId?.[tr.group.section_id] || '—'} • {tr.group.name}
+                      </span>
+                    </div>
+                    
+                    {/* Club */}
+                    <div className="flex items-center gap-2">
+                      <Building2 size={14} className="text-gray-500 flex-shrink-0" />
+                      <span className="text-sm text-gray-600">
+                        {clubNameBySectionId?.[tr.group.section_id] || '—'}
+                      </span>
+                    </div>
+                    
+                    {/* Location */}
+                    {tr.location && (
+                      <div className="flex items-center gap-2">
+                        <MapPin size={14} className="text-gray-500 flex-shrink-0" />
+                        <span className="text-sm text-gray-600">{tr.location}</span>
+                      </div>
+                    )}
+                    
+                    {/* Coach & Duration */}
+                    <div className="flex items-center gap-4 text-sm text-gray-600">
+                      <div className="flex items-center gap-1.5">
+                        <Users size={14} className="text-gray-500" />
+                        <span>{tr.coach.first_name} {tr.coach.last_name}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Timer size={14} className="text-gray-500" />
+                        <span>{tr.duration_minutes} мин</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <Building2 size={14} className="text-gray-500" />
-                    <span className="text-sm text-gray-600">
-                      {clubNameBySectionId?.[t.group.section_id] || '—'}
-                    </span>
+                  
+                  {/* Edit Button */}
+                  <div className="flex flex-col items-end gap-2">
+                    {(canEdit ? canEdit(tr) : true) && (
+                      <button
+                        onClick={() => onSelectLesson?.(tr)}
+                        className="p-2.5 rounded-xl bg-white text-gray-700 border border-gray-200 hover:bg-gray-100 hover:border-gray-300 active:scale-[0.97] transition-all shadow-sm"
+                        aria-label="Редактировать тренировку"
+                      >
+                        <Pencil size={16} />
+                      </button>
+                    )}
                   </div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <MapPin size={14} className="text-gray-500" />
-                    <span className="text-sm text-gray-600">{t.location || '—'}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Users size={14} className="text-gray-500" />
-                    <span className="text-sm text-gray-600">
-                      {t.coach.first_name} {t.coach.last_name} • {t.group.name}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex flex-col items-end gap-2">
-                  {(canEdit ? canEdit(t) : true) && (
-                    <button
-                      onClick={() => onSelectLesson?.(t)}
-                      className="p-2 rounded-lg bg-white text-gray-700 border border-gray-200 hover:bg-gray-100 active:scale-[0.98] transition"
-                      aria-label="Редактировать тренировку"
-                    >
-                      <Pencil size={18} />
-                    </button>
-                  )}
                 </div>
               </div>
-              {/* Progress or extra info can be placed here if needed */}
-            </div>
-          ))}
+            );
+          })}
           {trainings.length === 0 && (
             <div className="py-8 text-center">
               <div className="text-sm text-gray-500 mb-3">{t('day.modal.empty')}</div>
