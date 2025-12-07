@@ -6,7 +6,7 @@ import { EmployeesTab } from './components/EmployeesTab';
 import { SectionsTab } from './components/SectionsTab';
 import { PricingTab } from './components/PricingTab';
 import { useTelegram } from '@/hooks/useTelegram';
-import { clubsApi, teamApi, sectionsApi, invitationsApi, groupsApi, staffApi } from '@/functions/axios/axiosFunctions';
+import { clubsApi, teamApi, sectionsApi, invitationsApi, staffApi } from '@/functions/axios/axiosFunctions';
 import { mockTariffs } from './mockData';
 import type {
   Employee,
@@ -15,9 +15,6 @@ import type {
   Tariff,
   CreateEmployeeData,
   UpdateEmployeeData,
-  CreateSectionData,
-  CreateGroupData,
-  CreateScheduleData,
   CreateTariffData,
   Group,
   Club,
@@ -166,80 +163,7 @@ export default function ManagementPage() {
     window.Telegram?.WebApp?.showAlert(t('management.employees.updated'));
   };
 
-  // Section handlers
-  const handleCreateSection = async (
-    sectionData: CreateSectionData,
-    groupsData: (CreateGroupData & { schedules: CreateScheduleData[] })[]
-  ) => {
-    const club = clubs.find(c => c.id === sectionData.club_id);
-    const trainers = employees
-      .filter(e => sectionData.trainer_ids.includes(e.id))
-      .map(e => ({ id: e.id, name: `${e.first_name} ${e.last_name}` }));
-
-    let newSectionId = Date.now();
-    
-    if (initDataRaw) {
-      try {
-        // Create section via API
-        const response = await sectionsApi.create({
-          club_id: sectionData.club_id,
-          name: sectionData.name,
-          description: '',
-          coach_id: sectionData.trainer_ids[0] || null,
-          active: true,
-        }, initDataRaw);
-
-        if (response.data) {
-          newSectionId = response.data.id;
-
-          // Create groups for the section
-          for (const groupData of groupsData) {
-            await groupsApi.create({
-              section_id: newSectionId,
-              name: groupData.name,
-              description: '',
-              schedule: {},
-              price: '',
-              capacity: groupData.capacity || '',
-              level: groupData.level || 'all',
-              coach_id: sectionData.trainer_ids[0] || 0,
-              tags: [],
-              active: true,
-            }, initDataRaw);
-          }
-        }
-      } catch (error) {
-        console.error('Error creating section:', error);
-      }
-    }
-
-    const groups: Group[] = groupsData.map((g, index) => ({
-      id: Date.now() + index,
-      section_id: newSectionId,
-      name: g.name,
-      level: g.level,
-      capacity: g.capacity,
-      schedules: g.schedules.map((s, si) => ({
-        id: Date.now() + index * 100 + si,
-        group_id: Date.now() + index,
-        ...s,
-      })),
-    }));
-
-    const newSection: Section = {
-      id: newSectionId,
-      name: sectionData.name,
-      club_id: sectionData.club_id,
-      club_name: club?.name || '',
-      trainer_ids: sectionData.trainer_ids,
-      trainers,
-      groups,
-      created_at: new Date().toISOString(),
-    };
-
-    setSections([...sections, newSection]);
-    window.Telegram?.WebApp?.showAlert(t('management.sections.created'));
-  };
+  // Section handlers are now in CreateSectionModal which calls APIs directly
 
   const handleUpdateSection = async (id: number, name: string, trainerIds: number[], groups: Group[]) => {
     const section = sections.find(s => s.id === id);
@@ -374,7 +298,7 @@ export default function ManagementPage() {
             clubRoles={clubRoles}
             currentUser={currentUser}
             employees={employees}
-            onCreateSection={handleCreateSection}
+            onRefresh={loadData}
             onUpdateSection={handleUpdateSection}
             onDeleteSection={handleDeleteSection}
           />

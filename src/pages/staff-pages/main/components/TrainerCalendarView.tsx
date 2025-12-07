@@ -164,11 +164,11 @@ export const TrainerCalendarView: React.FC<TrainerCalendarViewProps> = ({
           </div>
           <div className="flex-1 bg-white/20 rounded-xl px-3 py-2 text-center backdrop-blur-sm">
             <p className="text-2xl font-bold text-white">{monthStats.scheduled}</p>
-            <p className="text-xs text-blue-100">План</p>
+            <p className="text-xs text-blue-100">Запланировано</p>
           </div>
           <div className="flex-1 bg-white/20 rounded-xl px-3 py-2 text-center backdrop-blur-sm">
             <p className="text-2xl font-bold text-white">{monthStats.completed}</p>
-            <p className="text-xs text-blue-100">Готово</p>
+            <p className="text-xs text-blue-100">Проведено</p>
           </div>
         </div>
       </div>

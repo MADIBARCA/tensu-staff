@@ -4,7 +4,7 @@ import { useI18n } from '@/i18n/i18n';
 import { SectionCard } from './SectionCard';
 import { CreateSectionModal } from './CreateSectionModal';
 import { EditSectionModal } from './EditSectionModal';
-import type { Section, Club, Employee, SectionFilters, CreateSectionData, CreateGroupData, CreateScheduleData, Group } from '../types';
+import type { Section, Club, Employee, SectionFilters, Group } from '../types';
 import type { ClubWithRole, CreateStaffResponse } from '@/functions/axios/responses';
 
 interface SectionsTabProps {
@@ -13,7 +13,7 @@ interface SectionsTabProps {
   clubRoles: ClubWithRole[];
   currentUser: CreateStaffResponse | null;
   employees: Employee[];
-  onCreateSection: (section: CreateSectionData, groups: (CreateGroupData & { schedules: CreateScheduleData[] })[]) => void;
+  onRefresh: () => void;
   onUpdateSection: (id: number, name: string, trainerIds: number[], groups: Group[]) => void;
   onDeleteSection: (id: number) => void;
 }
@@ -24,7 +24,7 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
   clubRoles,
   currentUser,
   employees,
-  onCreateSection,
+  onRefresh,
   onUpdateSection,
   onDeleteSection,
 }) => {
@@ -60,9 +60,9 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
     });
   }, [sections, filters]);
 
-  const handleCreateSection = (section: CreateSectionData, groups: (CreateGroupData & { schedules: CreateScheduleData[] })[]) => {
-    onCreateSection(section, groups);
+  const handleSectionCreated = () => {
     setShowCreateModal(false);
+    onRefresh();
   };
 
   const handleUpdateSection = (name: string, trainerIds: number[], groups: Group[]) => {
@@ -199,7 +199,7 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
           currentUser={currentUser}
           employees={employees}
           onClose={() => setShowCreateModal(false)}
-          onCreate={handleCreateSection}
+          onCreate={handleSectionCreated}
         />
       )}
 
