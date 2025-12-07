@@ -11,13 +11,7 @@ import { DeactivateClubModal } from './components/DeactivateClubModal';
 import { SettingsSection } from './components/SettingsSection';
 import { useTelegram } from '@/hooks/useTelegram';
 import { staffApi, clubsApi } from '@/functions/axios/axiosFunctions';
-import {
-  mockStaffUser,
-  mockClubs,
-  mockClubAnalytics,
-  mockPaymentHistory,
-  mockMembershipTariffs,
-} from './mockData';
+import { mockMembershipTariffs } from './constants';
 import type { StaffUser, Club, CreateClubData, ClubAnalytics } from './types';
 
 export default function ProfilePage() {
@@ -25,8 +19,8 @@ export default function ProfilePage() {
   const { initDataRaw } = useTelegram();
   
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<StaffUser>(mockStaffUser);
-  const [clubs, setClubs] = useState<Club[]>(mockClubs);
+  const [user, setUser] = useState<StaffUser | null>(null);
+  const [clubs, setClubs] = useState<Club[]>([]);
   const [selectedClub, setSelectedClub] = useState<Club | null>(null);
   
   const [showCreateClubModal, setShowCreateClubModal] = useState(false);
@@ -104,20 +98,19 @@ export default function ProfilePage() {
           };
         });
         
-        setClubs(transformedClubs.length > 0 ? transformedClubs : mockClubs);
+        setClubs(transformedClubs);
         
         // Update user role based on clubs
         if (clubsResponse.data.clubs.some(c => c.is_owner)) {
-          setUser(prev => ({ ...prev, role: 'owner' }));
+          setUser(prev => prev ? { ...prev, role: 'owner' } : null);
         } else if (clubsResponse.data.clubs.some(c => c.role === 'admin')) {
-          setUser(prev => ({ ...prev, role: 'admin' }));
+          setUser(prev => prev ? { ...prev, role: 'admin' } : null);
         } else {
-          setUser(prev => ({ ...prev, role: 'trainer' }));
+          setUser(prev => prev ? { ...prev, role: 'trainer' } : null);
         }
       }
     } catch (error) {
       console.error('Error loading data:', error);
-      // Keep mock data on error
     } finally {
       setLoading(false);
     }
@@ -202,7 +195,7 @@ export default function ProfilePage() {
       working_hours: '09:00 - 21:00',
       sections_count: 0,
       students_count: 0,
-      owner_id: user.id,
+      owner_id: user?.id || 0,
       membership: data.membership_tariff_id
         ? {
             id: Date.now(),
@@ -304,9 +297,9 @@ export default function ProfilePage() {
     window.Telegram?.WebApp?.showAlert(t('profile.clubDeactivated'));
   };
 
-  // Note: Analytics are mock-only since there's no analytics API
+  // Note: Analytics are not available from API
   const getClubAnalytics = (clubId: number): ClubAnalytics => {
-    return mockClubAnalytics.find(a => a.club_id === clubId) || {
+    return {
       club_id: clubId,
       sections: [],
       total_students: 0,
@@ -317,19 +310,29 @@ export default function ProfilePage() {
     };
   };
 
-  // Note: Payment history is mock-only since there's no payment API
+  // Note: Payment history is not available from API
   const getPaymentHistory = (clubId: number) => {
-    return mockPaymentHistory.filter(p => p.club_id === clubId);
+    return [];
   };
 
   // Check if user can create more clubs (based on role)
-  const maxClubs = user.role === 'owner' ? 5 : user.role === 'admin' ? 2 : 0;
+  const maxClubs = user?.role === 'owner' ? 5 : user?.role === 'admin' ? 2 : 0;
   const canCreateClub = clubs.length < maxClubs;
 
   // Check if any club is frozen (hide create functionality)
   const hasFreeze = clubs.some(c => c.status === 'frozen' || c.status === 'pending');
 
   if (loading) {
+    return (
+      <Layout title={t('nav.profile')}>
+        <PageContainer className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+        </PageContainer>
+      </Layout>
+    );
+  }
+
+  if (!user) {
     return (
       <Layout title={t('nav.profile')}>
         <PageContainer className="flex items-center justify-center min-h-[60vh]">
@@ -411,7 +414,7 @@ export default function ProfilePage() {
             club={selectedClub}
             analytics={getClubAnalytics(selectedClub.id)}
             paymentHistory={getPaymentHistory(selectedClub.id)}
-            userRole={user.role}
+            userRole={user?.role || 'trainer'}
             onClose={() => {
               setShowClubDetailsModal(false);
               setSelectedClub(null);

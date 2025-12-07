@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, Plus } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import type { CreateClubData, MembershipTariff } from '../types';
-import { cities, availableTags } from '../mockData';
+import { cities, availableTags } from '../constants';
 
 interface CreateClubModalProps {
   tariffs: MembershipTariff[];

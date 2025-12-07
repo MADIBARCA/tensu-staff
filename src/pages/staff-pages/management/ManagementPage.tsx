@@ -7,12 +7,6 @@ import { SectionsTab } from './components/SectionsTab';
 import { PricingTab } from './components/PricingTab';
 import { useTelegram } from '@/hooks/useTelegram';
 import { clubsApi, teamApi, sectionsApi, invitationsApi, groupsApi } from '@/functions/axios/axiosFunctions';
-import {
-  mockClubs,
-  mockEmployees,
-  mockSections,
-  mockTariffs,
-} from './mockData';
 import type {
   Employee,
   EmployeeRole,
@@ -36,10 +30,10 @@ export default function ManagementPage() {
   
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabId>('employees');
-  const [employees, setEmployees] = useState<Employee[]>(mockEmployees);
-  const [sections, setSections] = useState<Section[]>(mockSections);
-  const [clubs, setClubs] = useState<Club[]>(mockClubs);
-  const [tariffs, setTariffs] = useState<Tariff[]>(mockTariffs);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [sections, setSections] = useState<Section[]>([]);
+  const [clubs, setClubs] = useState<Club[]>([]);
+  const [tariffs, setTariffs] = useState<Tariff[]>([]);
 
   const tabs = [
     { id: 'employees' as TabId, label: t('management.tabs.employees'), icon: Users },
@@ -65,7 +59,7 @@ export default function ManagementPage() {
           name: c.club.name,
           status: 'active' as const,
         }));
-        setClubs(transformedClubs.length > 0 ? transformedClubs : mockClubs);
+        setClubs(transformedClubs);
       }
 
       // Load team (employees)
@@ -83,7 +77,7 @@ export default function ManagementPage() {
           photo_url: member.photo_url,
           created_at: member.created_at,
         }));
-        setEmployees(transformedEmployees.length > 0 ? transformedEmployees : mockEmployees);
+        setEmployees(transformedEmployees);
       }
 
       // Load sections
@@ -106,7 +100,7 @@ export default function ManagementPage() {
           })) || [],
           created_at: s.created_at,
         }));
-        setSections(transformedSections.length > 0 ? transformedSections : mockSections);
+        setSections(transformedSections);
       }
 
       // Note: Tariffs don't have an API endpoint, so we keep mock data

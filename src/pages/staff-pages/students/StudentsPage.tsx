@@ -9,7 +9,6 @@ import { ExtendMembershipModal } from './components/ExtendMembershipModal';
 import { FreezeMembershipModal } from './components/FreezeMembershipModal';
 import { useTelegram } from '@/hooks/useTelegram';
 import { studentsApi, teamApi, groupsApi } from '@/functions/axios/axiosFunctions';
-import { mockStudents, mockTrainers, mockGroups } from './mockData';
 import type { Student, StudentFilters, ExtendMembershipData, FreezeMembershipData, Trainer, Group } from './types';
 
 export default function StudentsPage() {
@@ -17,9 +16,9 @@ export default function StudentsPage() {
   const { initDataRaw } = useTelegram();
   
   const [loading, setLoading] = useState(true);
-  const [students, setStudents] = useState<Student[]>(mockStudents);
-  const [trainers, setTrainers] = useState<Trainer[]>(mockTrainers);
-  const [groups, setGroups] = useState<Group[]>(mockGroups);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [trainers, setTrainers] = useState<Trainer[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [filters, setFilters] = useState<StudentFilters>({
     search: '',
     status: 'all',
@@ -65,7 +64,7 @@ export default function StudentsPage() {
           membership: null,
           created_at: s.created_at,
         }));
-        setStudents(transformedStudents.length > 0 ? transformedStudents : mockStudents);
+        setStudents(transformedStudents);
       }
 
       // Load trainers (from team)
@@ -78,7 +77,7 @@ export default function StudentsPage() {
             name: `${member.first_name} ${member.last_name}`.trim(),
             club_id: member.clubs_and_roles[0]?.club_id || 0,
           }));
-        setTrainers(transformedTrainers.length > 0 ? transformedTrainers : mockTrainers);
+        setTrainers(transformedTrainers);
       }
 
       // Load groups
@@ -91,7 +90,7 @@ export default function StudentsPage() {
           section_name: g.section?.name || '',
           club_id: g.section?.club_id || 0,
         }));
-        setGroups(transformedGroups.length > 0 ? transformedGroups : mockGroups);
+        setGroups(transformedGroups);
       }
     } catch (error) {
       console.error('Error loading data:', error);

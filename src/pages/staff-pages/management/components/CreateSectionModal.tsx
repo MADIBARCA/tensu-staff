@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import type { Club, Employee, CreateSectionData, CreateGroupData, CreateScheduleData, WeekDay } from '../types';
-import { levelOptions, weekDays } from '../mockData';
+import { levelOptions, weekDays } from '../constants';
 
 interface CreateSectionModalProps {
   clubs: Club[];

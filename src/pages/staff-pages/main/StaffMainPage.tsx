@@ -11,12 +11,6 @@ import { TrainingDetailsModal } from './components/TrainingDetailsModal';
 import { useTelegram } from '@/hooks/useTelegram';
 import { clubsApi, sectionsApi, groupsApi, teamApi, scheduleApi } from '@/functions/axios/axiosFunctions';
 import type { Lesson } from '@/functions/axios/responses';
-import {
-  mockClubs,
-  mockSections,
-  mockGroups,
-  mockTrainers,
-} from './mockData';
 import type {
   Training,
   Filters,
@@ -93,10 +87,10 @@ export default function StaffMainPage() {
   const { initDataRaw } = useTelegram();
   
   const [trainings, setTrainings] = useState<Training[]>([]);
-  const [clubs, setClubs] = useState<Club[]>(mockClubs);
-  const [sections, setSections] = useState<Section[]>(mockSections);
-  const [groups, setGroups] = useState<Group[]>(mockGroups);
-  const [trainers, setTrainers] = useState<Trainer[]>(mockTrainers);
+  const [clubs, setClubs] = useState<Club[]>([]);
+  const [sections, setSections] = useState<Section[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [trainers, setTrainers] = useState<Trainer[]>([]);
   
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<Filters>({
@@ -126,7 +120,7 @@ export default function StaffMainPage() {
           id: c.club.id,
           name: c.club.name,
         }));
-        setClubs(transformedClubs.length > 0 ? transformedClubs : mockClubs);
+        setClubs(transformedClubs);
       }
 
       // Load sections
@@ -137,7 +131,7 @@ export default function StaffMainPage() {
           name: s.name,
           club_id: s.club_id,
         }));
-        setSections(transformedSections.length > 0 ? transformedSections : mockSections);
+        setSections(transformedSections);
       }
 
       // Load groups
@@ -148,7 +142,7 @@ export default function StaffMainPage() {
           name: g.name,
           section_id: g.section_id,
         }));
-        setGroups(transformedGroups.length > 0 ? transformedGroups : mockGroups);
+        setGroups(transformedGroups);
       }
 
       // Load team (trainers)
@@ -161,7 +155,7 @@ export default function StaffMainPage() {
             name: `${member.first_name} ${member.last_name}`.trim(),
             club_id: member.clubs_and_roles[0]?.club_id || 0,
           }));
-        setTrainers(transformedTrainers.length > 0 ? transformedTrainers : mockTrainers);
+        setTrainers(transformedTrainers);
       }
 
       // Load schedule for current week
@@ -300,32 +294,7 @@ export default function StaffMainPage() {
       }
     } catch (error) {
       console.error('Error creating training:', error);
-      // Fallback to local creation for demo
-      const newTraining: Training = {
-        id: Math.max(...trainings.map((t) => t.id), 0) + 1,
-        club_id: data.club_id,
-        club_name: clubs.find((c) => c.id === data.club_id)?.name || '',
-        section_id: data.section_id,
-        section_name: sections.find((s) => s.id === data.section_id)?.name || '',
-        group_id: data.group_id,
-        group_name: data.group_id
-          ? groups.find((g) => g.id === data.group_id)?.name
-          : undefined,
-        trainer_id: data.trainer_id,
-        trainer_name: trainers.find((t) => t.id === data.trainer_id)?.name || '',
-        date: data.date,
-        time: data.time,
-        duration: data.duration,
-        location: data.location,
-        max_participants: data.max_participants,
-        current_participants: 0,
-        status: 'scheduled',
-        training_type: 'single',
-        notes: data.notes,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-      setTrainings([...trainings, newTraining]);
+      window.Telegram?.WebApp?.showAlert('Ошибка при создании тренировки');
     }
     
     setShowCreateModal(false);
