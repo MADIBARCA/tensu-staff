@@ -72,6 +72,10 @@ const RU: Dict = {
   'language.kazakh': 'Қазақша',
   'language.save': 'Сохранить',
   'language.cancel': 'Отмена',
+  'common.loading': 'Загрузка...',
+  'schedule.filters': 'Фильтр',
+  'schedule.today': 'Сегодня',
+  'schedule.tomorrow': 'Завтра',
 };
 
 const KK: Dict = {
@@ -142,6 +146,10 @@ const KK: Dict = {
   'language.kazakh': 'Қазақша',
   'language.save': 'Сақтау',
   'language.cancel': 'Бас тарту',
+  'common.loading': 'Жүктелуде...',
+  'schedule.filters': 'Сүзгі',
+  'schedule.today': 'Бүгін',
+  'schedule.tomorrow': 'Ертең',
 };
 
 const dictionaries: Record<Lang, Dict> = { ru: RU, kk: KK };

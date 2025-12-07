@@ -3,10 +3,11 @@ import { DayDetailsModal } from "./DayDetailsModal";
 import type { DaySchedule, Lesson } from "@/functions/axios/responses";
 import { scheduleApi, teamApi, staffApi, groupsApi } from "@/functions/axios/axiosFunctions";
 import { EditLessonModal } from "./EditLessonModal";
-import { Filter, ChevronLeft, ChevronRight, Calendar, X } from "lucide-react";
+import { Filter, ChevronLeft, ChevronRight, Calendar, X, List, CalendarDays } from "lucide-react";
 import { AddTrainingModal } from "./AddTrainingModal";
-import { Skeleton, Select, Badge } from "@/components/ui";
+import { Skeleton, Select } from "@/components/ui";
 import { useI18n } from "@/i18n/i18n";
+import { TrainingListItem } from "./TrainingListItem";
 
 export const CalendarSection: React.FC<{ token: string | null; refreshKey?: number }> = ({
   token,
@@ -14,17 +15,18 @@ export const CalendarSection: React.FC<{ token: string | null; refreshKey?: numb
 }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
-  const [calendarData, setCalendarData] = useState<
-    Record<string, Array<DaySchedule>>
-  >({});
+  const [calendarData, setCalendarData] = useState<Record<string, Array<DaySchedule>>>({});
   const [showFilters, setShowFilters] = useState(false);
   const [calendarFilters, setCalendarFilters] = useState({
     coach: "all",
     club: "all",
-    type: "all",
   });
   const [sectionIdToClubName, setSectionIdToClubName] = useState<Record<number, string>>({});
   const [sectionIdToSectionName, setSectionIdToSectionName] = useState<Record<number, string>>({});
+  const [activeTab, setActiveTab] = useState<'list' | 'calendar'>('calendar');
+  const [isLoading, setIsLoading] = useState(true);
+
+  const { t, lang } = useI18n();
 
   const formatDate = useCallback((d: Date) => {
     const y = d.getFullYear();
@@ -38,10 +40,9 @@ export const CalendarSection: React.FC<{ token: string | null; refreshKey?: numb
     const weeks: string[] = [];
     const firstOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
     const lastOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-    // find Monday of first week
     let current = new Date(firstOfMonth);
     const day = current.getDay();
-    const diff = (day + 6) % 7; // Monday=0
+    const diff = (day + 6) % 7;
     current.setDate(current.getDate() - diff);
     while (current <= lastOfMonth) {
       weeks.push(formatDate(current));
@@ -53,6 +54,7 @@ export const CalendarSection: React.FC<{ token: string | null; refreshKey?: numb
 
   useEffect(() => {
     if (!token) return;
+    setIsLoading(true);
     const weeks = getWeeksInMonth(currentDate);
     Promise.all(
       weeks.map((dateStr) =>
@@ -66,18 +68,23 @@ export const CalendarSection: React.FC<{ token: string | null; refreshKey?: numb
         arr.forEach(({ key, days }) => (next[key] = days));
         setCalendarData(next);
       })
-      .catch(console.error);
+      .catch(console.error)
+      .finally(() => setIsLoading(false));
   }, [currentDate, token, refreshKey, getWeeksInMonth]);
 
   // Calendar utilities
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
-    const firstDay = new Date(year, month, 1).getDay();
-    const total = new Date(year, month + 1, 0).getDate();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
     const days: (Date | null)[] = [];
-    for (let i = 0; i < firstDay; i++) days.push(null);
-    for (let d = 1; d <= total; d++) days.push(new Date(year, month, d));
+    
+    let startDay = firstDay.getDay();
+    startDay = startDay === 0 ? 6 : startDay - 1;
+    
+    for (let i = 0; i < startDay; i++) days.push(null);
+    for (let d = 1; d <= lastDay.getDate(); d++) days.push(new Date(year, month, d));
     return days;
   };
 
@@ -91,7 +98,6 @@ export const CalendarSection: React.FC<{ token: string | null; refreshKey?: numb
 
   // Get scheduled lessons for a date with applied filters
   const getLessonsForDate = useCallback((dateStr: string): Lesson[] => {
-    // find week start for this date
     const d = new Date(dateStr);
     const day = d.getDay();
     const diff = (day + 6) % 7;
@@ -102,7 +108,6 @@ export const CalendarSection: React.FC<{ token: string | null; refreshKey?: numb
     const dayEntry = daysArr.find((ws) => ws.schedule_date === dateStr);
     let lessons = dayEntry ? dayEntry.lessons : [];
     
-    // Apply filters
     if (calendarFilters.coach !== "all") {
       lessons = lessons.filter((les) => {
         const coachName = `${les.coach.first_name}${les.coach.last_name ? " " + les.coach.last_name : ""}`.trim();
@@ -120,28 +125,49 @@ export const CalendarSection: React.FC<{ token: string | null; refreshKey?: numb
     return lessons;
   }, [calendarData, calendarFilters, formatDate, sectionIdToClubName]);
 
-  // Check if any lessons exist in current view (for empty state)
-  const hasAnyLessons = useMemo(() => {
-    for (const day of days) {
-      if (day && getLessonsForDate(formatDate(day)).length > 0) {
-        return true;
-      }
-    }
-    return false;
-  }, [days, getLessonsForDate, formatDate]);
+  // Get all lessons for list view
+  const allUpcomingLessons = useMemo(() => {
+    const todayStr = formatDate(new Date());
+    const allLessons: Lesson[] = [];
+    
+    Object.values(calendarData).forEach((weekDays) => {
+      weekDays.forEach((daySchedule) => {
+        if (daySchedule.schedule_date >= todayStr) {
+          let lessons = daySchedule.lessons;
+          
+          if (calendarFilters.coach !== "all") {
+            lessons = lessons.filter((les) => {
+              const coachName = `${les.coach.first_name}${les.coach.last_name ? " " + les.coach.last_name : ""}`.trim();
+              return coachName === calendarFilters.coach;
+            });
+          }
+          
+          if (calendarFilters.club !== "all") {
+            lessons = lessons.filter((les) => {
+              const clubName = sectionIdToClubName[les.group.section_id];
+              return clubName === calendarFilters.club;
+            });
+          }
+          
+          allLessons.push(...lessons);
+        }
+      });
+    });
+    
+    return allLessons.sort((a, b) => {
+      const dateCompare = a.planned_date.localeCompare(b.planned_date);
+      if (dateCompare !== 0) return dateCompare;
+      return a.planned_start_time.localeCompare(b.planned_start_time);
+    }).slice(0, 10);
+  }, [calendarData, calendarFilters, formatDate, sectionIdToClubName]);
 
-  // Check if filters are active
   const hasActiveFilters = calendarFilters.coach !== "all" || calendarFilters.club !== "all";
 
-  const getLessonChipClass = (lesson: Lesson) => {
-    const start = new Date(`${lesson.planned_date}T${lesson.planned_start_time.slice(0,5)}:00`);
-    const end = new Date(start.getTime() + (lesson.duration_minutes || 0) * 60000);
-    const now = new Date();
-    if (lesson.status === 'cancelled') return 'bg-red-500';
-    if (now < start) return 'bg-blue-500'; // upcoming
-    if (now >= start && now <= end) return 'bg-orange-500'; // live
-    return 'bg-gray-400'; // past
-  };
+  const todayStr = useMemo(() => formatDate(new Date()), [formatDate]);
+
+  const isPastDate = useCallback((dateStr: string) => dateStr < todayStr, [todayStr]);
+  const isToday = useCallback((dateStr: string) => dateStr === todayStr, [todayStr]);
+  const hasTrainings = useCallback((dateStr: string) => getLessonsForDate(dateStr).length > 0, [getLessonsForDate]);
 
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
   const [showAdd, setShowAdd] = useState(false);
@@ -150,7 +176,6 @@ export const CalendarSection: React.FC<{ token: string | null; refreshKey?: numb
   const [coaches, setCoaches] = useState<string[]>([]);
   const [isLoadingCoaches, setIsLoadingCoaches] = useState<boolean>(false);
   const [clubNames, setClubNames] = useState<string[]>([]);
-  const { t, lang } = useI18n();
 
   useEffect(() => {
     if (!token) return;
@@ -178,19 +203,16 @@ export const CalendarSection: React.FC<{ token: string | null; refreshKey?: numb
         const isCurrentUserCoach = currentClubs.some((c) => c.user_role === "coach");
         if (isCurrentUserCoach) {
           const myName = `${meRes.data.first_name}${meRes.data.last_name ? " " + meRes.data.last_name : ""}`.trim() || "Я (тренер)";
-          // Use a synthetic key to ensure inclusion without clashing with numeric IDs
           uniqueNames.set(-1, myName);
         }
 
         setCoaches(Array.from(uniqueNames.values()));
 
-        // Clubs: list all clubs the user is in (owner/admin/coach)
         const names = Array.from(
           new Set((currentClubs || []).map((c) => c.club_name).filter(Boolean))
         );
         setClubNames(names);
 
-        // Build section_id -> club_name mapping from groups + team clubs
         const clubIdToName = new Map<number, string>(
           (currentClubs || []).map((c) => [c.club_id, c.club_name])
         );
@@ -215,53 +237,78 @@ export const CalendarSection: React.FC<{ token: string | null; refreshKey?: numb
       .finally(() => setIsLoadingCoaches(false));
   }, [token]);
 
-  const todayStr = useMemo(() => {
-    const today = new Date();
-    const y = today.getFullYear();
-    const m = String(today.getMonth() + 1).padStart(2, '0');
-    const d = String(today.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-  }, []);
+  const getStatusInfo = (lesson: Lesson) => {
+    if (lesson.status === 'cancelled') {
+      return { key: 'cancelled', label: lang === 'kk' ? 'Бас тартылды' : 'Отменено', color: 'bg-red-500' };
+    }
+    const start = new Date(`${lesson.planned_date}T${lesson.planned_start_time.slice(0,5)}:00`);
+    const end = new Date(start.getTime() + (lesson.duration_minutes || 0) * 60000);
+    const now = new Date();
+    if (now < start) return { key: 'upcoming', label: lang === 'kk' ? 'Жоспарланған' : 'Запланировано', color: 'bg-blue-500' };
+    if (now >= start && now <= end) return { key: 'live', label: lang === 'kk' ? 'Қазір жүріп жатыр' : 'В процессе', color: 'bg-orange-500' };
+    return { key: 'past', label: lang === 'kk' ? 'Өткізілді' : 'Проведено', color: 'bg-gray-400' };
+  };
 
-  const isPastDate = useCallback((dateStr: string) => {
-    return dateStr < todayStr;
-  }, [todayStr]);
-
-  const isToday = useCallback((dateStr: string) => {
-    return dateStr === todayStr;
-  }, [todayStr]);
+  const activeFiltersCount = [calendarFilters.coach !== "all", calendarFilters.club !== "all"].filter(Boolean).length;
 
   return (
-    <section className="bg-white rounded-lg border border-gray-200 mb-4">
+    <section className="bg-white rounded-2xl border border-gray-100 shadow-sm">
       <div className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-semibold text-gray-900">{t('schedule.title')}</h2>
-            {hasActiveFilters && (
-              <Badge variant="info" size="sm">
-                {lang === 'kk' ? 'Сүзгі' : 'Фильтр'}
-              </Badge>
-            )}
+        {/* Header with Tabs and Filter */}
+        <div className="flex items-center justify-between mb-4">
+          {/* Tabs */}
+          <div className="flex bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setActiveTab('list')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                activeTab === 'list'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <List size={16} />
+              {lang === 'kk' ? 'Тізім' : 'Список'}
+            </button>
+            <button
+              onClick={() => setActiveTab('calendar')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                activeTab === 'calendar'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <CalendarDays size={16} />
+              {lang === 'kk' ? 'Күнтізбе' : 'Календарь'}
+            </button>
           </div>
+
+          {/* Filter Button */}
           <button
-            onClick={() => setShowFilters((f) => !f)}
-            className={`p-2 rounded-lg transition-colors ${
-              showFilters ? 'bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-100'
+            onClick={() => setShowFilters(!showFilters)}
+            className={`relative flex items-center gap-1.5 px-3 py-2 border rounded-lg transition-all ${
+              showFilters 
+                ? 'border-blue-200 bg-blue-50 text-blue-600' 
+                : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
             }`}
           >
-            <Filter size={20} />
+            <Filter size={16} />
+            <span className="text-sm">{t('schedule.filters') || (lang === 'kk' ? 'Сүзгі' : 'Фильтр')}</span>
+            {activeFiltersCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
+                {activeFiltersCount}
+              </span>
+            )}
           </button>
         </div>
 
+        {/* Filters Panel */}
         {showFilters && (
-          <div className="space-y-3 p-3 bg-gray-50 rounded-xl mb-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="mb-4 p-3 bg-gray-50 rounded-xl space-y-3">
+            <div className="grid grid-cols-2 gap-3">
               <Select
                 label={t('filters.coaches')}
                 value={calendarFilters.coach}
-                onChange={(e) =>
-                  setCalendarFilters((prev) => ({ ...prev, coach: e.target.value }))
-                }
+                onChange={(e) => setCalendarFilters((prev) => ({ ...prev, coach: e.target.value }))}
                 options={[
                   { value: "all", label: t('filters.allCoaches') },
                   ...coaches.map((c) => ({ value: c, label: c })),
@@ -271,9 +318,7 @@ export const CalendarSection: React.FC<{ token: string | null; refreshKey?: numb
               <Select
                 label={t('filters.clubs')}
                 value={calendarFilters.club}
-                onChange={(e) =>
-                  setCalendarFilters((prev) => ({ ...prev, club: e.target.value }))
-                }
+                onChange={(e) => setCalendarFilters((prev) => ({ ...prev, club: e.target.value }))}
                 options={[
                   { value: "all", label: t('filters.allClubs') },
                   ...clubNames.map((c) => ({ value: c, label: c })),
@@ -281,153 +326,201 @@ export const CalendarSection: React.FC<{ token: string | null; refreshKey?: numb
                 disabled={isLoadingCoaches}
               />
             </div>
-            {hasActiveFilters && (
-              <button
-                onClick={() => setCalendarFilters({ coach: "all", club: "all", type: "all" })}
-                className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors"
-              >
-                <X size={14} />
-                {lang === 'kk' ? 'Сүзгілерді тазалау' : 'Сбросить фильтры'}
-              </button>
+          </div>
+        )}
+
+        {/* Active Filters Badges */}
+        {hasActiveFilters && (
+          <div className="flex flex-wrap gap-2 mb-4">
+            {calendarFilters.coach !== "all" && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">
+                {calendarFilters.coach}
+                <button
+                  onClick={() => setCalendarFilters((f) => ({ ...f, coach: "all" }))}
+                  className="hover:text-blue-900"
+                >
+                  <X size={14} />
+                </button>
+              </span>
+            )}
+            {calendarFilters.club !== "all" && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">
+                {calendarFilters.club}
+                <button
+                  onClick={() => setCalendarFilters((f) => ({ ...f, club: "all" }))}
+                  className="hover:text-blue-900"
+                >
+                  <X size={14} />
+                </button>
+              </span>
             )}
           </div>
         )}
 
-        <div className="flex items-center justify-between mb-3">
-          <button
-            onClick={() => navigateMonth("prev")}
-            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <ChevronLeft size={20} />
-          </button>
-          <h3 className="text-base font-semibold text-gray-900 capitalize">
-            {currentDate.toLocaleDateString(lang === 'kk' ? 'kk-KZ' : 'ru-RU', { 
-              month: 'long', 
-              year: 'numeric' 
-            })}
-          </h3>
-          <button
-            onClick={() => navigateMonth("next")}
-            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <ChevronRight size={20} />
-          </button>
-        </div>
-        {/* calendar grid */}
-        <div className="bg-gray-50 rounded-xl overflow-hidden shadow-sm">
-          <div className="grid grid-cols-7 bg-gray-100 text-gray-500 text-xs font-semibold">
-            {(t('calendar.weekdays').split(',')).map((d) => (
-              <div key={d} className="py-2.5 text-center">
-                {d}
-              </div>
-            ))}
-          </div>
-          <div className="grid grid-cols-7">
-            {Object.keys(calendarData).length === 0 && (
-              Array.from({ length: 35 }).map((_, i) => (
-                <div key={i} className="min-h-[68px] p-1.5 border border-gray-100 bg-white">
-                  <Skeleton className="h-4 w-6 mb-1 rounded" />
-                  <Skeleton className="h-3 w-10 rounded" />
+        {/* Content */}
+        {activeTab === 'calendar' ? (
+          <>
+            {/* Calendar Header */}
+            <div className="flex items-center justify-between mb-4">
+              <button
+                onClick={() => navigateMonth("prev")}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <h3 className="font-semibold text-gray-900 capitalize">
+                {currentDate.toLocaleDateString(lang === 'kk' ? 'kk-KZ' : 'ru-RU', { 
+                  month: 'long', 
+                  year: 'numeric' 
+                })}
+              </h3>
+              <button
+                onClick={() => navigateMonth("next")}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
+
+            {/* Weekday Headers */}
+            <div className="grid grid-cols-7 gap-1 mb-2">
+              {(t('calendar.weekdays').split(',')).map((d) => (
+                <div key={d} className="text-center text-xs font-medium text-gray-500 py-2">
+                  {d}
                 </div>
+              ))}
+            </div>
+
+            {/* Calendar Grid */}
+            <div className="grid grid-cols-7 gap-1">
+              {isLoading ? (
+                Array.from({ length: 35 }).map((_, i) => (
+                  <div key={i} className="aspect-square">
+                    <Skeleton className="w-full h-full rounded-lg" />
+                  </div>
+                ))
+              ) : (
+                days.map((day, idx) => {
+                  const dateStr = day ? formatDate(day) : '';
+                  const past = day ? isPastDate(dateStr) : false;
+                  const today = day ? isToday(dateStr) : false;
+                  const selected = day ? dateStr === selectedDay : false;
+                  const hasEvents = day ? hasTrainings(dateStr) : false;
+
+                  return (
+                    <div key={idx} className="aspect-square">
+                      {day ? (
+                        <button
+                          onClick={() => setSelectedDay(selected ? null : dateStr)}
+                          className={`w-full h-full flex flex-col items-center justify-center rounded-lg text-sm transition-all relative ${
+                            selected
+                              ? 'bg-blue-500 text-white'
+                              : today
+                              ? 'bg-blue-100 text-blue-700 font-semibold'
+                              : past
+                              ? 'text-gray-400 bg-gray-50'
+                              : hasEvents
+                              ? 'bg-gray-100 hover:bg-gray-200'
+                              : 'hover:bg-gray-50'
+                          }`}
+                        >
+                          <span className={selected || today ? 'font-semibold' : ''}>
+                            {day.getDate()}
+                          </span>
+                          {hasEvents && !selected && (
+                            <span className="absolute bottom-1 w-1.5 h-1.5 bg-blue-500 rounded-full" />
+                          )}
+                        </button>
+                      ) : (
+                        <div className="w-full h-full" />
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Status Legend */}
+            <div className="mt-4 pt-3 border-t border-gray-100 flex flex-wrap items-center gap-3 text-xs text-gray-600">
+              <div className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                <span>{lang === 'kk' ? 'Жоспарланған' : 'Запланировано'}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-orange-500" />
+                <span>{lang === 'kk' ? 'В процессе' : 'В процессе'}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-gray-400" />
+                <span>{lang === 'kk' ? 'Өткізілді' : 'Проведено'}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
+                <span>{lang === 'kk' ? 'Бас тартылды' : 'Отменено'}</span>
+              </div>
+            </div>
+          </>
+        ) : (
+          /* List View */
+          <div className="space-y-3">
+            {isLoading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-24 w-full rounded-xl" />
+              ))
+            ) : allUpcomingLessons.length === 0 ? (
+              <div className="text-center py-8">
+                <Calendar className="mx-auto text-gray-300 mb-3" size={40} />
+                <p className="text-gray-500">
+                  {lang === 'kk' ? 'Жоспарланған жаттығулар жоқ' : 'Нет запланированных тренировок'}
+                </p>
+              </div>
+            ) : (
+              allUpcomingLessons.map((lesson) => (
+                <TrainingListItem
+                  key={lesson.id}
+                  lesson={lesson}
+                  clubName={sectionIdToClubName[lesson.group.section_id]}
+                  sectionName={sectionIdToSectionName[lesson.group.section_id]}
+                  statusInfo={getStatusInfo(lesson)}
+                  onEdit={() => setEditingLesson(lesson)}
+                  canEdit={
+                    lesson.status !== 'completed' && 
+                    !(new Date() >= new Date(`${lesson.planned_date}T${lesson.planned_start_time.slice(0,5)}:00`))
+                  }
+                />
               ))
             )}
-            {Object.keys(calendarData).length > 0 && days.map((day, idx) => {
-              const dateStr = day ? formatDate(day) : '';
-              const dayLessons = day ? getLessonsForDate(dateStr) : [];
-              const past = day ? isPastDate(dateStr) : false;
-              const today = day ? isToday(dateStr) : false;
-              
-              return (
-                <div
-                  key={idx}
-                  onClick={() => day && setSelectedDay(dateStr)}
-                  className={`min-h-[68px] p-1.5 border border-gray-100 cursor-pointer transition-all duration-200 ${
-                    !day
-                      ? "bg-gray-50"
-                      : today
-                      ? "bg-blue-50 ring-2 ring-blue-400 ring-inset"
-                      : past
-                      ? "bg-gray-100"
-                      : "bg-white hover:bg-gray-50"
-                  }`}
-                >
-                  {day && (
-                    <>
-                      <div
-                        className={`text-xs font-semibold mb-1 ${
-                          today
-                            ? "text-blue-600"
-                            : past
-                            ? "text-gray-400"
-                            : "text-gray-800"
-                        }`}
-                      >
-                        {day.getDate()}
-                      </div>
-                      <div className="space-y-0.5">
-                        {dayLessons
-                          .slice(0, 2)
-                          .map((les) => (
-                            <div
-                              key={les.id}
-                              className={`text-[10px] text-white rounded px-1 py-0.5 truncate font-medium ${getLessonChipClass(les)}`}
-                            >
-                              {les.planned_start_time.slice(0, 5)}
-                            </div>
-                          ))}
-                        {dayLessons.length > 2 && (
-                          <p className="text-[10px] text-gray-500 font-medium">
-                            +{dayLessons.length - 2}
-                          </p>
-                        )}
-                      </div>
-                    </>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Status Legend */}
-        <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-gray-600">
-          <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
-            <span>{lang === 'kk' ? 'Жоспарланған' : 'Запланировано'}</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-orange-500"></div>
-            <span>{lang === 'kk' ? 'Қазір жүріп жатыр' : 'В процессе'}</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-gray-400"></div>
-            <span>{lang === 'kk' ? 'Аяқталды' : 'Проведено'}</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
-            <span>{lang === 'kk' ? 'Бас тартылды' : 'Отменено'}</span>
-          </div>
-        </div>
-
-        {/* Empty state when filters return no results */}
-        {hasActiveFilters && !hasAnyLessons && Object.keys(calendarData).length > 0 && (
-          <div className="mt-4 p-6 bg-gray-50 rounded-xl text-center">
-            <Calendar className="mx-auto text-gray-300 mb-3" size={40} />
-            <p className="text-gray-500 font-medium">
-              {lang === 'kk' ? 'Ештеңе табылмады' : 'Ничего не найдено'}
-            </p>
-            <p className="text-gray-400 text-sm mt-1">
-              {lang === 'kk' ? 'Сүзгілерді өзгертіп көріңіз' : 'Попробуйте изменить фильтры'}
-            </p>
-            <button
-              onClick={() => setCalendarFilters({ coach: "all", club: "all", type: "all" })}
-              className="mt-3 text-blue-600 text-sm font-medium hover:text-blue-700"
-            >
-              {lang === 'kk' ? 'Сүзгілерді тазалау' : 'Сбросить фильтры'}
-            </button>
           </div>
         )}
 
+        {/* Empty state when filters return no results */}
+        {hasActiveFilters && activeTab === 'calendar' && !isLoading && (
+          (() => {
+            const hasAnyLessons = days.some(day => day && getLessonsForDate(formatDate(day)).length > 0);
+            if (!hasAnyLessons) {
+              return (
+                <div className="mt-4 p-6 bg-gray-50 rounded-xl text-center">
+                  <Calendar className="mx-auto text-gray-300 mb-3" size={40} />
+                  <p className="text-gray-500 font-medium">
+                    {lang === 'kk' ? 'Ештеңе табылмады' : 'Ничего не найдено'}
+                  </p>
+                  <p className="text-gray-400 text-sm mt-1">
+                    {lang === 'kk' ? 'Сүзгілерді өзгертіп көріңіз' : 'Попробуйте изменить фильтры'}
+                  </p>
+                  <button
+                    onClick={() => setCalendarFilters({ coach: "all", club: "all" })}
+                    className="mt-3 text-blue-600 text-sm font-medium hover:text-blue-700"
+                  >
+                    {lang === 'kk' ? 'Сүзгілерді тазалау' : 'Сбросить фильтры'}
+                  </button>
+                </div>
+              );
+            }
+            return null;
+          })()
+        )}
+
+        {/* Day Details Modal */}
         {selectedDay && (
           <DayDetailsModal
             day={selectedDay}
@@ -452,6 +545,7 @@ export const CalendarSection: React.FC<{ token: string | null; refreshKey?: numb
           />
         )}
 
+        {/* Edit Modal */}
         {editingLesson && token && (
           <EditLessonModal
             token={token}
@@ -464,6 +558,7 @@ export const CalendarSection: React.FC<{ token: string | null; refreshKey?: numb
           />
         )}
 
+        {/* Add Modal */}
         {showAdd && (
           <AddTrainingModal
             token={token}
