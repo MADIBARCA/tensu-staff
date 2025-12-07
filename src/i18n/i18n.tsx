@@ -918,7 +918,7 @@ const KK: Dict = {
   'management.employees.errors.phoneInvalid': 'Қате телефон нөмірі',
   'management.employees.errors.phoneExists': 'Бұл нөмір тіркелген',
   'management.employees.errors.clubRequired': 'Кем дегенде бір клуб таңдаңыз',
-  // Sections
+  // Sections part
   'management.sections.searchPlaceholder': 'Бөлім атауы бойынша іздеу',
   'management.sections.filters': 'Сүзгілер',
   'management.sections.create': 'Құру',
