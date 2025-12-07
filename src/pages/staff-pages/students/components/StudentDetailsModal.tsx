@@ -110,7 +110,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
 
   const handleMessage = () => {
     if (student.username) {
-      window.Telegram?.WebApp?.openTelegramLink(`https://t.me/${student.username}`);
+      window.Telegram?.WebApp?.openLink(`https://t.me/${student.username}`, { try_instant_view: false });
     }
   };
 

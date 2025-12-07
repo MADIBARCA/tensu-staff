@@ -1,6 +1,6 @@
 // Types for Management page
 
-export type EmployeeRole = 'owner' | 'admin' | 'trainer';
+export type EmployeeRole = 'owner' | 'admin' | 'trainer' | 'coach';
 export type EmployeeStatus = 'active' | 'pending' | 'deactivated' | 'declined';
 export type PaymentType = 'monthly' | 'semi_annual' | 'annual' | 'session_pack';
 export type PackageType = 'full_club' | 'full_section' | 'single_group' | 'multiple_groups';

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import type { Training, Trainer, UpdateTrainingData } from '../types';
@@ -93,21 +93,6 @@ export const EditTrainingModal: React.FC<EditTrainingModalProps> = ({
   const handleCancelWithType = (changeType: 'single' | 'series') => {
     setShowCancelDialog(false);
     onCancel(changeType);
-  };
-
-  const getStatusLabel = (status: Training['status']): string => {
-    switch (status) {
-      case 'scheduled':
-        return t('training.status.scheduled');
-      case 'in_progress':
-        return t('training.status.in_progress');
-      case 'completed':
-        return t('training.status.completed');
-      case 'cancelled':
-        return t('training.status.cancelled');
-      default:
-        return status;
-    }
   };
 
   return (

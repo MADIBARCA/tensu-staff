@@ -49,7 +49,7 @@ export const StudentCard: React.FC<StudentCardProps> = ({ student, onClick }) =>
   const handleMessage = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (student.username) {
-      window.Telegram?.WebApp?.openTelegramLink(`https://t.me/${student.username}`);
+      window.Telegram?.WebApp?.openLink(`https://t.me/${student.username}`, { try_instant_view: false });
     }
   };
 

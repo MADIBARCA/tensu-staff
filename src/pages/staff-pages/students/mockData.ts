@@ -17,7 +17,6 @@ export const mockGroups: Group[] = [
 ];
 
 const today = new Date();
-const twoWeeksAgo = new Date(today.getTime() - 14 * 24 * 60 * 60 * 1000);
 
 export const mockStudents: Student[] = [
   {

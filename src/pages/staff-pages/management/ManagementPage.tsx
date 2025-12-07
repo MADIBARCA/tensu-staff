@@ -76,7 +76,7 @@ export default function ManagementPage() {
           last_name: member.last_name,
           phone: member.phone_number,
           telegram_username: member.username,
-          role: member.clubs_and_roles[0]?.role || 'trainer',
+          role: (member.clubs_and_roles[0]?.role === 'coach' ? 'trainer' : (member.clubs_and_roles[0]?.role === 'owner' ? 'owner' : member.clubs_and_roles[0]?.role === 'admin' ? 'admin' : 'trainer')) as EmployeeRole,
           status: member.clubs_and_roles[0]?.is_active ? 'active' : 'pending',
           club_ids: member.clubs_and_roles.map(cr => cr.club_id),
           photo_url: member.photo_url,

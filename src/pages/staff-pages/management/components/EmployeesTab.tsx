@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Filter, Plus, X } from 'lucide-react';
+import { Search, Filter, Plus } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import { EmployeeCard } from './EmployeeCard';
 import { AddEmployeeModal } from './AddEmployeeModal';

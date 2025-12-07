@@ -373,7 +373,6 @@ const RU: Dict = {
   'profile.deactivate.warning': 'Клуб будет скрыт из поиска. Все расписания будут удалены. Это действие можно отменить.',
   'profile.deactivate.confirm': 'Деактивировать',
   'common.optional': 'необязательно',
-  'common.delete': 'Удалить',
   // Management page
   'nav.management': 'Управление',
   'management.tabs.employees': 'Сотрудники',
@@ -878,7 +877,6 @@ const KK: Dict = {
   'profile.deactivate.warning': 'Клуб іздеуден жасырылады. Барлық кестелер жойылады. Бұл әрекетті болдырмауға болады.',
   'profile.deactivate.confirm': 'Деактивациялау',
   'common.optional': 'міндетті емес',
-  'common.delete': 'Жою',
   // Management page
   'nav.management': 'Басқару',
   'management.tabs.employees': 'Қызметкерлер',

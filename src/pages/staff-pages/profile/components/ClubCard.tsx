@@ -87,7 +87,7 @@ export const ClubCard: React.FC<ClubCardProps> = ({ club, onClick, onPayment }) 
           <div className="mt-3 flex items-center gap-2 p-2 bg-yellow-50 rounded-lg">
             <AlertTriangle size={16} className="text-yellow-600" />
             <span className="text-sm text-yellow-700">
-              {t('profile.club.paymentDue', { days: club.membership?.days_until_expiry })}
+              {t('profile.club.paymentDue', { days: club.membership?.days_until_expiry ?? 0 })}
             </span>
           </div>
         )}

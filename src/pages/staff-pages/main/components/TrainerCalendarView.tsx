@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from 'react';
-import { useI18n } from '@/i18n/i18n';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import type { Training } from '../types';
 
@@ -15,7 +14,6 @@ export const TrainerCalendarView: React.FC<TrainerCalendarViewProps> = ({
   selectedDate,
   onSelectDate,
 }) => {
-  const { t } = useI18n();
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const weekDays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];

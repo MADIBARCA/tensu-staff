@@ -35,7 +35,6 @@ import type {
   Lesson, 
   GetStudentsListResponse,
   StudentResponse,
-  StaffResponse,
   SessionResponse,
   ClubLocationResponse
 } from './responses';
