@@ -13,7 +13,7 @@ export const EditLessonModal: React.FC<{
   onClose: () => void;
   onSaved?: () => void;
 }> = ({ lesson, token, onClose, onSaved }) => {
-  const { lang, t } = useI18n();
+  const { lang } = useI18n();
   const [plannedDate, setPlannedDate] = useState(lesson.planned_date);
   const [plannedStartTime, setPlannedStartTime] = useState(
     lesson.planned_start_time.slice(0, 5)
@@ -31,7 +31,6 @@ export const EditLessonModal: React.FC<{
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [sectionName, setSectionName] = useState<string>('');
 
   // Load coaches for the dropdown and section name
   useEffect(() => {
@@ -42,9 +41,9 @@ export const EditLessonModal: React.FC<{
         const group = groupsRes.data.find(g => g.section.id === lesson.group.section_id);
         const lessonClubId = group?.section.club_id;
         
-        if (group?.section?.name) {
-          setSectionName(group.section.name);
-        }
+        // if (group?.section?.name) {
+        //   setSectionName(group.section.name);
+        // }
         
         if (lessonClubId) {
           const coachMembers = (teamRes.data.staff_members || []).filter((m) =>
@@ -157,7 +156,8 @@ export const EditLessonModal: React.FC<{
                 {lang === 'kk' ? 'Жаттығуды өңдеу' : 'Редактировать тренировку'}
               </h2>
               <p className="text-xs text-gray-500 mt-0.5">
-                {lesson.group.section?.name} • {lesson.group.name}
+                {/* {lesson.group.section?.name} • {lesson.group.name} */}
+                {lesson.group.name}
               </p>
             </div>
             <button onClick={onClose} className="p-2 -mr-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors">
