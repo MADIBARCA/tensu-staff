@@ -10,6 +10,11 @@ import { ParticipantsModal } from './components/ParticipantsModal';
 import { useTelegram } from '@/hooks/useTelegram';
 import { clubsApi, teamApi, scheduleApi } from '@/functions/axios/axiosFunctions';
 
+// Helper function to format date as YYYY-MM-DD
+const formatDate = (date: Date): string => {
+  return date.toISOString().split('T')[0];
+};
+
 export interface Training {
   id: number;
   section_name: string;
@@ -55,7 +60,7 @@ export default function SchedulePage() {
   const [trainers, setTrainers] = useState<Trainer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [hasActiveMembership, setHasActiveMembership] = useState(true);
+  const [hasActiveMembership] = useState(true);
 
   // Filters
   const [filters, setFilters] = useState<Filters>({

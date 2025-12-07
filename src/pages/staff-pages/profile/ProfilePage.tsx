@@ -148,7 +148,7 @@ export default function ProfilePage() {
       }
     }
 
-    setUser((prev) => ({ ...prev, ...data }));
+    setUser((prev) => prev ? { ...prev, ...data } : null);
     window.Telegram?.WebApp?.showAlert(t('profile.saved'));
   };
 
@@ -311,7 +311,7 @@ export default function ProfilePage() {
   };
 
   // Note: Payment history is not available from API
-  const getPaymentHistory = (clubId: number) => {
+  const getPaymentHistory = (_clubId: number) => {
     return [];
   };
 
