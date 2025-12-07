@@ -1,0 +1,51 @@
+/* index.css */
+@import "tailwindcss";
+
+html,
+body {
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  background: #ffffff;
+}
+
+#wrap {
+  height: 100vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.PhoneInputInput {
+  outline: none;
+}
+
+.PhoneInputCountrySelect {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+}
+
+.PhoneInputCountryIcon {
+  margin-right: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.PhoneInputCountryIcon--border {
+  background-color: none;
+  box-shadow: none;
+}
+
+/* Hide number-input spinners in Chrome, Safari, Edge, Opera */
+input[type="number"].no-spinner::-webkit-outer-spin-button,
+input[type="number"].no-spinner::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Hide number-input spinner in Firefox */
+input[type="number"].no-spinner {
+  -moz-appearance: textfield;
+}
