@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Layout, PageContainer } from '@/components/Layout';
 import { useI18n } from '@/i18n/i18n';
-import { Search, Filter, ChevronDown, Loader2 } from 'lucide-react';
+import { Search, Filter, ChevronDown } from 'lucide-react';
 import { ClubCard } from './components/ClubCard';
 import { ClubDetailsModal } from './components/ClubDetailsModal';
 import { useTelegram } from '@/hooks/useTelegram';
@@ -50,12 +50,12 @@ export default function ClubsPage() {
           address: c.club.address || '',
           sections_count: 0,
           students_count: 0,
-          tags: c.club.tags || [],
+          tags: [],
           logo_url: c.club.logo_url,
           phone: c.club.phone,
-          telegram_url: c.club.telegram_link,
-          whatsapp_url: c.club.whatsapp_link,
-          working_hours: c.club.working_hours,
+          telegram_url: c.club.telegram_url,
+          whatsapp_url: undefined,
+          working_hours: undefined,
           description: c.club.description,
         }));
         
