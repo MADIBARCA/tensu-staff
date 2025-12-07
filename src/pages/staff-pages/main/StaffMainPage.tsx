@@ -113,14 +113,15 @@ export default function StaffMainPage() {
     try {
       setLoading(true);
       
-      // Load clubs
+      // Load clubs first
       const clubsResponse = await clubsApi.getMy(initDataRaw);
+      let loadedClubs: Club[] = [];
       if (clubsResponse.data?.clubs) {
-        const transformedClubs: Club[] = clubsResponse.data.clubs.map(c => ({
+        loadedClubs = clubsResponse.data.clubs.map(c => ({
           id: c.club.id,
           name: c.club.name,
         }));
-        setClubs(transformedClubs);
+        setClubs(loadedClubs);
       }
 
       // Load sections
@@ -158,12 +159,12 @@ export default function StaffMainPage() {
         setTrainers(transformedTrainers);
       }
 
-      // Load schedule for current week
+      // Load schedule for current week (use loadedClubs instead of clubs state)
       const today = new Date().toISOString().split('T')[0];
       const scheduleResponse = await scheduleApi.getWeekSchedule(today, initDataRaw);
       if (scheduleResponse.data?.days) {
         const allLessons: Training[] = [];
-        const clubNameMap = new Map(clubs.map(c => [c.id, c.name]));
+        const clubNameMap = new Map(loadedClubs.map(c => [c.id, c.name]));
         
         scheduleResponse.data.days.forEach(day => {
           day.lessons.forEach(lesson => {
@@ -176,11 +177,10 @@ export default function StaffMainPage() {
       }
     } catch (error) {
       console.error('Error loading data:', error);
-      // Keep mock data on error
     } finally {
       setLoading(false);
     }
-  }, [initDataRaw, clubs]);
+  }, [initDataRaw]);
 
   useEffect(() => {
     loadData();

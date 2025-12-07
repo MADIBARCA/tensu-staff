@@ -87,14 +87,15 @@ export default function SchedulePage() {
     setLoading(true);
     setError(null);
     try {
-      // Load clubs
+      // Load clubs first
       const clubsResponse = await clubsApi.getMy(initDataRaw);
+      let loadedClubs: Club[] = [];
       if (clubsResponse.data?.clubs) {
-        const transformedClubs: Club[] = clubsResponse.data.clubs.map(c => ({
+        loadedClubs = clubsResponse.data.clubs.map(c => ({
           id: c.club.id,
           name: c.club.name,
         }));
-        setClubs(transformedClubs);
+        setClubs(loadedClubs);
       }
 
       // Load trainers
@@ -110,12 +111,12 @@ export default function SchedulePage() {
         setTrainers(transformedTrainers);
       }
 
-      // Load schedule for current week
+      // Load schedule for current week (use loadedClubs instead of clubs state)
       const today = new Date().toISOString().split('T')[0];
       const scheduleResponse = await scheduleApi.getWeekSchedule(today, initDataRaw);
       if (scheduleResponse.data?.days) {
         const allTrainings: Training[] = [];
-        const clubNameMap = new Map(clubs.map(c => [c.id, c.name]));
+        const clubNameMap = new Map(loadedClubs.map(c => [c.id, c.name]));
         
         scheduleResponse.data.days.forEach(day => {
           day.lessons.forEach(lesson => {
@@ -149,7 +150,7 @@ export default function SchedulePage() {
     } finally {
       setLoading(false);
     }
-  }, [initDataRaw, clubs, t]);
+  }, [initDataRaw, t]);
 
   useEffect(() => {
     loadData();
