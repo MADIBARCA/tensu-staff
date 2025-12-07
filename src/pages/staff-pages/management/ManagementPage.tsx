@@ -15,6 +15,7 @@ import {
 } from './mockData';
 import type {
   Employee,
+  EmployeeRole,
   Section,
   Tariff,
   CreateEmployeeData,
