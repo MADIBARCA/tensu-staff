@@ -6,7 +6,7 @@ import { EmployeesTab } from './components/EmployeesTab';
 import { SectionsTab } from './components/SectionsTab';
 import { PricingTab } from './components/PricingTab';
 import { useTelegram } from '@/hooks/useTelegram';
-import { clubsApi, teamApi, sectionsApi, invitationsApi, groupsApi } from '@/functions/axios/axiosFunctions';
+import { clubsApi, teamApi, sectionsApi, invitationsApi, groupsApi, staffApi } from '@/functions/axios/axiosFunctions';
 import { mockTariffs } from './mockData';
 import type {
   Employee,
@@ -22,6 +22,7 @@ import type {
   Group,
   Club,
 } from './types';
+import type { ClubWithRole, CreateStaffResponse } from '@/functions/axios/responses';
 
 type TabId = 'employees' | 'sections' | 'pricing';
 
@@ -34,6 +35,8 @@ export default function ManagementPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
   const [clubs, setClubs] = useState<Club[]>([]);
+  const [clubRoles, setClubRoles] = useState<ClubWithRole[]>([]);
+  const [currentUser, setCurrentUser] = useState<CreateStaffResponse | null>(null);
   // Tariffs don't have API endpoint, using mock data
   const [tariffs, setTariffs] = useState<Tariff[]>(mockTariffs);
 
@@ -53,9 +56,18 @@ export default function ManagementPage() {
     try {
       setLoading(true);
 
+      // Load current user
+      const userResponse = await staffApi.getMe(initDataRaw);
+      if (userResponse.data) {
+        setCurrentUser(userResponse.data);
+      }
+
       // Load clubs
       const clubsResponse = await clubsApi.getMy(initDataRaw);
       if (clubsResponse.data?.clubs) {
+        // Save club roles for filtering
+        setClubRoles(clubsResponse.data.clubs);
+        
         const transformedClubs: Club[] = clubsResponse.data.clubs.map(c => ({
           id: c.club.id,
           name: c.club.name,
@@ -359,6 +371,8 @@ export default function ManagementPage() {
           <SectionsTab
             sections={sections}
             clubs={clubs}
+            clubRoles={clubRoles}
+            currentUser={currentUser}
             employees={employees}
             onCreateSection={handleCreateSection}
             onUpdateSection={handleUpdateSection}

@@ -2,10 +2,13 @@ import React, { useState, useMemo } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import type { Club, Employee, CreateSectionData, CreateGroupData, CreateScheduleData, WeekDay } from '../types';
+import type { ClubWithRole, CreateStaffResponse } from '@/functions/axios/responses';
 import { levelOptions, weekDays } from '../mockData';
 
 interface CreateSectionModalProps {
   clubs: Club[];
+  clubRoles: ClubWithRole[];
+  currentUser: CreateStaffResponse | null;
   employees: Employee[];
   onClose: () => void;
   onCreate: (section: CreateSectionData, groups: (CreateGroupData & { schedules: CreateScheduleData[] })[]) => void;
@@ -13,6 +16,8 @@ interface CreateSectionModalProps {
 
 export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
   clubs,
+  clubRoles,
+  currentUser,
   employees,
   onClose,
   onCreate,
@@ -26,11 +31,55 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
   const [groups, setGroups] = useState<(CreateGroupData & { schedules: CreateScheduleData[] })[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const activeClubs = clubs.filter(c => c.status === 'active');
+  // Filter clubs where user is owner or admin
+  const activeClubs = useMemo(() => {
+    return clubs.filter(c => {
+      if (c.status !== 'active') return false;
+      const clubRole = clubRoles.find(cr => cr.club.id === c.id);
+      return clubRole && (clubRole.role === 'owner' || clubRole.role === 'admin');
+    });
+  }, [clubs, clubRoles]);
+
+  // Check if current user is owner of the selected club
+  const isOwnerOfSelectedClub = useMemo(() => {
+    if (!sectionData.club_id || !currentUser) return false;
+    const clubRole = clubRoles.find(cr => cr.club.id === sectionData.club_id);
+    return clubRole?.role === 'owner' || clubRole?.is_owner;
+  }, [sectionData.club_id, clubRoles, currentUser]);
+
+  // Get trainers for selected club, including current user if they are owner
   const trainers = useMemo(() => {
     if (!sectionData.club_id) return [];
-    return employees.filter(e => e.role === 'trainer' && e.club_ids.includes(sectionData.club_id));
-  }, [employees, sectionData.club_id]);
+    
+    const clubTrainers = employees.filter(
+      e => e.role === 'trainer' && e.club_ids.includes(sectionData.club_id)
+    );
+    
+    // Add current user as trainer option if they are owner of the club
+    if (isOwnerOfSelectedClub && currentUser) {
+      // Check if current user is not already in the trainers list
+      const currentUserAlreadyInList = clubTrainers.some(t => t.id === currentUser.id);
+      if (!currentUserAlreadyInList) {
+        return [
+          {
+            id: currentUser.id,
+            first_name: currentUser.first_name,
+            last_name: currentUser.last_name,
+            phone: currentUser.phone_number,
+            telegram_username: currentUser.username,
+            role: 'owner' as const,
+            status: 'active' as const,
+            club_ids: [sectionData.club_id],
+            photo_url: currentUser.photo_url,
+            created_at: currentUser.created_at,
+          },
+          ...clubTrainers,
+        ];
+      }
+    }
+    
+    return clubTrainers;
+  }, [employees, sectionData.club_id, isOwnerOfSelectedClub, currentUser]);
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};

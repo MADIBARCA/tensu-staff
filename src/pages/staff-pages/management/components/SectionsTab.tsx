@@ -5,10 +5,13 @@ import { SectionCard } from './SectionCard';
 import { CreateSectionModal } from './CreateSectionModal';
 import { EditSectionModal } from './EditSectionModal';
 import type { Section, Club, Employee, SectionFilters, CreateSectionData, CreateGroupData, CreateScheduleData, Group } from '../types';
+import type { ClubWithRole, CreateStaffResponse } from '@/functions/axios/responses';
 
 interface SectionsTabProps {
   sections: Section[];
   clubs: Club[];
+  clubRoles: ClubWithRole[];
+  currentUser: CreateStaffResponse | null;
   employees: Employee[];
   onCreateSection: (section: CreateSectionData, groups: (CreateGroupData & { schedules: CreateScheduleData[] })[]) => void;
   onUpdateSection: (id: number, name: string, trainerIds: number[], groups: Group[]) => void;
@@ -18,6 +21,8 @@ interface SectionsTabProps {
 export const SectionsTab: React.FC<SectionsTabProps> = ({
   sections,
   clubs,
+  clubRoles,
+  currentUser,
   employees,
   onCreateSection,
   onUpdateSection,
@@ -190,6 +195,8 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
       {showCreateModal && (
         <CreateSectionModal
           clubs={clubs}
+          clubRoles={clubRoles}
+          currentUser={currentUser}
           employees={employees}
           onClose={() => setShowCreateModal(false)}
           onCreate={handleCreateSection}
