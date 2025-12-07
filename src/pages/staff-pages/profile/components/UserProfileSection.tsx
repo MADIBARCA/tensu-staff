@@ -4,20 +4,16 @@ import { useI18n } from '@/i18n/i18n';
 import type { StaffUser } from '../types';
 
 interface UserProfileSectionProps {
-  user: StaffUser | null;
+  user: StaffUser;
   onSave: (data: { first_name: string; last_name: string }) => void;
 }
 
 export const UserProfileSection: React.FC<UserProfileSectionProps> = ({ user, onSave }) => {
   const { t } = useI18n();
   const [isEditing, setIsEditing] = useState(false);
-  const [firstName, setFirstName] = useState(user?.first_name || '');
-  const [lastName, setLastName] = useState(user?.last_name || '');
+  const [firstName, setFirstName] = useState(user.first_name);
+  const [lastName, setLastName] = useState(user.last_name);
   const [error, setError] = useState('');
-
-  if (!user) {
-    return null;
-  }
 
   const handleSave = () => {
     if (!firstName.trim()) {

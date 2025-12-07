@@ -7,6 +7,7 @@ import { SectionsTab } from './components/SectionsTab';
 import { PricingTab } from './components/PricingTab';
 import { useTelegram } from '@/hooks/useTelegram';
 import { clubsApi, teamApi, sectionsApi, invitationsApi, groupsApi } from '@/functions/axios/axiosFunctions';
+import { mockTariffs } from './mockData';
 import type {
   Employee,
   EmployeeRole,
@@ -33,7 +34,8 @@ export default function ManagementPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
   const [clubs, setClubs] = useState<Club[]>([]);
-  const [tariffs, setTariffs] = useState<Tariff[]>([]);
+  // Tariffs don't have API endpoint, using mock data
+  const [tariffs, setTariffs] = useState<Tariff[]>(mockTariffs);
 
   const tabs = [
     { id: 'employees' as TabId, label: t('management.tabs.employees'), icon: Users },
@@ -106,7 +108,6 @@ export default function ManagementPage() {
       // Note: Tariffs don't have an API endpoint, so we keep mock data
     } catch (error) {
       console.error('Error loading data:', error);
-      // Keep mock data on error
     } finally {
       setLoading(false);
     }

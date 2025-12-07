@@ -11,7 +11,12 @@ import { DeactivateClubModal } from './components/DeactivateClubModal';
 import { SettingsSection } from './components/SettingsSection';
 import { useTelegram } from '@/hooks/useTelegram';
 import { staffApi, clubsApi } from '@/functions/axios/axiosFunctions';
-import { mockMembershipTariffs } from './constants';
+// Note: These mocks are kept because there's no API for payments, analytics, and membership tariffs
+import {
+  mockClubAnalytics,
+  mockPaymentHistory,
+  mockMembershipTariffs,
+} from './mockData';
 import type { StaffUser, Club, CreateClubData, ClubAnalytics } from './types';
 
 export default function ProfilePage() {
@@ -102,11 +107,11 @@ export default function ProfilePage() {
         
         // Update user role based on clubs
         if (clubsResponse.data.clubs.some(c => c.is_owner)) {
-          setUser(prev => prev ? { ...prev, role: 'owner' } : null);
+          setUser(prev => prev ? { ...prev, role: 'owner' } : prev);
         } else if (clubsResponse.data.clubs.some(c => c.role === 'admin')) {
-          setUser(prev => prev ? { ...prev, role: 'admin' } : null);
+          setUser(prev => prev ? { ...prev, role: 'admin' } : prev);
         } else {
-          setUser(prev => prev ? { ...prev, role: 'trainer' } : null);
+          setUser(prev => prev ? { ...prev, role: 'trainer' } : prev);
         }
       }
     } catch (error) {
@@ -148,7 +153,7 @@ export default function ProfilePage() {
       }
     }
 
-    setUser((prev) => prev ? { ...prev, ...data } : null);
+    setUser((prev) => prev ? { ...prev, ...data } : prev);
     window.Telegram?.WebApp?.showAlert(t('profile.saved'));
   };
 
@@ -297,9 +302,9 @@ export default function ProfilePage() {
     window.Telegram?.WebApp?.showAlert(t('profile.clubDeactivated'));
   };
 
-  // Note: Analytics are not available from API
+  // Note: Analytics are mock-only since there's no analytics API
   const getClubAnalytics = (clubId: number): ClubAnalytics => {
-    return {
+    return mockClubAnalytics.find(a => a.club_id === clubId) || {
       club_id: clubId,
       sections: [],
       total_students: 0,
@@ -310,9 +315,9 @@ export default function ProfilePage() {
     };
   };
 
-  // Note: Payment history is not available from API
-  const getPaymentHistory = (_clubId: number) => {
-    return [];
+  // Note: Payment history is mock-only since there's no payment API
+  const getPaymentHistory = (clubId: number) => {
+    return mockPaymentHistory.filter(p => p.club_id === clubId);
   };
 
   // Check if user can create more clubs (based on role)
@@ -336,7 +341,7 @@ export default function ProfilePage() {
     return (
       <Layout title={t('nav.profile')}>
         <PageContainer className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+          <p className="text-gray-500">{t('common.error')}</p>
         </PageContainer>
       </Layout>
     );
@@ -414,7 +419,7 @@ export default function ProfilePage() {
             club={selectedClub}
             analytics={getClubAnalytics(selectedClub.id)}
             paymentHistory={getPaymentHistory(selectedClub.id)}
-            userRole={user?.role || 'trainer'}
+            userRole={user.role}
             onClose={() => {
               setShowClubDetailsModal(false);
               setSelectedClub(null);

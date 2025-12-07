@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Phone, MessageCircle, ChevronDown, ChevronUp, Calendar, CreditCard, CheckCircle } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import type { Student, AttendanceRecord, PaymentRecord } from '../types';
+import { generateAttendanceRecords, generatePaymentRecords } from '../mockData';
 
 interface StudentDetailsModalProps {
   student: Student;
@@ -21,9 +22,14 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
   const { t } = useI18n();
   const [showAttendance, setShowAttendance] = useState(false);
   const [showPayments, setShowPayments] = useState(false);
-  // Note: Attendance and payment records are not available from API
-  const [attendanceRecords] = useState<AttendanceRecord[]>([]);
-  const [paymentRecords] = useState<PaymentRecord[]>([]);
+  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
+  const [paymentRecords, setPaymentRecords] = useState<PaymentRecord[]>([]);
+
+  useEffect(() => {
+    // Load attendance and payment records
+    setAttendanceRecords(generateAttendanceRecords(student.id));
+    setPaymentRecords(generatePaymentRecords(student.id));
+  }, [student.id]);
 
   const getStatusLabel = (status: string): string => {
     switch (status) {

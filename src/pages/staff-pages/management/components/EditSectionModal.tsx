@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { X, Plus, Trash2, AlertTriangle } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import type { Section, Employee, Group, CreateGroupData, CreateScheduleData, WeekDay } from '../types';
-import { levelOptions, weekDays } from '../constants';
+import { levelOptions, weekDays } from '../mockData';
 
 interface EditSectionModalProps {
   section: Section;

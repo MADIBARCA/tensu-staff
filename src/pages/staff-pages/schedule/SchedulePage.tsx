@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Layout, PageContainer } from '@/components/Layout';
 import { useI18n } from '@/i18n/i18n';
 import { Filter, List, CalendarDays, X } from 'lucide-react';
@@ -7,13 +7,6 @@ import { CalendarView } from './components/CalendarView';
 import { FiltersModal } from './components/FiltersModal';
 import { NoMembershipModal } from './components/NoMembershipModal';
 import { ParticipantsModal } from './components/ParticipantsModal';
-import { useTelegram } from '@/hooks/useTelegram';
-import { clubsApi, teamApi, scheduleApi } from '@/functions/axios/axiosFunctions';
-
-// Helper function to format date as YYYY-MM-DD
-const formatDate = (date: Date): string => {
-  return date.toISOString().split('T')[0];
-};
 
 export interface Training {
   id: number;
@@ -53,14 +46,13 @@ export interface Filters {
 
 export default function SchedulePage() {
   const { t } = useI18n();
-  const { initDataRaw } = useTelegram();
   const [activeTab, setActiveTab] = useState<'list' | 'calendar'>('list');
   const [trainings, setTrainings] = useState<Training[]>([]);
   const [clubs, setClubs] = useState<Club[]>([]);
   const [trainers, setTrainers] = useState<Trainer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [hasActiveMembership] = useState(true);
+  const [hasActiveMembership, setHasActiveMembership] = useState(true);
 
   // Filters
   const [filters, setFilters] = useState<Filters>({
@@ -78,84 +70,191 @@ export default function SchedulePage() {
   // Calendar
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
-  const loadData = useCallback(async () => {
-    if (!initDataRaw) {
-      setLoading(false);
-      return;
-    }
+  useEffect(() => {
+    loadData();
+  }, []);
 
+  const loadData = async () => {
     setLoading(true);
     setError(null);
     try {
-      // Load clubs first
-      const clubsResponse = await clubsApi.getMy(initDataRaw);
-      let loadedClubs: Club[] = [];
-      if (clubsResponse.data?.clubs) {
-        loadedClubs = clubsResponse.data.clubs.map(c => ({
-          id: c.club.id,
-          name: c.club.name,
-        }));
-        setClubs(loadedClubs);
-      }
+      // TODO: Replace with actual API calls
+      // const trainingsResponse = await scheduleApi.getTrainings(token);
+      // const clubsResponse = await clubsApi.getAll(token);
+      // const trainersResponse = await trainersApi.getAll(token);
 
-      // Load trainers
-      const teamResponse = await teamApi.get(initDataRaw);
-      if (teamResponse.data?.staff_members) {
-        const transformedTrainers: Trainer[] = teamResponse.data.staff_members
-          .filter(member => member.clubs_and_roles.some(cr => cr.role === 'coach'))
-          .map(member => ({
-            id: member.id,
-            name: `${member.first_name} ${member.last_name}`.trim(),
-            club_id: member.clubs_and_roles[0]?.club_id || 0,
-          }));
-        setTrainers(transformedTrainers);
-      }
+      // Mock clubs
+      const mockClubs: Club[] = [
+        { id: 1, name: 'Спортивный клуб "Чемпион"' },
+        { id: 2, name: 'Фитнес центр "Сила"' },
+        { id: 3, name: 'Бассейн "Волна"' },
+      ];
 
-      // Load schedule for current week (use loadedClubs instead of clubs state)
-      const today = new Date().toISOString().split('T')[0];
-      const scheduleResponse = await scheduleApi.getWeekSchedule(today, initDataRaw);
-      if (scheduleResponse.data?.days) {
-        const allTrainings: Training[] = [];
-        const clubNameMap = new Map(loadedClubs.map(c => [c.id, c.name]));
-        
-        scheduleResponse.data.days.forEach(day => {
-          day.lessons.forEach(lesson => {
-            const clubName = clubNameMap.get(lesson.group_id) || '';
-            allTrainings.push({
-              id: lesson.id,
-              section_name: lesson.group?.name || '',
-              group_name: lesson.group?.name,
-              trainer_name: `${lesson.coach?.first_name || ''} ${lesson.coach?.last_name || ''}`.trim(),
-              trainer_id: lesson.coach_id,
-              club_id: lesson.group?.section_id || 0,
-              club_name: clubName,
-              date: lesson.effective_date,
-              time: lesson.effective_start_time,
-              location: lesson.location || '',
-              max_participants: 0,
-              current_participants: 0,
-              participants: [],
-              notes: lesson.notes,
-              is_booked: false,
-              is_in_waitlist: false,
-            });
-          });
-        });
-        
-        setTrainings(allTrainings);
-      }
+      // Mock trainers
+      const mockTrainers: Trainer[] = [
+        { id: 1, name: 'Александр Петров', club_id: 1 },
+        { id: 2, name: 'Мария Иванова', club_id: 2 },
+        { id: 3, name: 'Дмитрий Сидоров', club_id: 1 },
+        { id: 4, name: 'Елена Козлова', club_id: 3 },
+      ];
+
+      // Mock trainings
+      const today = new Date();
+      const mockTrainings: Training[] = [
+        {
+          id: 1,
+          section_name: 'Футбол',
+          group_name: 'Группа А',
+          trainer_name: 'Александр Петров',
+          trainer_id: 1,
+          club_id: 1,
+          club_name: 'Спортивный клуб "Чемпион"',
+          date: formatDate(today),
+          time: '18:00',
+          location: 'Зал 1, ул. Абая 150',
+          max_participants: 15,
+          current_participants: 12,
+          participants: ['Иван И.', 'Петр П.', 'Сергей С.', 'Андрей А.', 'Николай Н.', 'Алексей А.', 'Михаил М.', 'Владимир В.', 'Евгений Е.', 'Дмитрий Д.', 'Артем А.', 'Максим М.'],
+          notes: 'Принести форму и бутсы',
+          is_booked: true,
+          is_in_waitlist: false,
+        },
+        {
+          id: 2,
+          section_name: 'Йога',
+          group_name: 'Утренняя группа',
+          trainer_name: 'Мария Иванова',
+          trainer_id: 2,
+          club_id: 2,
+          club_name: 'Фитнес центр "Сила"',
+          date: formatDate(addDays(today, 1)),
+          time: '09:00',
+          location: 'Зал йоги, пр. Достык 240',
+          max_participants: 20,
+          current_participants: 18,
+          participants: [],
+          notes: 'Коврики предоставляются',
+          is_booked: false,
+          is_in_waitlist: false,
+        },
+        {
+          id: 3,
+          section_name: 'Баскетбол',
+          group_name: 'Продвинутые',
+          trainer_name: 'Дмитрий Сидоров',
+          trainer_id: 3,
+          club_id: 1,
+          club_name: 'Спортивный клуб "Чемпион"',
+          date: formatDate(addDays(today, 2)),
+          time: '19:30',
+          location: 'Большой зал, ул. Абая 150',
+          max_participants: 10,
+          current_participants: 10,
+          participants: [],
+          is_booked: false,
+          is_in_waitlist: false,
+        },
+        {
+          id: 4,
+          section_name: 'Плавание',
+          group_name: 'Взрослые',
+          trainer_name: 'Елена Козлова',
+          trainer_id: 4,
+          club_id: 3,
+          club_name: 'Бассейн "Волна"',
+          date: formatDate(addDays(today, 3)),
+          time: '07:00',
+          location: 'Бассейн, ул. Жандосова 58',
+          max_participants: 8,
+          current_participants: 5,
+          participants: [],
+          notes: 'Шапочка обязательна',
+          is_booked: false,
+          is_in_waitlist: false,
+        },
+        {
+          id: 5,
+          section_name: 'Футбол',
+          group_name: 'Группа Б',
+          trainer_name: 'Александр Петров',
+          trainer_id: 1,
+          club_id: 1,
+          club_name: 'Спортивный клуб "Чемпион"',
+          date: formatDate(addDays(today, 5)),
+          time: '17:00',
+          location: 'Зал 2, ул. Абая 150',
+          max_participants: 15,
+          current_participants: 8,
+          participants: [],
+          is_booked: false,
+          is_in_waitlist: false,
+        },
+        {
+          id: 6,
+          section_name: 'Пилатес',
+          trainer_name: 'Мария Иванова',
+          trainer_id: 2,
+          club_id: 2,
+          club_name: 'Фитнес центр "Сила"',
+          date: formatDate(addDays(today, 7)),
+          time: '11:00',
+          location: 'Зал пилатеса, пр. Достык 240',
+          max_participants: 12,
+          current_participants: 6,
+          participants: [],
+          is_booked: false,
+          is_in_waitlist: false,
+        },
+        // Add more trainings for calendar view
+        ...generateCalendarTrainings(today),
+      ];
+
+      setClubs(mockClubs);
+      setTrainers(mockTrainers);
+      setTrainings(mockTrainings);
+      setHasActiveMembership(true); // Mock: user has membership
     } catch (err) {
       console.error('Failed to load schedule:', err);
       setError(t('schedule.error'));
     } finally {
       setLoading(false);
     }
-  }, [initDataRaw, t]);
+  };
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  // Helper functions
+  function formatDate(date: Date): string {
+    return date.toISOString().split('T')[0];
+  }
 
+  function addDays(date: Date, days: number): Date {
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
+  }
+
+  function generateCalendarTrainings(startDate: Date): Training[] {
+    const trainings: Training[] = [];
+    for (let i = 8; i <= 25; i += 3) {
+      const date = addDays(startDate, i);
+      trainings.push({
+        id: 100 + i,
+        section_name: i % 2 === 0 ? 'Футбол' : 'Йога',
+        trainer_name: i % 2 === 0 ? 'Александр Петров' : 'Мария Иванова',
+        trainer_id: i % 2 === 0 ? 1 : 2,
+        club_id: i % 2 === 0 ? 1 : 2,
+        club_name: i % 2 === 0 ? 'Спортивный клуб "Чемпион"' : 'Фитнес центр "Сила"',
+        date: formatDate(date),
+        time: i % 2 === 0 ? '18:00' : '10:00',
+        location: i % 2 === 0 ? 'Зал 1' : 'Зал йоги',
+        max_participants: 15,
+        current_participants: Math.floor(Math.random() * 10) + 3,
+        participants: [],
+        is_booked: false,
+        is_in_waitlist: false,
+      });
+    }
+    return trainings;
+  }
 
   // Filter trainings
   const filteredTrainings = useMemo(() => {

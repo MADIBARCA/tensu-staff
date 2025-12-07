@@ -60,7 +60,7 @@ const transformLessonToTraining = (lesson: Lesson, clubName: string): Training =
   
   return {
     id: lesson.id,
-    club_id: lesson.group?.section_id || 0, // Will be updated with actual club_id
+    club_id: lesson.group?.section_id || 0,
     club_name: clubName,
     section_id: lesson.group?.section_id || 0,
     section_name: lesson.group?.name || '',
@@ -113,15 +113,14 @@ export default function StaffMainPage() {
     try {
       setLoading(true);
       
-      // Load clubs first
+      // Load clubs
       const clubsResponse = await clubsApi.getMy(initDataRaw);
-      let loadedClubs: Club[] = [];
       if (clubsResponse.data?.clubs) {
-        loadedClubs = clubsResponse.data.clubs.map(c => ({
+        const transformedClubs: Club[] = clubsResponse.data.clubs.map(c => ({
           id: c.club.id,
           name: c.club.name,
         }));
-        setClubs(loadedClubs);
+        setClubs(transformedClubs);
       }
 
       // Load sections
@@ -159,12 +158,12 @@ export default function StaffMainPage() {
         setTrainers(transformedTrainers);
       }
 
-      // Load schedule for current week (use loadedClubs instead of clubs state)
+      // Load schedule for current week
       const today = new Date().toISOString().split('T')[0];
       const scheduleResponse = await scheduleApi.getWeekSchedule(today, initDataRaw);
       if (scheduleResponse.data?.days) {
         const allLessons: Training[] = [];
-        const clubNameMap = new Map(loadedClubs.map(c => [c.id, c.name]));
+        const clubNameMap = new Map(clubs.map(c => [c.id, c.name]));
         
         scheduleResponse.data.days.forEach(day => {
           day.lessons.forEach(lesson => {
@@ -180,7 +179,7 @@ export default function StaffMainPage() {
     } finally {
       setLoading(false);
     }
-  }, [initDataRaw]);
+  }, [initDataRaw, clubs]);
 
   useEffect(() => {
     loadData();
@@ -294,7 +293,32 @@ export default function StaffMainPage() {
       }
     } catch (error) {
       console.error('Error creating training:', error);
-      window.Telegram?.WebApp?.showAlert('Ошибка при создании тренировки');
+      // Fallback to local creation
+      const newTraining: Training = {
+        id: Math.max(...trainings.map((t) => t.id), 0) + 1,
+        club_id: data.club_id,
+        club_name: clubs.find((c) => c.id === data.club_id)?.name || '',
+        section_id: data.section_id,
+        section_name: sections.find((s) => s.id === data.section_id)?.name || '',
+        group_id: data.group_id,
+        group_name: data.group_id
+          ? groups.find((g) => g.id === data.group_id)?.name
+          : undefined,
+        trainer_id: data.trainer_id,
+        trainer_name: trainers.find((t) => t.id === data.trainer_id)?.name || '',
+        date: data.date,
+        time: data.time,
+        duration: data.duration,
+        location: data.location,
+        max_participants: data.max_participants,
+        current_participants: 0,
+        status: 'scheduled',
+        training_type: 'single',
+        notes: data.notes,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      setTrainings([...trainings, newTraining]);
     }
     
     setShowCreateModal(false);

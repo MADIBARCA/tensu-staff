@@ -52,7 +52,7 @@ export default function StudentsPage() {
           phone_number: s.phone_number,
           username: s.username,
           photo_url: s.photo_url,
-          club_id: 1, // Default, will be updated when we have club context
+          club_id: 1,
           club_name: '',
           section_id: undefined,
           section_name: undefined,
@@ -94,7 +94,6 @@ export default function StudentsPage() {
       }
     } catch (error) {
       console.error('Error loading data:', error);
-      // Keep mock data on error
     } finally {
       setLoading(false);
     }
