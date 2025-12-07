@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useI18n } from '@/i18n/i18n';
 import { Card } from '@/components/ui';
 import { X, MapPin, Clock, Phone, MessageCircle, Layers, CreditCard } from 'lucide-react';
 import { PurchaseMembershipModal } from './PurchaseMembershipModal';
+import { useTelegram } from '@/hooks/useTelegram';
+import { sectionsApi } from '@/functions/axios/axiosFunctions';
 import type { Club } from '../ClubsPage';
 
 interface Section {
@@ -29,77 +31,82 @@ interface ClubDetailsModalProps {
 
 export const ClubDetailsModal: React.FC<ClubDetailsModalProps> = ({ club, isMember: _isMember, onClose }) => {
   const { t } = useI18n();
+  const { initDataRaw } = useTelegram();
   const [sections, setSections] = useState<Section[]>([]);
   const [membershipPlans, setMembershipPlans] = useState<MembershipPlan[]>([]);
   const [selectedPlan, setSelectedPlan] = useState<MembershipPlan | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const loadClubDetails = async () => {
-      try {
-        // TODO: Replace with actual API calls
-        // const sectionsResponse = await clubsApi.getSections(club.id, token);
-        // const plansResponse = await clubsApi.getMembershipPlans(club.id, token);
-        
-        // Mock data for demo
-        const mockSections: Section[] = [
-          { id: 1, name: 'Футбол', description: 'Тренировки по футболу для всех возрастов' },
-          { id: 2, name: 'Баскетбол', description: 'Профессиональные занятия баскетболом' },
-          { id: 3, name: 'Волейбол', description: 'Волейбольная секция' },
-          { id: 4, name: 'Фитнес', description: 'Общая физическая подготовка' },
-        ];
+  const loadClubDetails = useCallback(async () => {
+    if (!initDataRaw) {
+      setLoading(false);
+      return;
+    }
 
-        const mockPlans: MembershipPlan[] = [
-          {
-            id: 1,
-            name: 'Стартовый',
-            type: 'monthly',
-            price: 15000,
-            duration_days: 30,
-            description: 'Базовый абонемент на месяц',
-            features: ['8 тренировок', 'Доступ к раздевалкам', 'Консультация тренера'],
-          },
-          {
-            id: 2,
-            name: 'Оптимальный',
-            type: 'monthly',
-            price: 25000,
-            duration_days: 30,
-            description: 'Расширенный абонемент',
-            features: ['12 тренировок', 'Доступ к раздевалкам', 'Персональная программа', 'Заморозка до 5 дней'],
-          },
-          {
-            id: 3,
-            name: 'Безлимит',
-            type: 'monthly',
-            price: 40000,
-            duration_days: 30,
-            description: 'Неограниченное посещение',
-            features: ['Безлимитные тренировки', 'Все секции', 'Персональный тренер', 'Заморозка до 10 дней', 'Гостевой визит'],
-          },
-          {
-            id: 4,
-            name: 'Квартальный',
-            type: 'quarterly',
-            price: 100000,
-            duration_days: 90,
-            description: '3 месяца со скидкой',
-            features: ['Безлимитные тренировки', 'Все секции', 'Персональный тренер', 'Заморозка до 20 дней'],
-          },
-        ];
-
-        setSections(mockSections);
-        setMembershipPlans(mockPlans);
-      } catch (error) {
-        console.error('Failed to load club details:', error);
-      } finally {
-        setLoading(false);
+    try {
+      // Load sections from API
+      const sectionsResponse = await sectionsApi.getByClubId(club.id, initDataRaw);
+      if (sectionsResponse.data) {
+        const loadedSections: Section[] = sectionsResponse.data.map(s => ({
+          id: s.id,
+          name: s.name,
+          description: s.description,
+        }));
+        setSections(loadedSections);
       }
-    };
 
+      // Mock membership plans - нет API для тарифов членства
+      const mockPlans: MembershipPlan[] = [
+        {
+          id: 1,
+          name: 'Стартовый',
+          type: 'monthly',
+          price: 15000,
+          duration_days: 30,
+          description: 'Базовый абонемент на месяц',
+          features: ['8 тренировок', 'Доступ к раздевалкам', 'Консультация тренера'],
+        },
+        {
+          id: 2,
+          name: 'Оптимальный',
+          type: 'monthly',
+          price: 25000,
+          duration_days: 30,
+          description: 'Расширенный абонемент',
+          features: ['12 тренировок', 'Доступ к раздевалкам', 'Персональная программа', 'Заморозка до 5 дней'],
+        },
+        {
+          id: 3,
+          name: 'Безлимит',
+          type: 'monthly',
+          price: 40000,
+          duration_days: 30,
+          description: 'Неограниченное посещение',
+          features: ['Безлимитные тренировки', 'Все секции', 'Персональный тренер', 'Заморозка до 10 дней', 'Гостевой визит'],
+        },
+        {
+          id: 4,
+          name: 'Квартальный',
+          type: 'quarterly',
+          price: 100000,
+          duration_days: 90,
+          description: '3 месяца со скидкой',
+          features: ['Безлимитные тренировки', 'Все секции', 'Персональный тренер', 'Заморозка до 20 дней'],
+        },
+      ];
+
+      setMembershipPlans(mockPlans);
+    } catch (error) {
+      console.error('Failed to load club details:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [club.id, initDataRaw]);
+
+  useEffect(() => {
     loadClubDetails();
-  }, [club.id]);
+  }, [loadClubDetails]);
 
   const handleContactClick = (type: 'telegram' | 'whatsapp' | 'phone') => {
     const tg = window.Telegram?.WebApp;

@@ -30,55 +30,11 @@ export const NextSessionsSection: React.FC = () => {
         const tg = window.Telegram?.WebApp;
         const token = tg?.initData || null;
         
-        try {
-          const response = await sessionsApi.getNext(token);
-          setSessions(response.data.slice(0, 3)); // Get first 3
-        } catch (error) {
-          // API might not be ready yet, use mock data for demo
-          console.warn('Sessions API not available yet, using mock data:', error);
-          const mockSessions: Session[] = [
-            {
-              id: 1,
-              section_name: 'Футбол',
-              group_name: 'Группа А (Начальный уровень)',
-              coach_name: 'Александр Петров',
-              date: new Date().toISOString().split('T')[0],
-              time: '18:00',
-              club_address: 'г. Алматы, ул. Абая, 150',
-              participants_count: 8,
-              max_participants: 12,
-              notes: 'Принести спортивную форму и бутылку воды',
-              status: 'booked',
-            },
-            {
-              id: 2,
-              section_name: 'Йога',
-              group_name: 'Утренняя группа',
-              coach_name: 'Мария Иванова',
-              date: new Date(Date.now() + 86400000).toISOString().split('T')[0], // Tomorrow
-              time: '09:00',
-              club_address: 'г. Алматы, пр. Достык, 240',
-              participants_count: 10,
-              max_participants: 15,
-              status: 'scheduled',
-            },
-            {
-              id: 3,
-              section_name: 'Баскетбол',
-              group_name: 'Средняя группа',
-              coach_name: 'Дмитрий Сидоров',
-              date: new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0], // Day after tomorrow
-              time: '19:30',
-              club_address: 'г. Алматы, ул. Абая, 150',
-              participants_count: 14,
-              max_participants: 14,
-              status: 'full',
-            },
-          ];
-          setSessions(mockSessions);
-        }
+        const response = await sessionsApi.getNext(token);
+        setSessions(response.data.slice(0, 3)); // Get first 3
       } catch (error) {
         console.error('Failed to load sessions:', error);
+        setSessions([]);
       } finally {
         setLoading(false);
       }

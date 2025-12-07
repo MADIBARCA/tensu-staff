@@ -26,10 +26,20 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
   const [paymentRecords, setPaymentRecords] = useState<PaymentRecord[]>([]);
 
   useEffect(() => {
-    // Load attendance and payment records
-    setAttendanceRecords(generateAttendanceRecords(student.id));
-    setPaymentRecords(generatePaymentRecords(student.id));
-  }, [student.id]);
+    // Load attendance and payment records (mock data - нет API)
+    setAttendanceRecords(generateAttendanceRecords(
+      student.id, 
+      student.section_name, 
+      student.group_name, 
+      student.trainer_name
+    ));
+    setPaymentRecords(generatePaymentRecords(
+      student.id, 
+      student.membership?.tariff_name, 
+      student.membership?.price,
+      student.membership?.start_date
+    ));
+  }, [student]);
 
   const getStatusLabel = (status: string): string => {
     switch (status) {
