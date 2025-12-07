@@ -1,119 +1,338 @@
-import React, { useState, useMemo } from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useState, useMemo, useEffect } from 'react';
 import { X, Plus, Trash2, AlertTriangle } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
-import type { Section, Employee, Group, CreateGroupData, CreateScheduleData, WeekDay } from '../types';
-import { levelOptions, weekDays } from '../mockData';
+import { useTelegram } from '@/hooks/useTelegram';
+import { sectionsApi, groupsApi } from '@/functions/axios/axiosFunctions';
+import type { Section, Employee } from '../types';
+import type { ClubWithRole, CreateStaffResponse, GetMyGroupResponse } from '@/functions/axios/responses';
+import { levelOptions } from '../mockData';
 
 interface EditSectionModalProps {
   section: Section;
   employees: Employee[];
+  clubRoles: ClubWithRole[];
+  currentUser: CreateStaffResponse | null;
   onClose: () => void;
-  onSave: (name: string, trainerIds: number[], groups: Group[]) => void;
-  onDelete: () => void;
+  onRefresh: () => void;
+}
+
+type ScheduleRow = { day: string; start: string; end: string };
+
+const dayMap: Record<string, string> = {
+  'Понедельник': 'monday',
+  'Вторник': 'tuesday',
+  'Среда': 'wednesday',
+  'Четверг': 'thursday',
+  'Пятница': 'friday',
+  'Суббота': 'saturday',
+  'Воскресенье': 'sunday',
+};
+
+const reverseDayMap: Record<string, string> = {
+  'monday': 'Понедельник',
+  'tuesday': 'Вторник',
+  'wednesday': 'Среда',
+  'thursday': 'Четверг',
+  'friday': 'Пятница',
+  'saturday': 'Суббота',
+  'sunday': 'Воскресенье',
+};
+
+const weekdays = [
+  'Понедельник',
+  'Вторник',
+  'Среда',
+  'Четверг',
+  'Пятница',
+  'Суббота',
+  'Воскресенье',
+];
+
+interface GroupForm {
+  id?: number;
+  name: string;
+  level: string;
+  capacity: number | '';
+  price: number | '';
+  description: string;
+  schedule: ScheduleRow[];
+  isNew?: boolean;
 }
 
 export const EditSectionModal: React.FC<EditSectionModalProps> = ({
   section,
   employees,
+  clubRoles,
+  currentUser,
   onClose,
-  onSave,
-  onDelete,
+  onRefresh,
 }) => {
   const { t } = useI18n();
+  const { initDataRaw } = useTelegram();
+  
+  const [loading, setLoading] = useState(false);
+  const [loadingGroups, setLoadingGroups] = useState(true);
   const [name, setName] = useState(section.name);
-  const [trainerIds, setTrainerIds] = useState<number[]>(section.trainer_ids);
-  const [groups, setGroups] = useState<Group[]>(section.groups);
+  const [coachId, setCoachId] = useState<number>(section.trainer_ids[0] || 0);
+  const [groups, setGroups] = useState<GroupForm[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Check if current user is owner of the club
+  const isOwnerOfClub = useMemo(() => {
+    if (!currentUser) return false;
+    const clubRole = clubRoles.find(cr => cr.club.id === section.club_id);
+    return clubRole?.role === 'owner' || clubRole?.is_owner;
+  }, [section.club_id, clubRoles, currentUser]);
+
+  // Get trainers for the club, including current user if they are owner
   const trainers = useMemo(() => {
-    return employees.filter(e => e.role === 'trainer' && e.club_ids.includes(section.club_id));
-  }, [employees, section.club_id]);
+    const clubTrainers = employees.filter(
+      e => e.role === 'trainer' && e.club_ids.includes(section.club_id)
+    );
+    
+    if (isOwnerOfClub && currentUser) {
+      const currentUserAlreadyInList = clubTrainers.some(t => t.id === currentUser.id);
+      if (!currentUserAlreadyInList) {
+        return [
+          {
+            id: currentUser.id,
+            first_name: currentUser.first_name,
+            last_name: currentUser.last_name,
+            phone: currentUser.phone_number,
+            telegram_username: currentUser.username,
+            role: 'owner' as const,
+            status: 'active' as const,
+            club_ids: [section.club_id],
+            photo_url: currentUser.photo_url,
+            created_at: currentUser.created_at,
+          },
+          ...clubTrainers,
+        ];
+      }
+    }
+    
+    return clubTrainers;
+  }, [employees, section.club_id, isOwnerOfClub, currentUser]);
+
+  // Load groups from API
+  useEffect(() => {
+    const loadGroups = async () => {
+      if (!initDataRaw) {
+        setLoadingGroups(false);
+        return;
+      }
+      
+      try {
+        const res = await groupsApi.getBySectionId(section.id, initDataRaw);
+        if (res.data) {
+          const forms: GroupForm[] = res.data.map((g: GetMyGroupResponse) => {
+            // Parse schedule from weekly_pattern
+            const scheduleRows: ScheduleRow[] = [];
+            if (g.schedule && typeof g.schedule === 'object') {
+              const weeklyPattern = (g.schedule as any).weekly_pattern || g.schedule;
+              Object.entries(weeklyPattern).forEach(([day, slots]) => {
+                if (Array.isArray(slots)) {
+                  slots.forEach((slot: any) => {
+                    const [h, m] = (slot.time as string).split(':').map(Number);
+                    const totalMin = h * 60 + m + (slot.duration || 60);
+                    const endH = Math.floor(totalMin / 60) % 24;
+                    const endM = totalMin % 60;
+                    scheduleRows.push({
+                      day: reverseDayMap[day] || day,
+                      start: slot.time,
+                      end: `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`,
+                    });
+                  });
+                }
+              });
+            }
+            
+            return {
+              id: g.id,
+              name: g.name,
+              level: g.level || '',
+              capacity: g.capacity || '',
+              price: typeof g.price === 'number' ? g.price : (parseInt(g.price as string) || ''),
+              description: g.description || '',
+              schedule: scheduleRows,
+            };
+          });
+          setGroups(forms);
+        }
+      } catch (err) {
+        console.error('Error loading groups:', err);
+      } finally {
+        setLoadingGroups(false);
+      }
+    };
+    
+    loadGroups();
+  }, [section.id, initDataRaw]);
+
+  // Build schedule entry for API
+  const buildScheduleEntry = (rows: ScheduleRow[]) => {
+    const pattern: Record<string, { time: string; duration: number }[]> = {};
+    rows.forEach(({ day, start, end }) => {
+      const engDay = dayMap[day] || day.toLowerCase();
+      const duration =
+        (Date.parse(`1970-01-01T${end}`) - Date.parse(`1970-01-01T${start}`)) / 60000;
+      if (!pattern[engDay]) pattern[engDay] = [];
+      pattern[engDay].push({ time: start, duration: duration > 0 ? duration : 60 });
+    });
+    return {
+      weekly_pattern: pattern,
+      valid_from: '',
+      valid_until: '',
+    };
+  };
+
+  // Group handlers
+  const addGroup = () => {
+    setGroups([...groups, {
+      name: '',
+      level: '',
+      capacity: '',
+      price: '',
+      description: '',
+      schedule: [],
+      isNew: true,
+    }]);
+  };
+
+  const updateGroup = (idx: number, field: keyof GroupForm, value: any) => {
+    setGroups(g => g.map((grp, i) => (i === idx ? { ...grp, [field]: value } : grp)));
+  };
+
+  const removeGroup = async (idx: number) => {
+    const group = groups[idx];
+    if (group.id && initDataRaw) {
+      // Delete from server
+      try {
+        await groupsApi.deleteById(group.id, initDataRaw);
+      } catch (err) {
+        console.error('Error deleting group:', err);
+        window.Telegram?.WebApp?.showAlert('Ошибка при удалении группы');
+        return;
+      }
+    }
+    setGroups(g => g.filter((_, i) => i !== idx));
+  };
+
+  // Schedule handlers
+  const addScheduleRow = (gIdx: number) => {
+    setGroups(g =>
+      g.map((grp, i) =>
+        i === gIdx
+          ? { ...grp, schedule: [...grp.schedule, { day: weekdays[0], start: '', end: '' }] }
+          : grp
+      )
+    );
+  };
+
+  const updateScheduleRow = (gIdx: number, rowIdx: number, field: keyof ScheduleRow, value: string) => {
+    setGroups(g =>
+      g.map((grp, i) =>
+        i === gIdx
+          ? {
+              ...grp,
+              schedule: grp.schedule.map((row, j) =>
+                j === rowIdx ? { ...row, [field]: value } : row
+              ),
+            }
+          : grp
+      )
+    );
+  };
+
+  const removeScheduleRow = (gIdx: number, rowIdx: number) => {
+    setGroups(g =>
+      g.map((grp, i) =>
+        i === gIdx
+          ? { ...grp, schedule: grp.schedule.filter((_, j) => j !== rowIdx) }
+          : grp
+      )
+    );
+  };
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
     if (!name.trim()) newErrors.name = t('management.sections.errors.nameRequired');
-    if (trainerIds.length === 0) newErrors.trainers = t('management.sections.errors.trainerRequired');
+    if (!coachId) newErrors.coach = t('management.sections.errors.trainerRequired');
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleTrainerToggle = (trainerId: number) => {
-    setTrainerIds(prev =>
-      prev.includes(trainerId)
-        ? prev.filter(id => id !== trainerId)
-        : [...prev, trainerId]
-    );
+  const handleSave = async () => {
+    if (!validate() || !initDataRaw) return;
+    
+    setLoading(true);
+    try {
+      // Update section
+      await sectionsApi.updateById({
+        club_id: section.club_id,
+        name: name.trim(),
+        description: '',
+        coach_id: coachId,
+        active: true,
+      }, section.id, initDataRaw);
+
+      // Update/create groups
+      for (const grp of groups) {
+        if (!grp.name.trim()) {
+          window.Telegram?.WebApp?.showAlert('Имя группы не может быть пустым');
+          setLoading(false);
+          return;
+        }
+
+        const payload = {
+          section_id: section.id,
+          name: grp.name,
+          description: grp.description || '',
+          schedule: buildScheduleEntry(grp.schedule),
+          price: Number(grp.price) || 0,
+          capacity: Number(grp.capacity) || 0,
+          level: grp.level || 'all',
+          coach_id: coachId,
+          tags: [],
+          active: true,
+        };
+
+        if (grp.id && !grp.isNew) {
+          // Update existing group
+          await groupsApi.updateById(payload, grp.id, initDataRaw);
+        } else if (grp.name) {
+          // Create new group
+          await groupsApi.create(payload, initDataRaw);
+        }
+      }
+
+      window.Telegram?.WebApp?.showAlert(t('management.sections.updated'));
+      onRefresh();
+      onClose();
+    } catch (error) {
+      console.error('Error saving section:', error);
+      window.Telegram?.WebApp?.showAlert('Ошибка при сохранении');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleAddGroup = () => {
-    const newGroup: Group = {
-      id: Date.now(),
-      section_id: section.id,
-      name: '',
-      level: '',
-      capacity: undefined,
-      schedules: [],
-    };
-    setGroups([...groups, newGroup]);
-  };
-
-  const handleRemoveGroup = (groupId: number) => {
-    setGroups(groups.filter(g => g.id !== groupId));
-  };
-
-  const handleGroupChange = (groupId: number, field: keyof CreateGroupData, value: any) => {
-    setGroups(groups.map(g => g.id === groupId ? { ...g, [field]: value } : g));
-  };
-
-  const handleAddSchedule = (groupId: number) => {
-    const newSchedule: CreateScheduleData & { id: number; group_id: number } = {
-      id: Date.now(),
-      group_id: groupId,
-      type: 'single',
-      start_date: '',
-      start_time: '',
-      duration: 60,
-    };
-    setGroups(groups.map(g =>
-      g.id === groupId ? { ...g, schedules: [...g.schedules, newSchedule as any] } : g
-    ));
-  };
-
-  const handleRemoveSchedule = (groupId: number, scheduleId: number) => {
-    setGroups(groups.map(g =>
-      g.id === groupId ? { ...g, schedules: g.schedules.filter(s => s.id !== scheduleId) } : g
-    ));
-  };
-
-  const handleScheduleChange = (groupId: number, scheduleId: number, field: string, value: any) => {
-    setGroups(groups.map(g =>
-      g.id === groupId ? {
-        ...g,
-        schedules: g.schedules.map(s => s.id === scheduleId ? { ...s, [field]: value } : s)
-      } : g
-    ));
-  };
-
-  const handleDayToggle = (groupId: number, scheduleId: number, day: WeekDay) => {
-    setGroups(groups.map(g =>
-      g.id === groupId ? {
-        ...g,
-        schedules: g.schedules.map(s => {
-          if (s.id !== scheduleId) return s;
-          const days = s.days_of_week || [];
-          return {
-            ...s,
-            days_of_week: days.includes(day) ? days.filter(d => d !== day) : [...days, day]
-          };
-        })
-      } : g
-    ));
-  };
-
-  const handleSubmit = () => {
-    if (validate()) {
-      onSave(name, trainerIds, groups);
+  const handleDelete = async () => {
+    if (!initDataRaw) return;
+    
+    setLoading(true);
+    try {
+      await sectionsApi.delete(section.id, initDataRaw);
+      window.Telegram?.WebApp?.showAlert(t('management.sections.deleted'));
+      onRefresh();
+      onClose();
+    } catch (error) {
+      console.error('Error deleting section:', error);
+      window.Telegram?.WebApp?.showAlert('Ошибка при удалении секции');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -160,39 +379,45 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
             {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
           </div>
 
-          {/* Trainers */}
+          {/* Coach/Trainer */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('management.sections.trainers')} *
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('management.sections.trainer')} *
             </label>
-            <div className="space-y-2">
-              {trainers.map(trainer => (
-                <label
-                  key={trainer.id}
-                  className="flex items-center gap-2 p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50"
-                >
-                  <input
-                    type="checkbox"
-                    checked={trainerIds.includes(trainer.id)}
-                    onChange={() => handleTrainerToggle(trainer.id)}
-                    className="w-4 h-4 text-blue-600 rounded"
-                  />
-                  <span className="text-gray-900">{trainer.first_name} {trainer.last_name}</span>
-                </label>
-              ))}
-            </div>
-            {errors.trainers && <p className="text-red-500 text-xs mt-1">{errors.trainers}</p>}
+            <select
+              value={coachId}
+              onChange={(e) => {
+                setCoachId(Number(e.target.value));
+                setErrors({ ...errors, coach: '' });
+              }}
+              className={`w-full border rounded-lg p-2 ${errors.coach ? 'border-red-500' : 'border-gray-200'}`}
+            >
+              <option value={0}>{t('management.sections.selectTrainer') || 'Выберите тренера'}</option>
+              {currentUser && isOwnerOfClub && (
+                <option value={currentUser.id}>
+                  {currentUser.first_name} {currentUser.last_name} ({t('management.sections.selectSelf')})
+                </option>
+              )}
+              {trainers
+                .filter(tr => tr.id !== currentUser?.id)
+                .map(trainer => (
+                  <option key={trainer.id} value={trainer.id}>
+                    {trainer.first_name} {trainer.last_name}
+                  </option>
+                ))}
+            </select>
+            {errors.coach && <p className="text-red-500 text-xs mt-1">{errors.coach}</p>}
           </div>
 
           {/* Groups */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-gray-700">
+          <div className="pt-4 border-t border-gray-200">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-semibold text-gray-900">
                 {t('management.sections.groups')}
-              </label>
+              </h3>
               <button
                 type="button"
-                onClick={handleAddGroup}
+                onClick={addGroup}
                 className="flex items-center gap-1 text-sm text-blue-500 hover:text-blue-600"
               >
                 <Plus size={16} />
@@ -200,137 +425,156 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
               </button>
             </div>
 
-            {groups.map((group, groupIndex) => (
-              <div key={group.id} className="mb-4 p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">
-                    {group.name || `${t('management.sections.group')} ${groupIndex + 1}`}
-                  </span>
-                  <button
-                    onClick={() => handleRemoveGroup(group.id)}
-                    className="p-1 text-red-500 hover:text-red-600"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-
-                <div className="space-y-2">
-                  <input
-                    type="text"
-                    value={group.name}
-                    onChange={(e) => handleGroupChange(group.id, 'name', e.target.value)}
-                    className="w-full border border-gray-200 rounded-lg p-2 text-sm"
-                    placeholder={t('management.sections.groupName')}
-                  />
-                  <div className="grid grid-cols-2 gap-2">
-                    <select
-                      value={group.level || ''}
-                      onChange={(e) => handleGroupChange(group.id, 'level', e.target.value)}
-                      className="border border-gray-200 rounded-lg p-2 text-sm"
+            {loadingGroups ? (
+              <div className="text-center py-4">
+                <div className="animate-spin h-6 w-6 border-2 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
+              </div>
+            ) : groups.length === 0 ? (
+              <p className="text-sm text-gray-500 text-center py-4">
+                {t('management.sections.noGroupsYet')}
+              </p>
+            ) : (
+              groups.map((group, gIdx) => (
+                <div key={group.id || `new-${gIdx}`} className="mb-4 p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-medium text-gray-700">
+                      {group.name || `${t('management.sections.group')} ${gIdx + 1}`}
+                    </span>
+                    <button
+                      onClick={() => removeGroup(gIdx)}
+                      className="p-1 text-red-500 hover:text-red-600"
                     >
-                      <option value="">{t('management.sections.level')}</option>
-                      {levelOptions.map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </select>
-                    <input
-                      type="number"
-                      value={group.capacity || ''}
-                      onChange={(e) => handleGroupChange(group.id, 'capacity', e.target.value ? Number(e.target.value) : undefined)}
-                      className="border border-gray-200 rounded-lg p-2 text-sm"
-                      placeholder={t('management.sections.capacity')}
-                    />
+                      <Trash2 size={16} />
+                    </button>
                   </div>
 
-                  {/* Schedules */}
-                  <div className="mt-2 pt-2 border-t border-gray-200">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs text-gray-600">{t('management.sections.schedules')}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleAddSchedule(group.id)}
-                        className="text-xs text-blue-500 hover:text-blue-600"
-                      >
-                        + {t('management.sections.addSchedule')}
-                      </button>
+                  <div className="space-y-3">
+                    {/* Group Name */}
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">
+                        {t('management.sections.groupName')} *
+                      </label>
+                      <input
+                        type="text"
+                        value={group.name}
+                        onChange={(e) => updateGroup(gIdx, 'name', e.target.value)}
+                        className="w-full border border-gray-200 rounded-lg p-2 text-sm"
+                        placeholder={t('management.sections.groupNamePlaceholder')}
+                      />
                     </div>
 
-                    {group.schedules.map((schedule) => (
-                      <div key={schedule.id} className="mb-2 p-2 bg-white rounded border border-gray-100">
-                        <div className="flex items-center justify-between mb-2">
-                          <select
-                            value={schedule.type}
-                            onChange={(e) => handleScheduleChange(group.id, schedule.id, 'type', e.target.value)}
-                            className="text-xs border border-gray-200 rounded p-1"
-                          >
-                            <option value="single">{t('management.sections.singleTraining')}</option>
-                            <option value="recurring">{t('management.sections.recurringTraining')}</option>
-                          </select>
-                          <button
-                            onClick={() => handleRemoveSchedule(group.id, schedule.id)}
-                            className="p-1 text-red-400 hover:text-red-500"
-                          >
-                            <X size={14} />
-                          </button>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-2 mb-2">
-                          <input
-                            type="date"
-                            value={schedule.start_date}
-                            onChange={(e) => handleScheduleChange(group.id, schedule.id, 'start_date', e.target.value)}
-                            className="text-xs border border-gray-200 rounded p-1"
-                          />
-                          <input
-                            type="time"
-                            value={schedule.start_time}
-                            onChange={(e) => handleScheduleChange(group.id, schedule.id, 'start_time', e.target.value)}
-                            className="text-xs border border-gray-200 rounded p-1"
-                          />
-                        </div>
-
-                        <div className="mb-2">
-                          <input
-                            type="number"
-                            value={schedule.duration}
-                            onChange={(e) => handleScheduleChange(group.id, schedule.id, 'duration', Number(e.target.value))}
-                            className="w-full text-xs border border-gray-200 rounded p-1"
-                            placeholder={t('management.sections.duration')}
-                          />
-                        </div>
-
-                        {schedule.type === 'recurring' && (
-                          <>
-                            <div className="flex flex-wrap gap-1 mb-2">
-                              {weekDays.map(day => (
-                                <button
-                                  key={day.value}
-                                  type="button"
-                                  onClick={() => handleDayToggle(group.id, schedule.id, day.value as WeekDay)}
-                                  className={`px-2 py-1 text-xs rounded ${
-                                    schedule.days_of_week?.includes(day.value as WeekDay)
-                                      ? 'bg-blue-500 text-white'
-                                      : 'bg-gray-100 text-gray-600'
-                                  }`}
-                                >
-                                  {day.label}
-                                </button>
-                              ))}
-                            </div>
-                            <input
-                              type="date"
-                              value={schedule.end_date || ''}
-                              onChange={(e) => handleScheduleChange(group.id, schedule.id, 'end_date', e.target.value)}
-                              className="w-full text-xs border border-gray-200 rounded p-1"
-                            />
-                          </>
-                        )}
+                    <div className="grid grid-cols-2 gap-2">
+                      {/* Level */}
+                      <div>
+                        <label className="block text-xs text-gray-600 mb-1">
+                          {t('management.sections.level')}
+                        </label>
+                        <select
+                          value={group.level}
+                          onChange={(e) => updateGroup(gIdx, 'level', e.target.value)}
+                          className="w-full border border-gray-200 rounded-lg p-2 text-sm"
+                        >
+                          <option value="">{t('management.sections.selectLevel')}</option>
+                          {levelOptions.map(opt => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
                       </div>
-                    ))}
+
+                      {/* Capacity */}
+                      <div>
+                        <label className="block text-xs text-gray-600 mb-1">
+                          {t('management.sections.capacity')}
+                        </label>
+                        <input
+                          type="number"
+                          value={group.capacity}
+                          onChange={(e) => updateGroup(gIdx, 'capacity', e.target.value ? Number(e.target.value) : '')}
+                          className="w-full border border-gray-200 rounded-lg p-2 text-sm"
+                          placeholder="10"
+                          min="1"
+                          max="100"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Price */}
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">
+                        {t('management.sections.price')}
+                      </label>
+                      <input
+                        type="number"
+                        value={group.price}
+                        onChange={(e) => updateGroup(gIdx, 'price', e.target.value ? Number(e.target.value) : '')}
+                        className="w-full border border-gray-200 rounded-lg p-2 text-sm"
+                        placeholder="10000"
+                      />
+                    </div>
+
+                    {/* Schedule */}
+                    <div className="pt-2 border-t border-gray-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-medium text-gray-700">
+                          {t('management.sections.schedule')}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => addScheduleRow(gIdx)}
+                          className="text-xs text-blue-500 hover:text-blue-600"
+                        >
+                          + {t('management.sections.addTime')}
+                        </button>
+                      </div>
+
+                      {group.schedule.length === 0 && (
+                        <p className="text-xs text-gray-400 text-center py-2">
+                          {t('management.sections.noScheduleYet')}
+                        </p>
+                      )}
+
+                      {group.schedule.map((row, rowIdx) => (
+                        <div key={rowIdx} className="mb-2 p-2 bg-white rounded border border-gray-100">
+                          {/* Day */}
+                          <select
+                            value={row.day}
+                            onChange={(e) => updateScheduleRow(gIdx, rowIdx, 'day', e.target.value)}
+                            className="w-full text-sm border border-gray-200 rounded p-2 mb-2"
+                          >
+                            {weekdays.map(d => (
+                              <option key={d} value={d}>{d}</option>
+                            ))}
+                          </select>
+
+                          {/* Time */}
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="time"
+                              value={row.start}
+                              onChange={(e) => updateScheduleRow(gIdx, rowIdx, 'start', e.target.value)}
+                              className="flex-1 text-sm border border-gray-200 rounded p-2"
+                            />
+                            <span className="text-gray-400">—</span>
+                            <input
+                              type="time"
+                              value={row.end}
+                              onChange={(e) => updateScheduleRow(gIdx, rowIdx, 'end', e.target.value)}
+                              className="flex-1 text-sm border border-gray-200 rounded p-2"
+                            />
+                            <button
+                              onClick={() => removeScheduleRow(gIdx, rowIdx)}
+                              className="p-1 text-red-400 hover:text-red-500"
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
@@ -343,10 +587,20 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
               {t('common.cancel')}
             </button>
             <button
-              onClick={handleSubmit}
-              className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+              onClick={handleSave}
+              disabled={loading}
+              className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
             >
-              {t('common.save')}
+              {loading ? (
+                <span className="flex items-center justify-center">
+                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                </span>
+              ) : (
+                t('common.save')
+              )}
             </button>
           </div>
           <button
@@ -381,8 +635,9 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
                 {t('common.cancel')}
               </button>
               <button
-                onClick={onDelete}
-                className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                onClick={handleDelete}
+                disabled={loading}
+                className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50"
               >
                 {t('common.delete')}
               </button>

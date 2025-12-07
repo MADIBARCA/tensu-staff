@@ -16,7 +16,6 @@ import type {
   CreateEmployeeData,
   UpdateEmployeeData,
   CreateTariffData,
-  Group,
   Club,
 } from './types';
 import type { ClubWithRole, CreateStaffResponse } from '@/functions/axios/responses';
@@ -163,47 +162,7 @@ export default function ManagementPage() {
     window.Telegram?.WebApp?.showAlert(t('management.employees.updated'));
   };
 
-  // Section handlers are now in CreateSectionModal which calls APIs directly
-
-  const handleUpdateSection = async (id: number, name: string, trainerIds: number[], groups: Group[]) => {
-    const section = sections.find(s => s.id === id);
-    
-    if (initDataRaw && section) {
-      try {
-        await sectionsApi.updateById({
-          club_id: section.club_id,
-          name,
-          description: '',
-          coach_id: trainerIds[0] || null,
-          active: true,
-        }, id, initDataRaw);
-      } catch (error) {
-        console.error('Error updating section:', error);
-      }
-    }
-
-    const trainers = employees
-      .filter(e => trainerIds.includes(e.id))
-      .map(e => ({ id: e.id, name: `${e.first_name} ${e.last_name}` }));
-
-    setSections(sections.map(s =>
-      s.id === id ? { ...s, name, trainer_ids: trainerIds, trainers, groups } : s
-    ));
-    window.Telegram?.WebApp?.showAlert(t('management.sections.updated'));
-  };
-
-  const handleDeleteSection = async (id: number) => {
-    if (initDataRaw) {
-      try {
-        await sectionsApi.delete(id, initDataRaw);
-      } catch (error) {
-        console.error('Error deleting section:', error);
-      }
-    }
-
-    setSections(sections.filter(s => s.id !== id));
-    window.Telegram?.WebApp?.showAlert(t('management.sections.deleted'));
-  };
+  // Section handlers are now in CreateSectionModal and EditSectionModal which call APIs directly
 
   // Tariff handlers (no API, mock only)
   const handleCreateTariff = (data: CreateTariffData) => {
@@ -299,8 +258,6 @@ export default function ManagementPage() {
             currentUser={currentUser}
             employees={employees}
             onRefresh={loadData}
-            onUpdateSection={handleUpdateSection}
-            onDeleteSection={handleDeleteSection}
           />
         )}
 

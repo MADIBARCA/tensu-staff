@@ -464,6 +464,7 @@ const RU: Dict = {
   'management.sections.groupsCreated': 'Группы успешно созданы',
   'management.sections.groupNamePlaceholder': 'Название группы',
   'management.sections.selectLevel': 'Выберите уровень',
+  'management.sections.selectTrainer': 'Выберите тренера',
   // Pricing
   'management.pricing.count': 'тарифов',
   'management.pricing.notFound': 'Тарифы не найдены',
@@ -979,6 +980,7 @@ const KK: Dict = {
   'management.sections.groupsCreated': 'Топтар сәтті құрылды',
   'management.sections.groupNamePlaceholder': 'Топ атауы',
   'management.sections.selectLevel': 'Деңгейді таңдаңыз',
+  'management.sections.selectTrainer': 'Жаттықтырушыны таңдаңыз',
   // Pricing
   'management.pricing.count': 'тариф',
   'management.pricing.notFound': 'Тарифтер табылмады',

@@ -4,7 +4,7 @@ import { useI18n } from '@/i18n/i18n';
 import { SectionCard } from './SectionCard';
 import { CreateSectionModal } from './CreateSectionModal';
 import { EditSectionModal } from './EditSectionModal';
-import type { Section, Club, Employee, SectionFilters, Group } from '../types';
+import type { Section, Club, Employee, SectionFilters } from '../types';
 import type { ClubWithRole, CreateStaffResponse } from '@/functions/axios/responses';
 
 interface SectionsTabProps {
@@ -14,8 +14,6 @@ interface SectionsTabProps {
   currentUser: CreateStaffResponse | null;
   employees: Employee[];
   onRefresh: () => void;
-  onUpdateSection: (id: number, name: string, trainerIds: number[], groups: Group[]) => void;
-  onDeleteSection: (id: number) => void;
 }
 
 export const SectionsTab: React.FC<SectionsTabProps> = ({
@@ -25,8 +23,6 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
   currentUser,
   employees,
   onRefresh,
-  onUpdateSection,
-  onDeleteSection,
 }) => {
   const { t } = useI18n();
   const [filters, setFilters] = useState<SectionFilters>({ search: '' });
@@ -65,18 +61,9 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
     onRefresh();
   };
 
-  const handleUpdateSection = (name: string, trainerIds: number[], groups: Group[]) => {
-    if (editingSection) {
-      onUpdateSection(editingSection.id, name, trainerIds, groups);
-      setEditingSection(null);
-    }
-  };
-
-  const handleDeleteSection = () => {
-    if (editingSection) {
-      onDeleteSection(editingSection.id);
-      setEditingSection(null);
-    }
+  const handleEditClosed = () => {
+    setEditingSection(null);
+    onRefresh();
   };
 
   const clearFilters = () => {
@@ -207,9 +194,10 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
         <EditSectionModal
           section={editingSection}
           employees={employees}
+          clubRoles={clubRoles}
+          currentUser={currentUser}
           onClose={() => setEditingSection(null)}
-          onSave={handleUpdateSection}
-          onDelete={handleDeleteSection}
+          onRefresh={handleEditClosed}
         />
       )}
     </div>
