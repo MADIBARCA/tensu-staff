@@ -74,7 +74,7 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [loadingGroups, setLoadingGroups] = useState(true);
   const [name, setName] = useState(section.name);
-  const [coachId, setCoachId] = useState<number>(section.trainer_ids[0] || 0);
+  const [trainerIds, setTrainerIds] = useState<number[]>(section.trainer_ids);
   const [groups, setGroups] = useState<GroupForm[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -107,13 +107,14 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
             club_ids: [section.club_id],
             photo_url: currentUser.photo_url,
             created_at: currentUser.created_at,
+            isCurrentUser: true,
           },
-          ...clubTrainers,
+          ...clubTrainers.map(t => ({ ...t, isCurrentUser: t.id === currentUser?.id })),
         ];
       }
     }
     
-    return clubTrainers;
+    return clubTrainers.map(t => ({ ...t, isCurrentUser: t.id === currentUser?.id }));
   }, [employees, section.club_id, isOwnerOfClub, currentUser]);
 
   // Load groups from API
@@ -171,6 +172,15 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
     loadGroups();
   }, [section.id, initDataRaw]);
 
+  const handleTrainerToggle = (trainerId: number) => {
+    setTrainerIds(prev =>
+      prev.includes(trainerId)
+        ? prev.filter(id => id !== trainerId)
+        : [...prev, trainerId]
+    );
+    setErrors({ ...errors, trainers: '' });
+  };
+
   // Build schedule entry for API
   const buildScheduleEntry = (rows: ScheduleRow[]) => {
     const pattern: Record<string, { time: string; duration: number }[]> = {};
@@ -208,7 +218,6 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
   const removeGroup = async (idx: number) => {
     const group = groups[idx];
     if (group.id && initDataRaw) {
-      // Delete from server
       try {
         await groupsApi.deleteById(group.id, initDataRaw);
       } catch (err) {
@@ -259,7 +268,7 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
     if (!name.trim()) newErrors.name = t('management.sections.errors.nameRequired');
-    if (!coachId) newErrors.coach = t('management.sections.errors.trainerRequired');
+    if (trainerIds.length === 0) newErrors.trainers = t('management.sections.errors.trainerRequired');
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -274,7 +283,7 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
         club_id: section.club_id,
         name: name.trim(),
         description: '',
-        coach_id: coachId,
+        coach_id: trainerIds[0],
         active: true,
       }, section.id, initDataRaw);
 
@@ -294,16 +303,14 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
           price: Number(grp.price) || 0,
           capacity: Number(grp.capacity) || 0,
           level: grp.level || 'all',
-          coach_id: coachId,
+          coach_id: trainerIds[0],
           tags: [],
           active: true,
         };
 
         if (grp.id && !grp.isNew) {
-          // Update existing group
           await groupsApi.updateById(payload, grp.id, initDataRaw);
         } else if (grp.name) {
-          // Create new group
           await groupsApi.create(payload, initDataRaw);
         }
       }
@@ -379,34 +386,39 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
             {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
           </div>
 
-          {/* Coach/Trainer */}
+          {/* Trainers (Checkboxes) */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('management.sections.trainer')} *
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t('management.sections.trainers')} *
             </label>
-            <select
-              value={coachId}
-              onChange={(e) => {
-                setCoachId(Number(e.target.value));
-                setErrors({ ...errors, coach: '' });
-              }}
-              className={`w-full border rounded-lg p-2 ${errors.coach ? 'border-red-500' : 'border-gray-200'}`}
-            >
-              <option value={0}>{t('management.sections.selectTrainer') || 'Выберите тренера'}</option>
-              {currentUser && isOwnerOfClub && (
-                <option value={currentUser.id}>
-                  {currentUser.first_name} {currentUser.last_name} ({t('management.sections.selectSelf')})
-                </option>
-              )}
-              {trainers
-                .filter(tr => tr.id !== currentUser?.id)
-                .map(trainer => (
-                  <option key={trainer.id} value={trainer.id}>
-                    {trainer.first_name} {trainer.last_name}
-                  </option>
+            {trainers.length === 0 ? (
+              <p className="text-sm text-gray-500">{t('management.sections.noTrainers')}</p>
+            ) : (
+              <div className="space-y-2">
+                {trainers.map(trainer => (
+                  <label
+                    key={trainer.id}
+                    className="flex items-center gap-2 p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={trainerIds.includes(trainer.id)}
+                      onChange={() => handleTrainerToggle(trainer.id)}
+                      className="w-4 h-4 text-blue-600 rounded"
+                    />
+                    <span className="text-gray-900">
+                      {trainer.first_name} {trainer.last_name}
+                      {(trainer as any).isCurrentUser && (
+                        <span className="text-blue-500 text-sm ml-1">
+                          ({t('management.sections.selectSelf') || 'вы'})
+                        </span>
+                      )}
+                    </span>
+                  </label>
                 ))}
-            </select>
-            {errors.coach && <p className="text-red-500 text-xs mt-1">{errors.coach}</p>}
+              </div>
+            )}
+            {errors.trainers && <p className="text-red-500 text-xs mt-1">{errors.trainers}</p>}
           </div>
 
           {/* Groups */}
@@ -450,123 +462,104 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
 
                   <div className="space-y-3">
                     {/* Group Name */}
-                    <div>
-                      <label className="block text-xs text-gray-600 mb-1">
-                        {t('management.sections.groupName')} *
-                      </label>
-                      <input
-                        type="text"
-                        value={group.name}
-                        onChange={(e) => updateGroup(gIdx, 'name', e.target.value)}
-                        className="w-full border border-gray-200 rounded-lg p-2 text-sm"
-                        placeholder={t('management.sections.groupNamePlaceholder')}
-                      />
-                    </div>
+                    <input
+                      type="text"
+                      value={group.name}
+                      onChange={(e) => updateGroup(gIdx, 'name', e.target.value)}
+                      className="w-full border border-gray-200 rounded-lg p-2 text-sm"
+                      placeholder={t('management.sections.groupName')}
+                    />
 
                     <div className="grid grid-cols-2 gap-2">
                       {/* Level */}
-                      <div>
-                        <label className="block text-xs text-gray-600 mb-1">
-                          {t('management.sections.level')}
-                        </label>
-                        <select
-                          value={group.level}
-                          onChange={(e) => updateGroup(gIdx, 'level', e.target.value)}
-                          className="w-full border border-gray-200 rounded-lg p-2 text-sm"
-                        >
-                          <option value="">{t('management.sections.selectLevel')}</option>
-                          {levelOptions.map(opt => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                          ))}
-                        </select>
-                      </div>
+                      <select
+                        value={group.level}
+                        onChange={(e) => updateGroup(gIdx, 'level', e.target.value)}
+                        className="border border-gray-200 rounded-lg p-2 text-sm"
+                      >
+                        <option value="">{t('management.sections.level')}</option>
+                        {levelOptions.map(opt => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
 
                       {/* Capacity */}
-                      <div>
-                        <label className="block text-xs text-gray-600 mb-1">
-                          {t('management.sections.capacity')}
-                        </label>
-                        <input
-                          type="number"
-                          value={group.capacity}
-                          onChange={(e) => updateGroup(gIdx, 'capacity', e.target.value ? Number(e.target.value) : '')}
-                          className="w-full border border-gray-200 rounded-lg p-2 text-sm"
-                          placeholder="10"
-                          min="1"
-                          max="100"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Price */}
-                    <div>
-                      <label className="block text-xs text-gray-600 mb-1">
-                        {t('management.sections.price')}
-                      </label>
                       <input
                         type="number"
-                        value={group.price}
-                        onChange={(e) => updateGroup(gIdx, 'price', e.target.value ? Number(e.target.value) : '')}
-                        className="w-full border border-gray-200 rounded-lg p-2 text-sm"
-                        placeholder="10000"
+                        value={group.capacity}
+                        onChange={(e) => updateGroup(gIdx, 'capacity', e.target.value ? Number(e.target.value) : '')}
+                        className="border border-gray-200 rounded-lg p-2 text-sm"
+                        placeholder={t('management.sections.capacity')}
                       />
                     </div>
 
                     {/* Schedule */}
-                    <div className="pt-2 border-t border-gray-200">
+                    <div className="mt-2 pt-2 border-t border-gray-200">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-medium text-gray-700">
-                          {t('management.sections.schedule')}
-                        </span>
+                        <span className="text-xs text-gray-600">{t('management.sections.schedules')}</span>
                         <button
                           type="button"
                           onClick={() => addScheduleRow(gIdx)}
                           className="text-xs text-blue-500 hover:text-blue-600"
                         >
-                          + {t('management.sections.addTime')}
+                          + {t('management.sections.addSchedule')}
                         </button>
                       </div>
 
                       {group.schedule.length === 0 && (
                         <p className="text-xs text-gray-400 text-center py-2">
-                          {t('management.sections.noScheduleYet')}
+                          {t('management.sections.noScheduleYet') || 'Нажмите "+ Добавить расписание"'}
                         </p>
                       )}
 
                       {group.schedule.map((row, rowIdx) => (
-                        <div key={rowIdx} className="mb-2 p-2 bg-white rounded border border-gray-100">
-                          {/* Day */}
-                          <select
-                            value={row.day}
-                            onChange={(e) => updateScheduleRow(gIdx, rowIdx, 'day', e.target.value)}
-                            className="w-full text-sm border border-gray-200 rounded p-2 mb-2"
-                          >
-                            {weekdays.map(d => (
-                              <option key={d} value={d}>{d}</option>
-                            ))}
-                          </select>
-
-                          {/* Time */}
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="time"
-                              value={row.start}
-                              onChange={(e) => updateScheduleRow(gIdx, rowIdx, 'start', e.target.value)}
-                              className="flex-1 text-sm border border-gray-200 rounded p-2"
-                            />
-                            <span className="text-gray-400">—</span>
-                            <input
-                              type="time"
-                              value={row.end}
-                              onChange={(e) => updateScheduleRow(gIdx, rowIdx, 'end', e.target.value)}
-                              className="flex-1 text-sm border border-gray-200 rounded p-2"
-                            />
+                        <div key={rowIdx} className="mb-2 p-3 bg-white rounded-lg border border-gray-200">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-medium text-gray-600">
+                              {t('management.sections.scheduleItem') || 'Занятие'} {rowIdx + 1}
+                            </span>
                             <button
                               onClick={() => removeScheduleRow(gIdx, rowIdx)}
                               className="p-1 text-red-400 hover:text-red-500"
                             >
-                              <X size={16} />
+                              <X size={14} />
                             </button>
+                          </div>
+                          
+                          {/* Day Selection */}
+                          <div className="mb-2">
+                            <label className="block text-xs text-gray-500 mb-1">День недели</label>
+                            <select
+                              value={row.day}
+                              onChange={(e) => updateScheduleRow(gIdx, rowIdx, 'day', e.target.value)}
+                              className="w-full text-sm border border-gray-200 rounded-lg p-2"
+                            >
+                              {weekdays.map(d => (
+                                <option key={d} value={d}>{d}</option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {/* Time Selection */}
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="block text-xs text-gray-500 mb-1">Начало</label>
+                              <input
+                                type="time"
+                                value={row.start}
+                                onChange={(e) => updateScheduleRow(gIdx, rowIdx, 'start', e.target.value)}
+                                className="w-full text-sm border border-gray-200 rounded-lg p-2"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs text-gray-500 mb-1">Конец</label>
+                              <input
+                                type="time"
+                                value={row.end}
+                                onChange={(e) => updateScheduleRow(gIdx, rowIdx, 'end', e.target.value)}
+                                className="w-full text-sm border border-gray-200 rounded-lg p-2"
+                              />
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -614,7 +607,7 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
 
       {/* Delete Confirmation */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-60 flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-sm rounded-xl p-6">
             <div className="flex items-center justify-center mb-4">
               <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">

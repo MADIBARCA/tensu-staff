@@ -465,6 +465,7 @@ const RU: Dict = {
   'management.sections.groupNamePlaceholder': 'Название группы',
   'management.sections.selectLevel': 'Выберите уровень',
   'management.sections.selectTrainer': 'Выберите тренера',
+  'management.sections.scheduleItem': 'Занятие',
   // Pricing
   'management.pricing.count': 'тарифов',
   'management.pricing.notFound': 'Тарифы не найдены',
@@ -981,6 +982,7 @@ const KK: Dict = {
   'management.sections.groupNamePlaceholder': 'Топ атауы',
   'management.sections.selectLevel': 'Деңгейді таңдаңыз',
   'management.sections.selectTrainer': 'Жаттықтырушыны таңдаңыз',
+  'management.sections.scheduleItem': 'Сабақ',
   // Pricing
   'management.pricing.count': 'тариф',
   'management.pricing.notFound': 'Тарифтер табылмады',

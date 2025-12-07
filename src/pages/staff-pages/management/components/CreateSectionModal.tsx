@@ -66,7 +66,7 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
   const [sectionData, setSectionData] = useState({
     name: '',
     club_id: 0,
-    coach_id: currentUser?.id || 0,
+    trainer_ids: [] as number[],
     description: '',
   });
   
@@ -113,14 +113,25 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
             club_ids: [sectionData.club_id],
             photo_url: currentUser.photo_url,
             created_at: currentUser.created_at,
+            isCurrentUser: true,
           },
-          ...clubTrainers,
+          ...clubTrainers.map(t => ({ ...t, isCurrentUser: false })),
         ];
       }
     }
     
-    return clubTrainers;
+    return clubTrainers.map(t => ({ ...t, isCurrentUser: t.id === currentUser?.id }));
   }, [employees, sectionData.club_id, isOwnerOfSelectedClub, currentUser]);
+
+  const handleTrainerToggle = (trainerId: number) => {
+    setSectionData(prev => ({
+      ...prev,
+      trainer_ids: prev.trainer_ids.includes(trainerId)
+        ? prev.trainer_ids.filter(id => id !== trainerId)
+        : [...prev.trainer_ids, trainerId],
+    }));
+    setErrors({ ...errors, trainers: '' });
+  };
 
   // Build schedule entry for API
   const buildScheduleEntry = (rows: ScheduleRow[]) => {
@@ -202,7 +213,7 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
     const newErrors: Record<string, string> = {};
     if (!sectionData.name.trim()) newErrors.name = t('management.sections.errors.nameRequired');
     if (!sectionData.club_id) newErrors.club = t('management.sections.errors.clubRequired');
-    if (!sectionData.coach_id) newErrors.coach = t('management.sections.errors.trainerRequired');
+    if (sectionData.trainer_ids.length === 0) newErrors.trainers = t('management.sections.errors.trainerRequired');
     
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -215,7 +226,7 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
         club_id: sectionData.club_id,
         name: sectionData.name,
         description: sectionData.description || '',
-        coach_id: sectionData.coach_id,
+        coach_id: sectionData.trainer_ids[0], // API accepts single coach_id
         active: true,
       }, initDataRaw);
       
@@ -257,7 +268,7 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
           price: Number(grp.price) || 0,
           capacity: Number(grp.capacity) || 0,
           level: grp.level || 'all',
-          coach_id: sectionData.coach_id,
+          coach_id: sectionData.trainer_ids[0],
           tags: [],
           active: true,
         };
@@ -325,7 +336,7 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
                 <select
                   value={sectionData.club_id}
                   onChange={(e) => {
-                    setSectionData({ ...sectionData, club_id: Number(e.target.value), coach_id: currentUser?.id || 0 });
+                    setSectionData({ ...sectionData, club_id: Number(e.target.value), trainer_ids: [] });
                     setErrors({ ...errors, club: '' });
                   }}
                   className={`w-full border rounded-lg p-2 ${errors.club ? 'border-red-500' : 'border-gray-200'}`}
@@ -356,34 +367,40 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
                 {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
               </div>
 
-              {/* Coach/Trainer */}
+              {/* Trainers (Checkboxes) */}
               {sectionData.club_id > 0 && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t('management.sections.trainer')} *
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t('management.sections.trainers')} *
                   </label>
-                  <select
-                    value={sectionData.coach_id}
-                    onChange={(e) => {
-                      setSectionData({ ...sectionData, coach_id: Number(e.target.value) });
-                      setErrors({ ...errors, coach: '' });
-                    }}
-                    className={`w-full border rounded-lg p-2 ${errors.coach ? 'border-red-500' : 'border-gray-200'}`}
-                  >
-                    {currentUser && isOwnerOfSelectedClub && (
-                      <option value={currentUser.id}>
-                        {currentUser.first_name} {currentUser.last_name} ({t('management.sections.selectSelf') || 'выбрать себя'})
-                      </option>
-                    )}
-                    {trainers
-                      .filter(t => t.id !== currentUser?.id)
-                      .map(trainer => (
-                        <option key={trainer.id} value={trainer.id}>
-                          {trainer.first_name} {trainer.last_name}
-                        </option>
+                  {trainers.length === 0 ? (
+                    <p className="text-sm text-gray-500">{t('management.sections.noTrainers')}</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {trainers.map(trainer => (
+                        <label
+                          key={trainer.id}
+                          className="flex items-center gap-2 p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={sectionData.trainer_ids.includes(trainer.id)}
+                            onChange={() => handleTrainerToggle(trainer.id)}
+                            className="w-4 h-4 text-blue-600 rounded"
+                          />
+                          <span className="text-gray-900">
+                            {trainer.first_name} {trainer.last_name}
+                            {(trainer as any).isCurrentUser && (
+                              <span className="text-blue-500 text-sm ml-1">
+                                ({t('management.sections.selectSelf') || 'вы'})
+                              </span>
+                            )}
+                          </span>
+                        </label>
                       ))}
-                  </select>
-                  {errors.coach && <p className="text-red-500 text-xs mt-1">{errors.coach}</p>}
+                    </div>
+                  )}
+                  {errors.trainers && <p className="text-red-500 text-xs mt-1">{errors.trainers}</p>}
                 </div>
               )}
             </>
@@ -427,123 +444,104 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
 
                 <div className="space-y-3">
                   {/* Group Name */}
-                  <div>
-                    <label className="block text-xs text-gray-600 mb-1">
-                      {t('management.sections.groupName')} *
-                    </label>
-                    <input
-                      type="text"
-                      value={group.name}
-                      onChange={(e) => updateGroup(gIdx, 'name', e.target.value)}
-                      className="w-full border border-gray-200 rounded-lg p-2 text-sm"
-                      placeholder={t('management.sections.groupNamePlaceholder') || 'Название группы'}
-                    />
-                  </div>
+                  <input
+                    type="text"
+                    value={group.name}
+                    onChange={(e) => updateGroup(gIdx, 'name', e.target.value)}
+                    className="w-full border border-gray-200 rounded-lg p-2 text-sm"
+                    placeholder={t('management.sections.groupName')}
+                  />
 
                   <div className="grid grid-cols-2 gap-2">
                     {/* Level */}
-                    <div>
-                      <label className="block text-xs text-gray-600 mb-1">
-                        {t('management.sections.level')}
-                      </label>
-                      <select
-                        value={group.level}
-                        onChange={(e) => updateGroup(gIdx, 'level', e.target.value)}
-                        className="w-full border border-gray-200 rounded-lg p-2 text-sm"
-                      >
-                        <option value="">{t('management.sections.selectLevel') || 'Уровень'}</option>
-                        {levelOptions.map(opt => (
-                          <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                      </select>
-                    </div>
+                    <select
+                      value={group.level}
+                      onChange={(e) => updateGroup(gIdx, 'level', e.target.value)}
+                      className="border border-gray-200 rounded-lg p-2 text-sm"
+                    >
+                      <option value="">{t('management.sections.level')}</option>
+                      {levelOptions.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
 
                     {/* Capacity */}
-                    <div>
-                      <label className="block text-xs text-gray-600 mb-1">
-                        {t('management.sections.capacity')}
-                      </label>
-                      <input
-                        type="number"
-                        value={group.capacity}
-                        onChange={(e) => updateGroup(gIdx, 'capacity', e.target.value ? Number(e.target.value) : '')}
-                        className="w-full border border-gray-200 rounded-lg p-2 text-sm"
-                        placeholder="10"
-                        min="1"
-                        max="100"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Price */}
-                  <div>
-                    <label className="block text-xs text-gray-600 mb-1">
-                      {t('management.sections.price') || 'Цена (₸)'}
-                    </label>
                     <input
                       type="number"
-                      value={group.price}
-                      onChange={(e) => updateGroup(gIdx, 'price', e.target.value ? Number(e.target.value) : '')}
-                      className="w-full border border-gray-200 rounded-lg p-2 text-sm"
-                      placeholder="10000"
+                      value={group.capacity}
+                      onChange={(e) => updateGroup(gIdx, 'capacity', e.target.value ? Number(e.target.value) : '')}
+                      className="border border-gray-200 rounded-lg p-2 text-sm"
+                      placeholder={t('management.sections.capacity')}
                     />
                   </div>
 
                   {/* Schedule */}
-                  <div className="pt-2 border-t border-gray-200">
+                  <div className="mt-2 pt-2 border-t border-gray-200">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-medium text-gray-700">
-                        {t('management.sections.schedule') || 'Расписание'}
-                      </span>
+                      <span className="text-xs text-gray-600">{t('management.sections.schedules')}</span>
                       <button
                         type="button"
                         onClick={() => addScheduleRow(gIdx)}
                         className="text-xs text-blue-500 hover:text-blue-600"
                       >
-                        + {t('management.sections.addTime') || 'Добавить время'}
+                        + {t('management.sections.addSchedule')}
                       </button>
                     </div>
 
                     {group.schedule.length === 0 && (
                       <p className="text-xs text-gray-400 text-center py-2">
-                        {t('management.sections.noScheduleYet') || 'Расписание не задано'}
+                        {t('management.sections.noScheduleYet') || 'Нажмите "+ Добавить расписание"'}
                       </p>
                     )}
 
                     {group.schedule.map((row, rowIdx) => (
-                      <div key={rowIdx} className="mb-2 p-2 bg-white rounded border border-gray-100">
-                        {/* Day */}
-                        <select
-                          value={row.day}
-                          onChange={(e) => updateScheduleRow(gIdx, rowIdx, 'day', e.target.value)}
-                          className="w-full text-sm border border-gray-200 rounded p-2 mb-2"
-                        >
-                          {weekdays.map(d => (
-                            <option key={d} value={d}>{d}</option>
-                          ))}
-                        </select>
-
-                        {/* Time */}
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="time"
-                            value={row.start}
-                            onChange={(e) => updateScheduleRow(gIdx, rowIdx, 'start', e.target.value)}
-                            className="flex-1 text-sm border border-gray-200 rounded p-2"
-                          />
-                          <span className="text-gray-400">—</span>
-                          <input
-                            type="time"
-                            value={row.end}
-                            onChange={(e) => updateScheduleRow(gIdx, rowIdx, 'end', e.target.value)}
-                            className="flex-1 text-sm border border-gray-200 rounded p-2"
-                          />
+                      <div key={rowIdx} className="mb-2 p-3 bg-white rounded-lg border border-gray-200">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-medium text-gray-600">
+                            {t('management.sections.scheduleItem') || 'Занятие'} {rowIdx + 1}
+                          </span>
                           <button
                             onClick={() => removeScheduleRow(gIdx, rowIdx)}
                             className="p-1 text-red-400 hover:text-red-500"
                           >
-                            <X size={16} />
+                            <X size={14} />
                           </button>
+                        </div>
+                        
+                        {/* Day Selection */}
+                        <div className="mb-2">
+                          <label className="block text-xs text-gray-500 mb-1">День недели</label>
+                          <select
+                            value={row.day}
+                            onChange={(e) => updateScheduleRow(gIdx, rowIdx, 'day', e.target.value)}
+                            className="w-full text-sm border border-gray-200 rounded-lg p-2"
+                          >
+                            {weekdays.map(d => (
+                              <option key={d} value={d}>{d}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Time Selection */}
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Начало</label>
+                            <input
+                              type="time"
+                              value={row.start}
+                              onChange={(e) => updateScheduleRow(gIdx, rowIdx, 'start', e.target.value)}
+                              className="w-full text-sm border border-gray-200 rounded-lg p-2"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Конец</label>
+                            <input
+                              type="time"
+                              value={row.end}
+                              onChange={(e) => updateScheduleRow(gIdx, rowIdx, 'end', e.target.value)}
+                              className="w-full text-sm border border-gray-200 rounded-lg p-2"
+                            />
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -563,12 +561,12 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
           </button>
           <button
             onClick={handleFinish}
-            disabled={loading || (!sectionCreated && (!sectionData.name || !sectionData.club_id || !sectionData.coach_id))}
+            disabled={loading || (!sectionCreated && (!sectionData.name || !sectionData.club_id || sectionData.trainer_ids.length === 0))}
             className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
           >
             {loading ? (
               <span className="flex items-center justify-center">
-                <svg className="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
+                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
