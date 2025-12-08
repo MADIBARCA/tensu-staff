@@ -12,6 +12,7 @@ export interface Section {
   id: number;
   name: string;
   club_id: number;
+  coach_id?: number;
 }
 
 export interface Group {

@@ -1,13 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { X } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import type { Club, Section, Group, Trainer, CreateTrainingData } from '../types';
+import type { ClubWithRole, CreateStaffResponse } from '@/functions/axios/responses';
 
 interface CreateTrainingModalProps {
   clubs: Club[];
   sections: Section[];
   groups: Group[];
   trainers: Trainer[];
+  clubRoles: ClubWithRole[];
+  currentUser: CreateStaffResponse | null;
   selectedDate?: string;
   onClose: () => void;
   onCreate: (data: CreateTrainingData) => void;
@@ -18,6 +21,8 @@ export const CreateTrainingModal: React.FC<CreateTrainingModalProps> = ({
   sections,
   groups,
   trainers,
+  clubRoles,
+  currentUser,
   selectedDate,
   onClose,
   onCreate,
@@ -36,23 +41,61 @@ export const CreateTrainingModal: React.FC<CreateTrainingModalProps> = ({
     notes: '',
   });
 
+  const [trainerIds, setTrainerIds] = useState<number[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Filter sections by selected club
-  const availableSections = sections.filter(s => s.club_id === formData.club_id);
-  
+  // Check if user is admin or owner of a club
+  const isAdminOrOwner = useMemo(() => {
+    if (!currentUser || !formData.club_id) return false;
+    const clubRole = clubRoles.find(cr => cr.club.id === formData.club_id);
+    return clubRole ? (clubRole.role === 'owner' || clubRole.role === 'admin' || clubRole.is_owner) : false;
+  }, [formData.club_id, clubRoles, currentUser]);
+
+  // Filter sections based on user role:
+  // - If coach: only sections where user is the coach (coach_id === currentUser.id)
+  // - If admin/owner: all sections in the club
+  const availableSections = useMemo(() => {
+    if (!formData.club_id) return [];
+    
+    const clubSections = sections.filter(s => s.club_id === formData.club_id);
+    
+    // If user is admin or owner, show all sections
+    if (isAdminOrOwner) {
+      return clubSections;
+    }
+    
+    // If user is coach, only show sections where they are the coach
+    if (currentUser) {
+      return clubSections.filter(s => s.coach_id === currentUser.id);
+    }
+    
+    return [];
+  }, [sections, formData.club_id, isAdminOrOwner, currentUser]);
+
   // Filter groups by selected section
   const availableGroups = groups.filter(g => g.section_id === formData.section_id);
   
   // Filter trainers by selected club
   const availableTrainers = trainers.filter(t => t.club_id === formData.club_id);
 
+  const handleTrainerToggle = (trainerId: number) => {
+    setTrainerIds(prev =>
+      prev.includes(trainerId)
+        ? prev.filter(id => id !== trainerId)
+        : [...prev, trainerId]
+    );
+    setErrors({ ...errors, trainer_id: '' });
+  };
+
   useEffect(() => {
     // Reset section when club changes
     if (formData.club_id && availableSections.length > 0) {
       setFormData(prev => ({ ...prev, section_id: availableSections[0].id }));
+    } else {
+      setFormData(prev => ({ ...prev, section_id: 0 }));
     }
-  }, [formData.club_id]);
+    setTrainerIds([]);
+  }, [formData.club_id, availableSections]);
 
   useEffect(() => {
     // Reset group when section changes
@@ -61,14 +104,7 @@ export const CreateTrainingModal: React.FC<CreateTrainingModalProps> = ({
     } else {
       setFormData(prev => ({ ...prev, group_id: undefined }));
     }
-  }, [formData.section_id]);
-
-  useEffect(() => {
-    // Reset trainer when club changes
-    if (formData.club_id && availableTrainers.length > 0) {
-      setFormData(prev => ({ ...prev, trainer_id: availableTrainers[0].id }));
-    }
-  }, [formData.club_id]);
+  }, [formData.section_id, availableGroups]);
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -79,7 +115,7 @@ export const CreateTrainingModal: React.FC<CreateTrainingModalProps> = ({
     if (!formData.section_id) {
       newErrors.section_id = t('training.errors.sectionRequired');
     }
-    if (!formData.trainer_id) {
+    if (trainerIds.length === 0) {
       newErrors.trainer_id = t('training.errors.trainerRequired');
     }
     if (!formData.date) {
@@ -117,17 +153,21 @@ export const CreateTrainingModal: React.FC<CreateTrainingModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validate()) {
-      onCreate(formData);
+      // Use first selected trainer for API (since API only accepts single trainer_id)
+      onCreate({
+        ...formData,
+        trainer_id: trainerIds[0],
+      });
     }
   };
 
-  const isFormValid = formData.club_id && formData.section_id && formData.trainer_id && 
+  const isFormValid = formData.club_id && formData.section_id && trainerIds.length > 0 && 
                       formData.date && formData.time && formData.location && formData.duration > 0;
 
   return (
     <div className="fixed inset-0 bg-opacity-30 z-50 flex items-center justify-center">
       <div className="bg-white w-full max-w-md rounded-xl p-6 max-h-screen overflow-y-auto">
-        <div className="flex items-center justify-between mb-4 mt-15">
+        <div className="flex items-center justify-between mb-4 mt-17">
           <h2 className="text-lg font-semibold text-gray-900">
             {t('training.create.title')}
           </h2>
@@ -187,6 +227,11 @@ export const CreateTrainingModal: React.FC<CreateTrainingModalProps> = ({
             {errors.section_id && (
               <p className="text-red-500 text-xs mt-1">{errors.section_id}</p>
             )}
+            {formData.club_id && availableSections.length === 0 && (
+              <p className="text-gray-500 text-xs mt-1">
+                {t('training.noSectionsAvailable') || 'Нет доступных секций'}
+              </p>
+            )}
           </div>
 
           {/* Group */}
@@ -215,26 +260,33 @@ export const CreateTrainingModal: React.FC<CreateTrainingModalProps> = ({
             </div>
           )}
 
-          {/* Trainer */}
+          {/* Trainers (Checkboxes) */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               {t('training.trainer')} *
             </label>
-            <select
-              value={formData.trainer_id || ''}
-              onChange={(e) => setFormData({ ...formData, trainer_id: Number(e.target.value) })}
-              className={`w-full border rounded-lg p-2 ${
-                errors.trainer_id ? 'border-red-500' : 'border-gray-200'
-              }`}
-              disabled={!formData.club_id || availableTrainers.length === 0}
-            >
-              <option value="">{t('training.select.trainer')}</option>
-              {availableTrainers.map((trainer) => (
-                <option key={trainer.id} value={trainer.id}>
-                  {trainer.name}
-                </option>
-              ))}
-            </select>
+            {availableTrainers.length === 0 ? (
+              <p className="text-sm text-gray-500">
+                {t('training.noTrainersAvailable') || 'Нет доступных тренеров'}
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {availableTrainers.map((trainer) => (
+                  <label
+                    key={trainer.id}
+                    className="flex items-center gap-2 p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={trainerIds.includes(trainer.id)}
+                      onChange={() => handleTrainerToggle(trainer.id)}
+                      className="w-4 h-4 text-blue-600 rounded"
+                    />
+                    <span className="text-gray-900">{trainer.name}</span>
+                  </label>
+                ))}
+              </div>
+            )}
             {errors.trainer_id && (
               <p className="text-red-500 text-xs mt-1">{errors.trainer_id}</p>
             )}

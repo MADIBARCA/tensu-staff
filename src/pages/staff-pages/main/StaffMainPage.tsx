@@ -9,8 +9,8 @@ import { CreateTrainingModal } from './components/CreateTrainingModal';
 import { EditTrainingModal } from './components/EditTrainingModal';
 import { TrainingDetailsModal } from './components/TrainingDetailsModal';
 import { useTelegram } from '@/hooks/useTelegram';
-import { clubsApi, sectionsApi, groupsApi, teamApi, scheduleApi } from '@/functions/axios/axiosFunctions';
-import type { Lesson } from '@/functions/axios/responses';
+import { clubsApi, sectionsApi, groupsApi, teamApi, scheduleApi, staffApi } from '@/functions/axios/axiosFunctions';
+import type { Lesson, ClubWithRole, CreateStaffResponse } from '@/functions/axios/responses';
 import type {
   Training,
   Filters,
@@ -91,6 +91,8 @@ export default function StaffMainPage() {
   const [sections, setSections] = useState<Section[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [trainers, setTrainers] = useState<Trainer[]>([]);
+  const [clubRoles, setClubRoles] = useState<ClubWithRole[]>([]);
+  const [currentUser, setCurrentUser] = useState<CreateStaffResponse | null>(null);
   
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<Filters>({
@@ -113,10 +115,17 @@ export default function StaffMainPage() {
     try {
       setLoading(true);
       
+      // Load current user
+      const userResponse = await staffApi.getMe(initDataRaw);
+      if (userResponse.data) {
+        setCurrentUser(userResponse.data);
+      }
+      
       // Load clubs first to get club names for schedule
       let loadedClubs: Club[] = [];
       const clubsResponse = await clubsApi.getMy(initDataRaw);
       if (clubsResponse.data?.clubs) {
+        setClubRoles(clubsResponse.data.clubs);
         loadedClubs = clubsResponse.data.clubs.map(c => ({
           id: c.club.id,
           name: c.club.name,
@@ -131,6 +140,7 @@ export default function StaffMainPage() {
           id: s.id,
           name: s.name,
           club_id: s.club_id,
+          coach_id: s.coach_id,
         }));
         setSections(transformedSections);
       }
@@ -564,6 +574,8 @@ export default function StaffMainPage() {
             sections={sections}
             groups={groups}
             trainers={trainers}
+            clubRoles={clubRoles}
+            currentUser={currentUser}
             selectedDate={selectedDate?.toISOString().split('T')[0]}
             onClose={() => setShowCreateModal(false)}
             onCreate={handleCreateTraining}
