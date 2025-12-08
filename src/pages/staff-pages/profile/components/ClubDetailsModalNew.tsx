@@ -78,8 +78,8 @@ export const ClubDetailsModalNew: React.FC<ClubDetailsModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-opacity-30 z-50 flex items-center justify-center">
-      <div className="bg-white w-full max-w-md rounded-xl max-h-screen overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center max-h-screen">
+      <div className="bg-white w-full max-w-md rounded-xl overflow-hidden flex flex-col">
         {/* Header */}
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-start justify-between mt-20">
