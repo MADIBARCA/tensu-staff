@@ -165,9 +165,9 @@ export const CreateTrainingModal: React.FC<CreateTrainingModalProps> = ({
                       formData.date && formData.time && formData.location && formData.duration > 0;
 
   return (
-    <div className="fixed inset-0 bg-opacity-30 z-50 flex items-center justify-center max-h-screen">
-      <div className="bg-white w-full max-w-md rounded-xl p-6 overflow-y-auto">
-        <div className="flex items-center justify-between mb-4 mt-17">
+    <div className="fixed inset-0 bg-opacity-30 z-50 flex items-center justify-center">
+      <div className="bg-white w-full max-w-md rounded-xl max-h-screen overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 mt-20">
           <h2 className="text-lg font-semibold text-gray-900">
             {t('training.create.title')}
           </h2>
@@ -179,7 +179,7 @@ export const CreateTrainingModal: React.FC<CreateTrainingModalProps> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 space-y-4">
           {/* Club */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
