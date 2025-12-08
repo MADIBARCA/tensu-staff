@@ -165,8 +165,8 @@ export const CreateTrainingModal: React.FC<CreateTrainingModalProps> = ({
                       formData.date && formData.time && formData.location && formData.duration > 0;
 
   return (
-    <div className="fixed inset-0 bg-opacity-30 z-50 flex items-center justify-center max-h-screen">
-      <div className="bg-white w-full max-w-md rounded-xl p-6 overflow-y-auto">
+    <div className="fixed inset-0 bg-opacity-30 z-50 flex items-center justify-center">
+      <div className="bg-white w-full max-w-md rounded-xl p-6 overflow-y-auto max-h-screen">
         <div className="flex items-center justify-between mb-4 mt-17">
           <h2 className="text-lg font-semibold text-gray-900">
             {t('training.create.title')}
