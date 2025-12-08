@@ -82,7 +82,7 @@ export const ClubDetailsModalNew: React.FC<ClubDetailsModalProps> = ({
       <div className="bg-white w-full max-w-md rounded-xl max-h-screen overflow-hidden flex flex-col">
         {/* Header */}
         <div className="p-4 border-b border-gray-200">
-          <div className="flex items-start justify-between">
+          <div className="flex items-start justify-between mt-20">
             <div className="flex-1 min-w-0 mt-20">
               <div className="flex items-center gap-2 mb-1">
                 <h2 className="text-lg font-semibold text-gray-900 truncate">{club.name}</h2>
