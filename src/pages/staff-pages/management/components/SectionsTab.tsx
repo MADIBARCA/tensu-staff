@@ -62,8 +62,15 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
   };
 
   const handleEditClosed = () => {
-    setEditingSection(null);
+      setEditingSection(null);
     onRefresh();
+  };
+
+  // Check if user can edit a section (must be owner or admin of the section's club)
+  const canEditSection = (section: Section): boolean => {
+    if (!currentUser) return false;
+    const clubRole = clubRoles.find(cr => cr.club.id === section.club_id);
+    return clubRole ? (clubRole.role === 'owner' || clubRole.role === 'admin') : false;
   };
 
   const clearFilters = () => {
@@ -172,6 +179,7 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
             <SectionCard
               key={section.id}
               section={section}
+              canEdit={canEditSection(section)}
               onEdit={() => setEditingSection(section)}
             />
           ))}

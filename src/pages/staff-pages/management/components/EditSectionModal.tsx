@@ -79,7 +79,14 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Check if current user is owner of the club
+  // Check if current user can edit (must be owner or admin of the section's club)
+  const canEdit = useMemo(() => {
+    if (!currentUser) return false;
+    const clubRole = clubRoles.find(cr => cr.club.id === section.club_id);
+    return clubRole ? (clubRole.role === 'owner' || clubRole.role === 'admin' || clubRole.is_owner) : false;
+  }, [section.club_id, clubRoles, currentUser]);
+
+  // Check if current user is owner of the club (for showing self as trainer option)
   const isOwnerOfClub = useMemo(() => {
     if (!currentUser) return false;
     const clubRole = clubRoles.find(cr => cr.club.id === section.club_id);
@@ -117,10 +124,18 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
     return clubTrainers.map(t => ({ ...t, isCurrentUser: t.id === currentUser?.id }));
   }, [employees, section.club_id, isOwnerOfClub, currentUser]);
 
+  // Check permissions on mount - close modal if user doesn't have permission
+  useEffect(() => {
+    if (!canEdit) {
+      window.Telegram?.WebApp?.showAlert('У вас нет прав для редактирования этой секции');
+      onClose();
+    }
+  }, [canEdit, onClose]);
+
   // Load groups from API
   useEffect(() => {
     const loadGroups = async () => {
-      if (!initDataRaw) {
+      if (!initDataRaw || !canEdit) {
         setLoadingGroups(false);
         return;
       }
@@ -274,7 +289,13 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
   };
 
   const handleSave = async () => {
-    if (!validate() || !initDataRaw) return;
+    if (!validate() || !initDataRaw || !canEdit) {
+      if (!canEdit) {
+        window.Telegram?.WebApp?.showAlert('У вас нет прав для редактирования этой секции');
+        onClose();
+      }
+      return;
+    }
     
     setLoading(true);
     try {
@@ -327,7 +348,13 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
   };
 
   const handleDelete = async () => {
-    if (!initDataRaw) return;
+    if (!initDataRaw || !canEdit) {
+      if (!canEdit) {
+        window.Telegram?.WebApp?.showAlert('У вас нет прав для удаления этой секции');
+        onClose();
+      }
+      return;
+    }
     
     setLoading(true);
     try {
@@ -342,6 +369,11 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
       setLoading(false);
     }
   };
+
+  // Don't render modal if user doesn't have permission
+  if (!canEdit) {
+    return null;
+  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-30 z-50 flex items-center justify-center p-4">
@@ -394,18 +426,18 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
             {trainers.length === 0 ? (
               <p className="text-sm text-gray-500">{t('management.sections.noTrainers')}</p>
             ) : (
-              <div className="space-y-2">
-                {trainers.map(trainer => (
-                  <label
-                    key={trainer.id}
-                    className="flex items-center gap-2 p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={trainerIds.includes(trainer.id)}
-                      onChange={() => handleTrainerToggle(trainer.id)}
-                      className="w-4 h-4 text-blue-600 rounded"
-                    />
+            <div className="space-y-2">
+              {trainers.map(trainer => (
+                <label
+                  key={trainer.id}
+                  className="flex items-center gap-2 p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50"
+                >
+                  <input
+                    type="checkbox"
+                    checked={trainerIds.includes(trainer.id)}
+                    onChange={() => handleTrainerToggle(trainer.id)}
+                    className="w-4 h-4 text-blue-600 rounded"
+                  />
                     <span className="text-gray-900">
                       {trainer.first_name} {trainer.last_name}
                       {(trainer as any).isCurrentUser && (
@@ -414,9 +446,9 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
                         </span>
                       )}
                     </span>
-                  </label>
-                ))}
-              </div>
+                </label>
+              ))}
+            </div>
             )}
             {errors.trainers && <p className="text-red-500 text-xs mt-1">{errors.trainers}</p>}
           </div>
@@ -449,62 +481,62 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
               groups.map((group, gIdx) => (
                 <div key={group.id || `new-${gIdx}`} className="mb-4 p-4 bg-gray-50 rounded-lg">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-medium text-gray-700">
+                  <span className="text-sm font-medium text-gray-700">
                       {group.name || `${t('management.sections.group')} ${gIdx + 1}`}
-                    </span>
-                    <button
+                  </span>
+                  <button
                       onClick={() => removeGroup(gIdx)}
-                      className="p-1 text-red-500 hover:text-red-600"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
+                    className="p-1 text-red-500 hover:text-red-600"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
 
                   <div className="space-y-3">
                     {/* Group Name */}
-                    <input
-                      type="text"
-                      value={group.name}
+                  <input
+                    type="text"
+                    value={group.name}
                       onChange={(e) => updateGroup(gIdx, 'name', e.target.value)}
-                      className="w-full border border-gray-200 rounded-lg p-2 text-sm"
-                      placeholder={t('management.sections.groupName')}
-                    />
+                    className="w-full border border-gray-200 rounded-lg p-2 text-sm"
+                    placeholder={t('management.sections.groupName')}
+                  />
 
-                    <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-2">
                       {/* Level */}
-                      <select
+                    <select
                         value={group.level}
                         onChange={(e) => updateGroup(gIdx, 'level', e.target.value)}
-                        className="border border-gray-200 rounded-lg p-2 text-sm"
-                      >
-                        <option value="">{t('management.sections.level')}</option>
-                        {levelOptions.map(opt => (
-                          <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                      </select>
+                      className="border border-gray-200 rounded-lg p-2 text-sm"
+                    >
+                      <option value="">{t('management.sections.level')}</option>
+                      {levelOptions.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
 
                       {/* Capacity */}
-                      <input
-                        type="number"
+                    <input
+                      type="number"
                         value={group.capacity}
                         onChange={(e) => updateGroup(gIdx, 'capacity', e.target.value ? Number(e.target.value) : '')}
-                        className="border border-gray-200 rounded-lg p-2 text-sm"
-                        placeholder={t('management.sections.capacity')}
-                      />
-                    </div>
+                      className="border border-gray-200 rounded-lg p-2 text-sm"
+                      placeholder={t('management.sections.capacity')}
+                    />
+                  </div>
 
                     {/* Schedule */}
-                    <div className="mt-2 pt-2 border-t border-gray-200">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs text-gray-600">{t('management.sections.schedules')}</span>
-                        <button
-                          type="button"
+                  <div className="mt-2 pt-2 border-t border-gray-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs text-gray-600">{t('management.sections.schedules')}</span>
+                      <button
+                        type="button"
                           onClick={() => addScheduleRow(gIdx)}
-                          className="text-xs text-blue-500 hover:text-blue-600"
-                        >
-                          + {t('management.sections.addSchedule')}
-                        </button>
-                      </div>
+                        className="text-xs text-blue-500 hover:text-blue-600"
+                      >
+                        + {t('management.sections.addSchedule')}
+                      </button>
+                    </div>
 
                       {group.schedule.length === 0 && (
                         <p className="text-xs text-gray-400 text-center py-2">
@@ -514,20 +546,20 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
 
                       {group.schedule.map((row, rowIdx) => (
                         <div key={rowIdx} className="mb-2 p-3 bg-white rounded-lg border border-gray-200">
-                          <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center justify-between mb-2">
                             <span className="text-xs font-medium text-gray-600">
                               {t('management.sections.scheduleItem') || 'Занятие'} {rowIdx + 1}
                             </span>
-                            <button
+                          <button
                               onClick={() => removeScheduleRow(gIdx, rowIdx)}
-                              className="p-1 text-red-400 hover:text-red-500"
-                            >
-                              <X size={14} />
-                            </button>
-                          </div>
-                          
+                            className="p-1 text-red-400 hover:text-red-500"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+
                           {/* Day Selection */}
-                          <div className="mb-2">
+                        <div className="mb-2">
                             <label className="block text-xs text-gray-500 mb-1">День недели</label>
                             <select
                               value={row.day}
@@ -538,7 +570,7 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
                                 <option key={d} value={d}>{d}</option>
                               ))}
                             </select>
-                          </div>
+                        </div>
 
                           {/* Time Selection */}
                           <div className="grid grid-cols-2 gap-2">
@@ -553,19 +585,19 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
                             </div>
                             <div>
                               <label className="block text-xs text-gray-500 mb-1">Конец</label>
-                              <input
+                            <input
                                 type="time"
                                 value={row.end}
                                 onChange={(e) => updateScheduleRow(gIdx, rowIdx, 'end', e.target.value)}
                                 className="w-full text-sm border border-gray-200 rounded-lg p-2"
-                              />
+                            />
                             </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
+              </div>
               ))
             )}
           </div>

@@ -328,66 +328,66 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
             </div>
           ) : (
             <>
-              {/* Club */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('management.sections.club')} *
-                </label>
-                <select
-                  value={sectionData.club_id}
-                  onChange={(e) => {
-                    setSectionData({ ...sectionData, club_id: Number(e.target.value), trainer_ids: [] });
-                    setErrors({ ...errors, club: '' });
-                  }}
-                  className={`w-full border rounded-lg p-2 ${errors.club ? 'border-red-500' : 'border-gray-200'}`}
-                >
-                  <option value={0}>{t('management.sections.selectClub')}</option>
-                  {activeClubs.map(club => (
-                    <option key={club.id} value={club.id}>{club.name}</option>
-                  ))}
-                </select>
-                {errors.club && <p className="text-red-500 text-xs mt-1">{errors.club}</p>}
-              </div>
+          {/* Club */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('management.sections.club')} *
+            </label>
+            <select
+              value={sectionData.club_id}
+              onChange={(e) => {
+                setSectionData({ ...sectionData, club_id: Number(e.target.value), trainer_ids: [] });
+                setErrors({ ...errors, club: '' });
+              }}
+              className={`w-full border rounded-lg p-2 ${errors.club ? 'border-red-500' : 'border-gray-200'}`}
+            >
+              <option value={0}>{t('management.sections.selectClub')}</option>
+              {activeClubs.map(club => (
+                <option key={club.id} value={club.id}>{club.name}</option>
+              ))}
+            </select>
+            {errors.club && <p className="text-red-500 text-xs mt-1">{errors.club}</p>}
+          </div>
 
-              {/* Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('management.sections.name')} *
-                </label>
-                <input
-                  type="text"
-                  value={sectionData.name}
-                  onChange={(e) => {
-                    setSectionData({ ...sectionData, name: e.target.value });
-                    setErrors({ ...errors, name: '' });
-                  }}
-                  className={`w-full border rounded-lg p-2 ${errors.name ? 'border-red-500' : 'border-gray-200'}`}
-                  placeholder={t('management.sections.namePlaceholder')}
-                />
-                {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
-              </div>
+          {/* Name */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('management.sections.name')} *
+            </label>
+            <input
+              type="text"
+              value={sectionData.name}
+              onChange={(e) => {
+                setSectionData({ ...sectionData, name: e.target.value });
+                setErrors({ ...errors, name: '' });
+              }}
+              className={`w-full border rounded-lg p-2 ${errors.name ? 'border-red-500' : 'border-gray-200'}`}
+              placeholder={t('management.sections.namePlaceholder')}
+            />
+            {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+          </div>
 
               {/* Trainers (Checkboxes) */}
-              {sectionData.club_id > 0 && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t('management.sections.trainers')} *
-                  </label>
-                  {trainers.length === 0 ? (
-                    <p className="text-sm text-gray-500">{t('management.sections.noTrainers')}</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {trainers.map(trainer => (
-                        <label
-                          key={trainer.id}
-                          className="flex items-center gap-2 p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={sectionData.trainer_ids.includes(trainer.id)}
-                            onChange={() => handleTrainerToggle(trainer.id)}
-                            className="w-4 h-4 text-blue-600 rounded"
-                          />
+          {sectionData.club_id > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t('management.sections.trainers')} *
+              </label>
+              {trainers.length === 0 ? (
+                <p className="text-sm text-gray-500">{t('management.sections.noTrainers')}</p>
+              ) : (
+                <div className="space-y-2">
+                  {trainers.map(trainer => (
+                    <label
+                      key={trainer.id}
+                      className="flex items-center gap-2 p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={sectionData.trainer_ids.includes(trainer.id)}
+                        onChange={() => handleTrainerToggle(trainer.id)}
+                        className="w-4 h-4 text-blue-600 rounded"
+                      />
                           <span className="text-gray-900">
                             {trainer.first_name} {trainer.last_name}
                             {(trainer as any).isCurrentUser && (
@@ -396,13 +396,13 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
                               </span>
                             )}
                           </span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                  {errors.trainers && <p className="text-red-500 text-xs mt-1">{errors.trainers}</p>}
+                    </label>
+                  ))}
                 </div>
               )}
+              {errors.trainers && <p className="text-red-500 text-xs mt-1">{errors.trainers}</p>}
+            </div>
+          )}
             </>
           )}
 
@@ -507,7 +507,7 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
                             <X size={14} />
                           </button>
                         </div>
-                        
+
                         {/* Day Selection */}
                         <div className="mb-2">
                           <label className="block text-xs text-gray-500 mb-1">День недели</label>
@@ -532,7 +532,7 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
                               onChange={(e) => updateScheduleRow(gIdx, rowIdx, 'start', e.target.value)}
                               className="w-full text-sm border border-gray-200 rounded-lg p-2"
                             />
-                          </div>
+                            </div>
                           <div>
                             <label className="block text-xs text-gray-500 mb-1">Конец</label>
                             <input

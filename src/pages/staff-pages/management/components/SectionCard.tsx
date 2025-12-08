@@ -5,10 +5,11 @@ import type { Section } from '../types';
 
 interface SectionCardProps {
   section: Section;
+  canEdit: boolean;
   onEdit: () => void;
 }
 
-export const SectionCard: React.FC<SectionCardProps> = ({ section, onEdit }) => {
+export const SectionCard: React.FC<SectionCardProps> = ({ section, canEdit, onEdit }) => {
   const { t } = useI18n();
 
   return (
@@ -18,12 +19,14 @@ export const SectionCard: React.FC<SectionCardProps> = ({ section, onEdit }) => 
           <h3 className="font-semibold text-gray-900">{section.name}</h3>
           <p className="text-sm text-gray-500">{section.club_name}</p>
         </div>
-        <button
-          onClick={onEdit}
-          className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <Edit2 size={18} />
-        </button>
+        {canEdit && (
+          <button
+            onClick={onEdit}
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <Edit2 size={18} />
+          </button>
+        )}
       </div>
 
       {/* Trainers */}

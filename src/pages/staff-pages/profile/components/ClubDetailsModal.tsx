@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react';
 import { X, MapPin, Phone, Instagram, MessageCircle, Users, DollarSign } from 'lucide-react';
 import { Card } from '@/components/ui';
