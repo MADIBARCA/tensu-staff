@@ -1,16 +1,35 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { MapPin, Clock, Users, AlertTriangle, ChevronRight } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import type { Club } from '../types';
+import type { ClubWithRole, CreateStaffResponse } from '@/functions/axios/responses';
 
 interface ClubCardProps {
   club: Club;
+  clubRoles: ClubWithRole[];
+  currentUser: CreateStaffResponse | null;
   onClick: () => void;
   onPayment?: () => void;
 }
 
-export const ClubCard: React.FC<ClubCardProps> = ({ club, onClick, onPayment }) => {
+export const ClubCard: React.FC<ClubCardProps> = ({ club, clubRoles, currentUser, onClick, onPayment }) => {
   const { t } = useI18n();
+
+  // Determine user role for this specific club
+  const userRoleInClub = useMemo(() => {
+    if (!currentUser) return null;
+    const clubRole = clubRoles.find(cr => cr.club.id === club.id);
+    if (!clubRole) return null;
+    
+    if (clubRole.role === 'owner' || clubRole.is_owner) {
+      return 'owner';
+    } else if (clubRole.role === 'admin') {
+      return 'admin';
+    } else if (clubRole.role === 'coach') {
+      return 'coach';
+    }
+    return null;
+  }, [club.id, clubRoles, currentUser]);
 
   const getStatusLabel = (status: string): string => {
     switch (status) {
@@ -67,8 +86,24 @@ export const ClubCard: React.FC<ClubCardProps> = ({ club, onClick, onPayment }) 
               <MapPin size={14} />
               <span className="truncate">{club.address}</span>
             </div>
+            {/* User Role Badge */}
+            {userRoleInClub && (
+              <div className="mt-2">
+                <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${
+                  userRoleInClub === 'owner' 
+                    ? 'bg-purple-100 text-purple-700' 
+                    : userRoleInClub === 'admin'
+                    ? 'bg-blue-100 text-blue-700'
+                    : 'bg-green-100 text-green-700'
+                }`}>
+                  {userRoleInClub === 'owner' && t('profile.club.role.owner')}
+                  {userRoleInClub === 'admin' && t('profile.club.role.admin')}
+                  {userRoleInClub === 'coach' && t('profile.club.role.coach')}
+                </span>
+              </div>
+            )}
           </div>
-          <ChevronRight size={20} className="text-gray-400 flex-shrink-0" />
+          <ChevronRight size={20} className="text-gray-400 shrink-0" />
         </div>
 
         <div className="flex items-center gap-4 text-sm text-gray-600">
