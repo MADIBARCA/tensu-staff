@@ -81,7 +81,7 @@ export const ClubDetailsModalNew: React.FC<ClubDetailsModalProps> = ({
     <div className="fixed inset-0 bg-black bg-opacity-30 z-50">
       <div className="bg-white w-full h-full overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-4 border-b border-gray-200 mt-20">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
@@ -307,7 +307,7 @@ export const ClubDetailsModalNew: React.FC<ClubDetailsModalProps> = ({
 
         {/* Deactivate Button (Only for Owner) */}
         {canDeactivate && club.status !== 'deactivated' && (
-          <div className="p-4 border-t border-gray-200">
+          <div className="p-4 border-t border-gray-200 mb-20">
             <button
               onClick={onDeactivate}
               className="w-full flex items-center justify-center gap-2 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
