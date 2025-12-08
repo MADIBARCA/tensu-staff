@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { X, MapPin, Phone, Clock, Users, Calendar, ChevronDown, ChevronUp, AlertTriangle, Power } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import type { Club, ClubAnalytics, PaymentHistory, UserRole } from '../types';
+import type { ClubWithRole } from '@/functions/axios/responses';
 
 interface ClubDetailsModalProps {
   club: Club;
   analytics: ClubAnalytics;
   paymentHistory: PaymentHistory[];
   userRole: UserRole;
+  clubRoles: ClubWithRole[];
   onClose: () => void;
   onPayment: () => void;
   onDeactivate: () => void;
@@ -18,6 +20,7 @@ export const ClubDetailsModalNew: React.FC<ClubDetailsModalProps> = ({
   analytics,
   paymentHistory,
   userRole,
+  clubRoles,
   onClose,
   onPayment,
   onDeactivate,
@@ -26,8 +29,14 @@ export const ClubDetailsModalNew: React.FC<ClubDetailsModalProps> = ({
   const [activeTab, setActiveTab] = useState<'analytics' | 'membership'>('analytics');
   const [showPaymentHistory, setShowPaymentHistory] = useState(false);
 
+  // Check if user is owner of THIS specific club
+  const isOwnerOfThisClub = useMemo(() => {
+    const clubRole = clubRoles.find(cr => cr.club.id === club.id);
+    return clubRole ? (clubRole.role === 'owner' || clubRole.is_owner) : false;
+  }, [club.id, clubRoles]);
+
   const canViewMembership = userRole === 'owner' || userRole === 'admin';
-  const canDeactivate = userRole === 'owner';
+  const canDeactivate = isOwnerOfThisClub; // Only owner of THIS specific club can deactivate
   const showPayButton = club.membership && club.membership.days_until_expiry <= 7;
 
   const getStatusLabel = (status: string): string => {

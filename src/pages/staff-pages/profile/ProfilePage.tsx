@@ -11,6 +11,7 @@ import { DeactivateClubModal } from './components/DeactivateClubModal';
 import { SettingsSection } from './components/SettingsSection';
 import { useTelegram } from '@/hooks/useTelegram';
 import { staffApi, clubsApi } from '@/functions/axios/axiosFunctions';
+import type { ClubWithRole } from '@/functions/axios/responses';
 // Note: These mocks are kept because there's no API for payments, analytics, and membership tariffs
 import {
   mockClubAnalytics,
@@ -26,6 +27,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<StaffUser | null>(null);
   const [clubs, setClubs] = useState<Club[]>([]);
+  const [clubRoles, setClubRoles] = useState<ClubWithRole[]>([]);
   const [selectedClub, setSelectedClub] = useState<Club | null>(null);
   
   const [showCreateClubModal, setShowCreateClubModal] = useState(false);
@@ -63,6 +65,9 @@ export default function ProfilePage() {
       // Load clubs
       const clubsResponse = await clubsApi.getMy(initDataRaw);
       if (clubsResponse.data?.clubs) {
+        // Store club roles for permission checking
+        setClubRoles(clubsResponse.data.clubs);
+        
         const transformedClubs: Club[] = clubsResponse.data.clubs.map(c => {
           // Calculate days until expiry (mock for now since API doesn't provide membership info)
           const endDate = new Date();
@@ -420,6 +425,7 @@ export default function ProfilePage() {
             analytics={getClubAnalytics(selectedClub.id)}
             paymentHistory={getPaymentHistory(selectedClub.id)}
             userRole={user.role}
+            clubRoles={clubRoles}
             onClose={() => {
               setShowClubDetailsModal(false);
               setSelectedClub(null);

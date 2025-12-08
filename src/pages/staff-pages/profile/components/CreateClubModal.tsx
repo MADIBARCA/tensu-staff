@@ -80,9 +80,9 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-30 z-50 flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-md rounded-xl max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+    <div className="fixed inset-0 bg-opacity-30 z-50 flex items-center justify-center">
+      <div className="bg-white w-full max-w-md rounded-xl max-h-screen overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 mt-17">
           <h2 className="text-lg font-semibold text-gray-900">
             {t('profile.createClub.title')}
           </h2>
