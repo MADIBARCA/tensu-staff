@@ -32,6 +32,11 @@ export const EmployeesTab: React.FC<EmployeesTabProps> = ({
 
   const filteredEmployees = useMemo(() => {
     return employees.filter(employee => {
+      // Exclude current user from the list
+      if (currentUser && employee.id === currentUser.id) {
+        return false;
+      }
+
       // Search filter
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
@@ -56,7 +61,7 @@ export const EmployeesTab: React.FC<EmployeesTabProps> = ({
 
       return true;
     });
-  }, [employees, filters]);
+  }, [employees, filters, currentUser]);
 
   const handleCall = (phone: string) => {
     window.open(`tel:${phone.replace(/\s/g, '')}`, '_blank');

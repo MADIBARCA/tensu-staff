@@ -125,7 +125,7 @@ export const EmployeeCard: React.FC<EmployeeCardProps> = ({
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
+      <div className="flex items-center gap-1 mt-3 pt-3 border-t border-gray-100">
         <button
           onClick={onCall}
           className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
