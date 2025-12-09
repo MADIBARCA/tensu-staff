@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import type { Employee, Club, EmployeeRole, UpdateEmployeeData } from '../types';
+import type { ClubWithRole, CreateStaffResponse } from '@/functions/axios/responses';
 
 interface EditEmployeeModalProps {
   employee: Employee;
   clubs: Club[];
+  clubRoles: ClubWithRole[];
+  currentUser: CreateStaffResponse | null;
   onClose: () => void;
   onSave: (data: UpdateEmployeeData) => void;
 }
@@ -13,15 +16,49 @@ interface EditEmployeeModalProps {
 export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
   employee,
   clubs,
+  clubRoles,
+  currentUser,
   onClose,
   onSave,
 }) => {
   const { t } = useI18n();
+
+  // Filter clubs to show only those where user is owner or admin
+  const availableClubs = useMemo(() => {
+    if (!currentUser) return [];
+    
+    return clubs.filter(club => {
+      if (club.status !== 'active') return false;
+      
+      const clubRole = clubRoles.find(cr => cr.club.id === club.id);
+      if (!clubRole) return false;
+      
+      // Show only if user is owner or admin
+      return clubRole.role === 'owner' || clubRole.role === 'admin' || clubRole.is_owner;
+    });
+  }, [clubs, clubRoles, currentUser]);
+
+  // Initialize form data with only available clubs
+  const initialClubIds = useMemo(() => {
+    const availableClubIds = availableClubs.map(club => club.id);
+    return employee.club_ids.filter(clubId => availableClubIds.includes(clubId));
+  }, [employee.club_ids, availableClubs]);
+
   const [formData, setFormData] = useState<UpdateEmployeeData>({
     role: employee.role,
-    club_ids: employee.club_ids,
+    club_ids: initialClubIds,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Update form data when employee or available clubs change
+  useEffect(() => {
+    const availableClubIds = availableClubs.map(club => club.id);
+    const filteredClubIds = employee.club_ids.filter(clubId => availableClubIds.includes(clubId));
+    setFormData(prev => ({
+      ...prev,
+      club_ids: filteredClubIds,
+    }));
+  }, [employee.club_ids, availableClubs]);
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -47,11 +84,13 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validate()) {
-      onSave(formData);
+      // Filter out clubs that are not available (where user is only coach)
+      const filteredClubIds = formData.club_ids.filter(clubId => 
+        availableClubs.some(club => club.id === clubId)
+      );
+      onSave({ ...formData, club_ids: filteredClubIds });
     }
   };
-
-  const activeClubs = clubs.filter(c => c.status === 'active');
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -117,22 +156,28 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               {t('management.employees.clubs')} *
             </label>
-            <div className="space-y-2">
-              {activeClubs.map(club => (
-                <label
-                  key={club.id}
-                  className="flex items-center gap-2 p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50"
-                >
-                  <input
-                    type="checkbox"
-                    checked={formData.club_ids.includes(club.id)}
-                    onChange={() => handleClubToggle(club.id)}
-                    className="w-4 h-4 text-blue-600 rounded"
-                  />
-                  <span className="text-gray-900">{club.name}</span>
-                </label>
-              ))}
-            </div>
+            {availableClubs.length === 0 ? (
+              <p className="text-sm text-gray-500">
+                {t('management.employees.noClubsAvailable')}
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {availableClubs.map(club => (
+                  <label
+                    key={club.id}
+                    className="flex items-center gap-2 p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={formData.club_ids.includes(club.id)}
+                      onChange={() => handleClubToggle(club.id)}
+                      className="w-4 h-4 text-blue-600 rounded"
+                    />
+                    <span className="text-gray-900">{club.name}</span>
+                  </label>
+                ))}
+              </div>
+            )}
             {errors.clubs && <p className="text-red-500 text-xs mt-1">{errors.clubs}</p>}
           </div>
         </form>

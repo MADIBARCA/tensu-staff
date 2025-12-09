@@ -418,6 +418,7 @@ const RU: Dict = {
   'management.employees.errors.phoneInvalid': 'Некорректный номер телефона',
   'management.employees.errors.phoneExists': 'Этот номер уже зарегистрирован',
   'management.employees.errors.clubRequired': 'Выберите хотя бы один клуб',
+  'management.employees.noClubsAvailable': 'Нет доступных клубов',
   // Sections
   'management.sections.searchPlaceholder': 'Поиск по названию секции',
   'management.sections.filters': 'Фильтры',
@@ -939,6 +940,7 @@ const KK: Dict = {
   'management.employees.errors.phoneInvalid': 'Қате телефон нөмірі',
   'management.employees.errors.phoneExists': 'Бұл нөмір тіркелген',
   'management.employees.errors.clubRequired': 'Кем дегенде бір клуб таңдаңыз',
+  'management.employees.noClubsAvailable': 'Қолжетімді клубтар жоқ',
   // Sections part
   'management.sections.searchPlaceholder': 'Бөлім атауы бойынша іздеу',
   'management.sections.filters': 'Сүзгілер',

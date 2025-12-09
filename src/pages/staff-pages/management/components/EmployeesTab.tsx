@@ -214,6 +214,8 @@ export const EmployeesTab: React.FC<EmployeesTabProps> = ({
         <EditEmployeeModal
           employee={editingEmployee}
           clubs={clubs}
+          clubRoles={clubRoles}
+          currentUser={currentUser}
           onClose={() => setEditingEmployee(null)}
           onSave={handleEditEmployee}
         />
