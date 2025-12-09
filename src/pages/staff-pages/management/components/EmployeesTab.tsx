@@ -91,6 +91,15 @@ export const EmployeesTab: React.FC<EmployeesTabProps> = ({
 
   const hasActiveFilters = filters.role || filters.club_id;
 
+  // Check if user can add employees (must be owner or admin of at least one club)
+  const canAddEmployee = useMemo(() => {
+    if (!currentUser) return false;
+    
+    return clubRoles.some(clubRole => 
+      clubRole.role === 'owner' || clubRole.role === 'admin' || clubRole.is_owner
+    );
+  }, [clubRoles, currentUser]);
+
   return (
     <div className="space-y-4">
       {/* Search and Filter Bar */}
@@ -113,13 +122,15 @@ export const EmployeesTab: React.FC<EmployeesTabProps> = ({
         >
           <Filter size={20} />
         </button>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-1 px-3 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600"
-        >
-          <Plus size={18} />
-          {t('management.employees.addStaff')}
-        </button>
+        {canAddEmployee && (
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-1 px-3 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600"
+          >
+            <Plus size={18} />
+            {t('management.employees.addStaff')}
+          </button>
+        )}
       </div>
 
       {/* Filters Panel */}
@@ -204,6 +215,8 @@ export const EmployeesTab: React.FC<EmployeesTabProps> = ({
       {showAddModal && (
         <AddEmployeeModal
           clubs={clubs}
+          clubRoles={clubRoles}
+          currentUser={currentUser}
           existingEmployees={employees}
           onClose={() => setShowAddModal(false)}
           onAdd={handleAddEmployee}

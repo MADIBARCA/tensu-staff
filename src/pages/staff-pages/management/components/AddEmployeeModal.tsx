@@ -2,9 +2,12 @@ import React, { useState, useMemo } from 'react';
 import { X, AlertCircle } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import type { CreateEmployeeData, Club, EmployeeRole, Employee } from '../types';
+import type { ClubWithRole, CreateStaffResponse } from '@/functions/axios/responses';
 
 interface AddEmployeeModalProps {
   clubs: Club[];
+  clubRoles: ClubWithRole[];
+  currentUser: CreateStaffResponse | null;
   existingEmployees: Employee[];
   onClose: () => void;
   onAdd: (data: CreateEmployeeData) => void;
@@ -12,6 +15,8 @@ interface AddEmployeeModalProps {
 
 export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
   clubs,
+  clubRoles,
+  currentUser,
   existingEmployees,
   onClose,
   onAdd,
@@ -25,6 +30,21 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
     club_ids: [],
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Filter clubs to show only those where user is owner or admin
+  const availableClubs = useMemo(() => {
+    if (!currentUser) return [];
+    
+    return clubs.filter(club => {
+      if (club.status !== 'active') return false;
+      
+      const clubRole = clubRoles.find(cr => cr.club.id === club.id);
+      if (!clubRole) return false;
+      
+      // Show only if user is owner or admin
+      return clubRole.role === 'owner' || clubRole.role === 'admin' || clubRole.is_owner;
+    });
+  }, [clubs, clubRoles, currentUser]);
 
   const phoneExists = useMemo(() => {
     if (formData.phone.length < 12) return false;
@@ -87,11 +107,13 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validate()) {
-      onAdd(formData);
+      // Filter out clubs that are not available (where user is only coach)
+      const filteredClubIds = formData.club_ids.filter(clubId => 
+        availableClubs.some(club => club.id === clubId)
+      );
+      onAdd({ ...formData, club_ids: filteredClubIds });
     }
   };
-
-  const activeClubs = clubs.filter(c => c.status === 'active');
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">
@@ -188,22 +210,28 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               {t('management.employees.clubs')} *
             </label>
-            <div className="space-y-2">
-              {activeClubs.map(club => (
-                <label
-                  key={club.id}
-                  className="flex items-center gap-2 p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50"
-                >
-                  <input
-                    type="checkbox"
-                    checked={formData.club_ids.includes(club.id)}
-                    onChange={() => handleClubToggle(club.id)}
-                    className="w-4 h-4 text-blue-600 rounded"
-                  />
-                  <span className="text-gray-900">{club.name}</span>
-                </label>
-              ))}
-            </div>
+            {availableClubs.length === 0 ? (
+              <p className="text-sm text-gray-500">
+                {t('management.employees.noClubsAvailable')}
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {availableClubs.map(club => (
+                  <label
+                    key={club.id}
+                    className="flex items-center gap-2 p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={formData.club_ids.includes(club.id)}
+                      onChange={() => handleClubToggle(club.id)}
+                      className="w-4 h-4 text-blue-600 rounded"
+                    />
+                    <span className="text-gray-900">{club.name}</span>
+                  </label>
+                ))}
+              </div>
+            )}
             {errors.clubs && <p className="text-red-500 text-xs mt-1">{errors.clubs}</p>}
           </div>
         </form>
