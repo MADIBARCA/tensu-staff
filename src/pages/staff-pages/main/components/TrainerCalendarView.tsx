@@ -57,7 +57,11 @@ export const TrainerCalendarView: React.FC<TrainerCalendarViewProps> = ({
   };
 
   const formatDateString = (date: Date): string => {
-    return date.toISOString().split('T')[0];
+    // Format date as YYYY-MM-DD without timezone conversion
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
 
   const isToday = (date: Date): boolean => {
@@ -112,7 +116,9 @@ export const TrainerCalendarView: React.FC<TrainerCalendarViewProps> = ({
     const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
     
     const monthTrainings = trainings.filter(t => {
-      const date = new Date(t.date);
+      // Parse date string (YYYY-MM-DD) directly without timezone conversion
+      const [year, month, day] = t.date.split('-').map(Number);
+      const date = new Date(year, month - 1, day);
       return date >= monthStart && date <= monthEnd;
     });
 
