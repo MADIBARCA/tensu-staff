@@ -376,7 +376,7 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white bg-opacity-80 blur-2xl">
       <div className="bg-white w-full max-w-lg rounded-xl max-h-screen overflow-hidden flex flex-col">
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">
