@@ -249,7 +249,11 @@ export default function StaffMainPage() {
   // Get trainings for selected date
   const selectedDateTrainings = useMemo(() => {
     if (!selectedDate) return [];
-    const dateStr = selectedDate.toISOString().split('T')[0];
+    // Format date as YYYY-MM-DD without timezone conversion
+    const year = selectedDate.getFullYear();
+    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(selectedDate.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
     return filteredTrainings
       .filter((t) => t.date === dateStr)
       .sort((a, b) => {
@@ -560,7 +564,12 @@ export default function StaffMainPage() {
             coaches={coaches}
             clubRoles={clubRoles}
             currentUser={currentUser}
-            selectedDate={selectedDate?.toISOString().split('T')[0]}
+            selectedDate={selectedDate ? (() => {
+              const year = selectedDate.getFullYear();
+              const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+              const day = String(selectedDate.getDate()).padStart(2, '0');
+              return `${year}-${month}-${day}`;
+            })() : undefined}
             onClose={() => setShowCreateModal(false)}
             onCreate={handleCreateTraining}
           />
