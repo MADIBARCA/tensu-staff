@@ -96,7 +96,7 @@ export const SelectedDateTrainings: React.FC<SelectedDateTrainingsProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/30 z-50 flex items-end justify-center">
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center">
       <div className="bg-white w-full max-w-md rounded-t-3xl max-h-[80vh] flex flex-col animate-in slide-in-from-bottom duration-300">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100">

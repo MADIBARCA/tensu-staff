@@ -50,7 +50,7 @@ const mapTrainingStatusToApiStatus = (status: Training['status']): "scheduled" |
 };
 
 // Helper function to transform API Lesson to Training
-const transformLessonToTraining = (lesson: Lesson, clubName: string): Training => {
+const transformLessonToTraining = (lesson: Lesson, clubName: string, sectionNameMap: Map<number, string>): Training => {
   const status = mapApiStatusToTrainingStatus(
     lesson.status,
     lesson.effective_date,
@@ -58,12 +58,15 @@ const transformLessonToTraining = (lesson: Lesson, clubName: string): Training =
     lesson.duration_minutes
   );
   
+  const sectionId = lesson.group?.section_id || 0;
+  const sectionName = sectionNameMap.get(sectionId) || '';
+  
   return {
     id: lesson.id,
-    club_id: lesson.group?.section_id || 0,
+    club_id: sectionId,
     club_name: clubName,
-    section_id: lesson.group?.section_id || 0,
-    section_name: lesson.group?.name || '',
+    section_id: sectionId,
+    section_name: sectionName,
     group_id: lesson.group_id,
     group_name: lesson.group?.name,
     coach_id: lesson.coach_id,
@@ -134,9 +137,10 @@ export default function StaffMainPage() {
       }
 
       // Load sections
+      let transformedSections: Section[] = [];
       const sectionsResponse = await sectionsApi.getMy(initDataRaw);
       if (sectionsResponse.data) {
-        const transformedSections: Section[] = sectionsResponse.data.map(s => ({
+        transformedSections = sectionsResponse.data.map(s => ({
           id: s.id,
           name: s.name,
           club_id: s.club_id,
@@ -175,11 +179,19 @@ export default function StaffMainPage() {
       if (scheduleResponse.data?.days) {
         const allLessons: Training[] = [];
         const clubNameMap = new Map(loadedClubs.map(c => [c.id, c.name]));
+        // Create section name map from sections response data
+        const sectionNameMap = new Map(
+          (sectionsResponse.data || []).map(s => [s.id, s.name] as [number, string])
+        );
         
         scheduleResponse.data.days.forEach(day => {
           day.lessons.forEach(lesson => {
-            const clubName = clubNameMap.get(lesson.group_id) || 'Клуб';
-            allLessons.push(transformLessonToTraining(lesson, clubName));
+            // Get club name from group's section
+            const sectionId = lesson.group?.section_id;
+            const section = (sectionsResponse.data || []).find(s => s.id === sectionId);
+            const clubId = section?.club_id || 0;
+            const clubName = clubNameMap.get(clubId) || 'Клуб';
+            allLessons.push(transformLessonToTraining(lesson, clubName, sectionNameMap));
           });
         });
         
@@ -299,9 +311,11 @@ export default function StaffMainPage() {
       }, initDataRaw);
 
       if (response.data) {
+        const sectionNameMap = new Map(sections.map(s => [s.id, s.name]));
         const newTraining = transformLessonToTraining(
           response.data as unknown as Lesson,
-          clubs.find(c => c.id === data.club_id)?.name || ''
+          clubs.find(c => c.id === data.club_id)?.name || '',
+          sectionNameMap
         );
         newTraining.club_id = data.club_id;
         newTraining.section_id = data.section_id;
