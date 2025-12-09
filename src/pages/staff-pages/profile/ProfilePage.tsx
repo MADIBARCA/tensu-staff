@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Layout, PageContainer } from '@/components/Layout';
 import { useI18n } from '@/i18n/i18n';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, Check, X } from 'lucide-react';
 import { UserProfileSection } from './components/UserProfileSection';
 import { ClubCard } from './components/ClubCard';
 import { CreateClubModal } from './components/CreateClubModal';
@@ -10,8 +10,8 @@ import { PayMembershipModal } from './components/PayMembershipModal';
 import { DeactivateClubModal } from './components/DeactivateClubModal';
 import { SettingsSection } from './components/SettingsSection';
 import { useTelegram } from '@/hooks/useTelegram';
-import { staffApi, clubsApi } from '@/functions/axios/axiosFunctions';
-import type { ClubWithRole, CreateStaffResponse } from '@/functions/axios/responses';
+import { staffApi, clubsApi, invitationsApi } from '@/functions/axios/axiosFunctions';
+import type { ClubWithRole, CreateStaffResponse, Invitation } from '@/functions/axios/responses';
 // Note: These mocks are kept because there's no API for payments, analytics, and membership tariffs
 import {
   mockClubAnalytics,
@@ -35,6 +35,10 @@ export default function ProfilePage() {
   const [showClubDetailsModal, setShowClubDetailsModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
+  
+  // Invitations state
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [invitationLoading, setInvitationLoading] = useState(false);
 
   // Load data from API
   const loadData = useCallback(async () => {
@@ -62,6 +66,16 @@ export default function ProfilePage() {
           role: 'owner', // Default role, will be updated based on clubs
           created_at: apiUser.created_at,
         });
+      }
+
+      // Load pending invitations
+      try {
+        const invitationsResponse = await invitationsApi.getMyPending(initDataRaw);
+        if (invitationsResponse.data?.invitations) {
+          setInvitations(invitationsResponse.data.invitations);
+        }
+      } catch (error) {
+        console.error('Error loading invitations:', error);
       }
 
       // Load clubs
@@ -147,6 +161,59 @@ export default function ProfilePage() {
       })
     );
   }, []);
+
+  // Invitation handlers
+  const handleAcceptInvitation = async (invitationId: number) => {
+    if (!initDataRaw) return;
+    
+    try {
+      setInvitationLoading(true);
+      await invitationsApi.accept(invitationId, initDataRaw);
+      
+      // Remove from list and reload data
+      setInvitations(prev => prev.filter(inv => inv.id !== invitationId));
+      await loadData();
+      
+      window.Telegram?.WebApp?.showAlert(t('profile.invitations.accepted'));
+    } catch (error) {
+      console.error('Error accepting invitation:', error);
+      window.Telegram?.WebApp?.showAlert(t('profile.invitations.error'));
+    } finally {
+      setInvitationLoading(false);
+    }
+  };
+
+  const handleDeclineInvitation = async (invitationId: number) => {
+    if (!initDataRaw) return;
+    
+    try {
+      setInvitationLoading(true);
+      await invitationsApi.decline(invitationId, initDataRaw);
+      
+      // Remove from list
+      setInvitations(prev => prev.filter(inv => inv.id !== invitationId));
+      
+      window.Telegram?.WebApp?.showAlert(t('profile.invitations.declined'));
+    } catch (error) {
+      console.error('Error declining invitation:', error);
+      window.Telegram?.WebApp?.showAlert(t('profile.invitations.error'));
+    } finally {
+      setInvitationLoading(false);
+    }
+  };
+
+  const getRoleLabel = (role: string): string => {
+    switch (role) {
+      case 'owner':
+        return t('profile.role.owner');
+      case 'admin':
+        return t('profile.role.admin');
+      case 'coach':
+        return t('profile.role.coach');
+      default:
+        return role;
+    }
+  };
 
   const handleSaveProfile = async (data: { first_name: string; last_name: string }) => {
     if (initDataRaw) {
@@ -359,6 +426,59 @@ export default function ProfilePage() {
       <PageContainer>
         {/* User Profile Section */}
         <UserProfileSection user={user} onSave={handleSaveProfile} />
+
+        {/* Invitations Section */}
+        {invitations.length > 0 && (
+          <div className="mb-4">
+            <div className="bg-white rounded-lg border border-gray-200 p-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                {t('profile.invitations.title')} ({invitations.length})
+              </h3>
+              <div className="space-y-3">
+                {invitations.map((invitation) => (
+                  <div
+                    key={invitation.id}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-gray-900">
+                        {invitation.club.name}
+                      </div>
+                      <div className="text-xs text-gray-600">
+                        {t('profile.invitations.roleInClub')}{' '}
+                        <span className="font-semibold text-blue-600">
+                          {getRoleLabel(invitation.role)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 ml-3">
+                      {invitationLoading ? (
+                        <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => handleAcceptInvitation(invitation.id)}
+                            className="flex items-center gap-1 px-3 py-1.5 bg-blue-500 text-white text-xs font-medium rounded-lg hover:bg-blue-600 transition-colors"
+                          >
+                            <Check size={14} />
+                            {t('profile.invitations.accept')}
+                          </button>
+                          <button
+                            onClick={() => handleDeclineInvitation(invitation.id)}
+                            className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 text-red-600 text-xs font-medium rounded-lg hover:bg-red-50 transition-colors"
+                          >
+                            <X size={14} />
+                            {t('profile.invitations.decline')}
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Clubs Section */}
         <div className="mb-4">

@@ -375,6 +375,14 @@ const RU: Dict = {
   'profile.deactivate.message': 'Вы уверены, что хотите деактивировать клуб "{name}"?',
   'profile.deactivate.warning': 'Клуб будет скрыт из поиска. Все расписания будут удалены. Это действие можно отменить.',
   'profile.deactivate.confirm': 'Деактивировать',
+  // Invitations
+  'profile.invitations.title': 'Приглашения',
+  'profile.invitations.roleInClub': 'Роль:',
+  'profile.invitations.accept': 'Принять',
+  'profile.invitations.decline': 'Отклонить',
+  'profile.invitations.accepted': 'Приглашение принято',
+  'profile.invitations.declined': 'Приглашение отклонено',
+  'profile.invitations.error': 'Ошибка при обработке приглашения',
   'common.optional': 'необязательно',
   // Management page
   'nav.management': 'Управление',
@@ -897,6 +905,14 @@ const KK: Dict = {
   'profile.deactivate.message': '"{name}" клубын деактивациялауды қалайсыз ба?',
   'profile.deactivate.warning': 'Клуб іздеуден жасырылады. Барлық кестелер жойылады. Бұл әрекетті болдырмауға болады.',
   'profile.deactivate.confirm': 'Деактивациялау',
+  // Invitations
+  'profile.invitations.title': 'Шақырулар',
+  'profile.invitations.roleInClub': 'Рөлі:',
+  'profile.invitations.accept': 'Қабылдау',
+  'profile.invitations.decline': 'Қабылдамау',
+  'profile.invitations.accepted': 'Шақыру қабылданды',
+  'profile.invitations.declined': 'Шақыру қабылданбады',
+  'profile.invitations.error': 'Шақыруды өңдеу кезінде қате',
   'common.optional': 'міндетті емес',
   // Management page
   'nav.management': 'Басқару',
