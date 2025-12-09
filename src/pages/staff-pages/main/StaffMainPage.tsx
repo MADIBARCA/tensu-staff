@@ -277,7 +277,10 @@ export default function StaffMainPage() {
   }, [filteredTrainings]);
 
   const handleCreateTraining = async (data: CreateTrainingData) => {
-    if (!initDataRaw) return;
+    if (!initDataRaw) {
+      window.Telegram?.WebApp?.showAlert(t('training.errors.createFailed') || 'Не удалось создать тренировку');
+      return;
+    }
 
     try {
       // Create lesson via API
@@ -301,39 +304,20 @@ export default function StaffMainPage() {
         newTraining.section_name = sections.find(s => s.id === data.section_id)?.name || '';
         
         setTrainings([...trainings, newTraining]);
+        
+        // Success - close modal and show date
+        setShowCreateModal(false);
+        setSelectedDate(new Date(data.date));
+        window.Telegram?.WebApp?.showAlert(t('training.created') || 'Тренировка создана');
+      } else {
+        // No data in response - show error
+        window.Telegram?.WebApp?.showAlert(t('training.errors.createFailed') || 'Не удалось создать тренировку');
       }
     } catch (error) {
       console.error('Error creating training:', error);
-      // Fallback to local creation
-      const newTraining: Training = {
-        id: Math.max(...trainings.map((t) => t.id), 0) + 1,
-        club_id: data.club_id,
-        club_name: clubs.find((c) => c.id === data.club_id)?.name || '',
-        section_id: data.section_id,
-        section_name: sections.find((s) => s.id === data.section_id)?.name || '',
-        group_id: data.group_id,
-        group_name: data.group_id
-          ? groups.find((g) => g.id === data.group_id)?.name
-          : undefined,
-        coach_id: data.coach_id,
-        coach_name: coaches.find((t) => t.id === data.coach_id)?.name || '',
-        date: data.date,
-        time: data.time,
-        duration: data.duration,
-        location: data.location,
-        max_participants: data.max_participants,
-        current_participants: 0,
-        status: 'scheduled',
-        training_type: 'single',
-        notes: data.notes,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-      setTrainings([...trainings, newTraining]);
+      // Show error message instead of success
+      window.Telegram?.WebApp?.showAlert(t('training.errors.createFailed') || 'Не удалось создать тренировку. Попробуйте позже.');
     }
-    
-    setShowCreateModal(false);
-    setSelectedDate(new Date(data.date));
   };
 
   const handleUpdateTraining = async (

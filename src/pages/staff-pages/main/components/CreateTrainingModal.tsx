@@ -75,8 +75,44 @@ export const CreateTrainingModal: React.FC<CreateTrainingModalProps> = ({
   // Filter groups by selected section
   const availableGroups = groups.filter(g => g.section_id === formData.section_id);
   
-  // Filter coaches by selected club
-  const availableCoaches = coaches.filter(t => t.club_id === formData.club_id);
+  // Filter coaches based on user role:
+  // - If owner/admin: can choose self and other coaches
+  // - If just a coach: can only choose self
+  const availableCoaches = useMemo(() => {
+    if (!currentUser || !formData.club_id) return [];
+    
+    const clubCoaches = coaches.filter(t => t.club_id === formData.club_id);
+    
+    // If user is admin or owner, they can choose any coach + themselves
+    if (isAdminOrOwner) {
+      // Add current user as option if not already in coaches list
+      const currentUserInList = clubCoaches.some(c => c.id === currentUser.id);
+      if (!currentUserInList) {
+        return [
+          {
+            id: currentUser.id,
+            name: `${currentUser.first_name} ${currentUser.last_name}`.trim(),
+            club_id: formData.club_id,
+          },
+          ...clubCoaches
+        ];
+      }
+      return clubCoaches;
+    }
+    
+    // If user is just a coach, they can only choose themselves
+    const selfInList = clubCoaches.find(c => c.id === currentUser.id);
+    if (selfInList) {
+      return [selfInList];
+    }
+    
+    // If not in coaches list but is a coach, add self
+    return [{
+      id: currentUser.id,
+      name: `${currentUser.first_name} ${currentUser.last_name}`.trim(),
+      club_id: formData.club_id,
+    }];
+  }, [coaches, formData.club_id, currentUser, isAdminOrOwner]);
 
   const handleTrainerToggle = (coachId: number) => {
     setTrainerIds(prev =>
