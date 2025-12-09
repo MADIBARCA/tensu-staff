@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X } from 'lucide-react';
+import { X, AlertCircle } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import type { Club, Section, Group, Trainer, CreateTrainingData } from '../types';
 import type { ClubWithRole, CreateStaffResponse } from '@/functions/axios/responses';
@@ -151,6 +151,9 @@ export const CreateTrainingModal: React.FC<CreateTrainingModalProps> = ({
     if (!formData.section_id) {
       newErrors.section_id = t('training.errors.sectionRequired');
     }
+    if (!formData.group_id) {
+      newErrors.group_id = t('training.errors.groupRequired');
+    }
     if (coachIds.length === 0) {
       newErrors.coach_id = t('training.errors.coachRequired');
     }
@@ -197,7 +200,7 @@ export const CreateTrainingModal: React.FC<CreateTrainingModalProps> = ({
     }
   };
 
-  const isFormValid = formData.club_id && formData.section_id && coachIds.length > 0 && 
+  const isFormValid = formData.club_id && formData.section_id && formData.group_id && coachIds.length > 0 && 
                       formData.date && formData.time && formData.location && formData.duration > 0;
 
   return (
@@ -271,11 +274,25 @@ export const CreateTrainingModal: React.FC<CreateTrainingModalProps> = ({
           </div>
 
           {/* Group */}
-          {availableGroups.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t('training.group')}
-              </label>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('training.group')} *
+            </label>
+            {formData.section_id && availableGroups.length === 0 ? (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-amber-800">
+                      {t('training.noGroupsInSection')}
+                    </p>
+                    <p className="text-xs text-amber-600 mt-1">
+                      {t('training.createGroupFirst')}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
               <select
                 value={formData.group_id || ''}
                 onChange={(e) =>
@@ -284,7 +301,10 @@ export const CreateTrainingModal: React.FC<CreateTrainingModalProps> = ({
                     group_id: e.target.value ? Number(e.target.value) : undefined,
                   })
                 }
-                className="w-full border border-gray-200 rounded-lg p-2"
+                className={`w-full border rounded-lg p-2 ${
+                  errors.group_id ? 'border-red-500' : 'border-gray-200'
+                }`}
+                disabled={!formData.section_id || availableGroups.length === 0}
               >
                 <option value="">{t('training.select.group')}</option>
                 {availableGroups.map((group) => (
@@ -293,8 +313,11 @@ export const CreateTrainingModal: React.FC<CreateTrainingModalProps> = ({
                   </option>
                 ))}
               </select>
-            </div>
-          )}
+            )}
+            {errors.group_id && (
+              <p className="text-red-500 text-xs mt-1">{errors.group_id}</p>
+            )}
+          </div>
 
           {/* Coaches (Checkboxes) */}
           <div>

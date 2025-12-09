@@ -90,8 +90,8 @@ export const TrainingDetailsModal: React.FC<TrainingDetailsModalProps> = ({
   const canEdit = training.status === 'scheduled' || training.status === 'cancelled';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-      <div className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-3xl max-h-screen flex flex-col animate-in slide-in-from-bottom duration-300">
+    <div className="fixed inset-0 bg-white opacity-80 z-50 flex items-end sm:items-center justify-center">
+      <div className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-3xl max-h-[90vh] flex flex-col animate-in slide-in-from-bottom duration-300">
         {/* Header with gradient */}
         <div className={`relative overflow-hidden rounded-t-3xl sm:rounded-t-2xl mt-20`}>
           <div className={`${statusConfig.bg} px-6 pt-6 pb-8`}>
