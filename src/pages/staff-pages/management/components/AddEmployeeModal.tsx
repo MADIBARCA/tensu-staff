@@ -94,9 +94,9 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
   const activeClubs = clubs.filter(c => c.status === 'active');
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">
       <div className="bg-white w-full max-w-md rounded-xl max-h-screen overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 mt-20">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 mt-15">
           <h2 className="text-lg font-semibold text-gray-900">
             {t('management.employees.addTitle')}
           </h2>
