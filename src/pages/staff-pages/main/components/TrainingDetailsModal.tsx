@@ -71,12 +71,34 @@ export const TrainingDetailsModal: React.FC<TrainingDetailsModalProps> = ({
   };
 
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
+    // Parse date string (format: YYYY-MM-DD) and create date in local timezone
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    
+    // Get today's date without time
     const today = new Date();
-    const isToday = date.toDateString() === today.toDateString();
+    today.setHours(0, 0, 0, 0);
+    
+    // Compare dates by year, month, and day only
+    const isToday = 
+      date.getFullYear() === today.getFullYear() &&
+      date.getMonth() === today.getMonth() &&
+      date.getDate() === today.getDate();
     
     if (isToday) {
-      return 'Сегодня';
+      return t('training.today');
+    }
+    
+    // Check if tomorrow
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const isTomorrow =
+      date.getFullYear() === tomorrow.getFullYear() &&
+      date.getMonth() === tomorrow.getMonth() &&
+      date.getDate() === tomorrow.getDate();
+    
+    if (isTomorrow) {
+      return t('training.tomorrow');
     }
     
     return date.toLocaleDateString('ru-RU', {
@@ -90,7 +112,7 @@ export const TrainingDetailsModal: React.FC<TrainingDetailsModalProps> = ({
   const canEdit = training.status === 'scheduled' || training.status === 'cancelled';
 
   return (
-    <div className="fixed inset-0 bg-white opacity-80 z-50 flex items-end sm:items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       <div className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-3xl max-h-[90vh] flex flex-col animate-in slide-in-from-bottom duration-300">
         {/* Header with gradient */}
         <div className={`relative overflow-hidden rounded-t-3xl sm:rounded-t-2xl mt-20`}>
