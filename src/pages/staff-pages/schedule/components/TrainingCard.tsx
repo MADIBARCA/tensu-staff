@@ -65,7 +65,7 @@ export const TrainingCard: React.FC<TrainingCardProps> = ({
               <span className="text-gray-500 font-normal"> • {training.group_name}</span>
             )}
           </h3>
-          <p className="text-sm text-gray-600">{training.trainer_name}</p>
+          <p className="text-sm text-gray-600">{training.coach_name}</p>
         </div>
         {training.is_booked && (
           <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full font-medium">

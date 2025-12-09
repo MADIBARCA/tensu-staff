@@ -146,7 +146,7 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
               {employee.role === 'owner' && (
                 <option value="owner">{t('management.employees.role.owner')}</option>
               )}
-              <option value="trainer">{t('management.employees.role.trainer')}</option>
+              <option value="coach">{t('management.employees.role.coach')}</option>
               <option value="admin">{t('management.employees.role.admin')}</option>
             </select>
           </div>

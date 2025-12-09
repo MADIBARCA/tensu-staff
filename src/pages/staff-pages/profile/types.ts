@@ -2,7 +2,7 @@
 
 export type ClubStatus = 'active' | 'frozen' | 'pending' | 'deactivated';
 export type MembershipStatus = 'active' | 'expiring' | 'expired' | 'frozen';
-export type UserRole = 'owner' | 'admin' | 'trainer';
+export type UserRole = 'owner' | 'admin' | 'coach';
 
 export interface StaffUser {
   id: number;

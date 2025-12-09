@@ -14,8 +14,8 @@ export interface Training {
   id: number;
   section_name: string;
   group_name?: string;
-  trainer_name: string;
-  trainer_id: number;
+  coach_name: string;
+  coach_id: number;
   club_id: number;
   club_name: string;
   date: string;
@@ -43,7 +43,7 @@ export interface Trainer {
 export interface Filters {
   clubId: number | null;
   sectionsType: 'all' | 'my';
-  trainerId: number | null;
+  coachId: number | null;
 }
 
 export default function SchedulePage() {
@@ -52,7 +52,7 @@ export default function SchedulePage() {
   const [activeTab, setActiveTab] = useState<'list' | 'calendar'>('list');
   const [trainings, setTrainings] = useState<Training[]>([]);
   const [clubs, setClubs] = useState<Club[]>([]);
-  const [trainers, setTrainers] = useState<Trainer[]>([]);
+  const [coaches, setCoaches] = useState<Trainer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasActiveMembership, setHasActiveMembership] = useState(true);
@@ -61,7 +61,7 @@ export default function SchedulePage() {
   const [filters, setFilters] = useState<Filters>({
     clubId: null,
     sectionsType: 'all',
-    trainerId: null,
+    coachId: null,
   });
   const [showFiltersModal, setShowFiltersModal] = useState(false);
 
@@ -98,17 +98,17 @@ export default function SchedulePage() {
         setClubs(loadedClubs);
       }
 
-      // Load trainers
+      // Load coaches
       const teamResponse = await teamApi.get(initDataRaw);
       if (teamResponse.data?.staff_members) {
-        const loadedTrainers: Trainer[] = teamResponse.data.staff_members
+        const loadedCoaches: Trainer[] = teamResponse.data.staff_members
           .filter(member => member.clubs_and_roles.some(cr => cr.role === 'coach'))
           .map(member => ({
             id: member.id,
             name: `${member.first_name} ${member.last_name}`.trim(),
             club_id: member.clubs_and_roles[0]?.club_id || 0,
           }));
-        setTrainers(loadedTrainers);
+        setCoaches(loadedCoaches);
       }
 
       // Load schedule
@@ -124,8 +124,8 @@ export default function SchedulePage() {
               id: lesson.id,
               section_name: lesson.group?.name || '',
               group_name: lesson.group?.name,
-              trainer_name: `${lesson.coach?.first_name || ''} ${lesson.coach?.last_name || ''}`.trim(),
-              trainer_id: lesson.coach_id,
+              coach_name: `${lesson.coach?.first_name || ''} ${lesson.coach?.last_name || ''}`.trim(),
+              coach_id: lesson.coach_id,
               club_id: lesson.group?.section_id || 0,
               club_name: clubNameMap.get(lesson.group?.section_id || 0) || 'Клуб',
               date: lesson.effective_date,
@@ -165,8 +165,8 @@ export default function SchedulePage() {
       result = result.filter(t => t.club_id === filters.clubId);
     }
 
-    if (filters.trainerId) {
-      result = result.filter(t => t.trainer_id === filters.trainerId);
+    if (filters.coachId) {
+      result = result.filter(t => t.coach_id === filters.coachId);
     }
 
     // Sort by date and time
@@ -268,7 +268,7 @@ export default function SchedulePage() {
   const activeFiltersCount = [
     filters.clubId,
     filters.sectionsType !== 'all',
-    filters.trainerId,
+    filters.coachId,
   ].filter(Boolean).length;
 
   if (loading) {
@@ -361,11 +361,11 @@ export default function SchedulePage() {
                 </button>
               </span>
             )}
-            {filters.trainerId && (
+            {filters.coachId && (
               <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">
-                {trainers.find(t => t.id === filters.trainerId)?.name}
+                {coaches.find(t => t.id === filters.coachId)?.name}
                 <button
-                  onClick={() => setFilters(f => ({ ...f, trainerId: null }))}
+                  onClick={() => setFilters(f => ({ ...f, coachId: null }))}
                   className="hover:text-blue-900"
                 >
                   <X size={14} />
@@ -424,7 +424,7 @@ export default function SchedulePage() {
         {showFiltersModal && (
           <FiltersModal
             clubs={clubs}
-            trainers={trainers}
+            coaches={coaches}
             filters={filters}
             onFiltersChange={setFilters}
             onClose={() => setShowFiltersModal(false)}

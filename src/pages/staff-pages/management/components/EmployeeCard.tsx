@@ -40,7 +40,7 @@ export const EmployeeCard: React.FC<EmployeeCardProps> = ({
     switch (role) {
       case 'owner': return t('management.employees.role.owner');
       case 'admin': return t('management.employees.role.admin');
-      case 'trainer': return t('management.employees.role.trainer');
+      case 'coach': return t('management.employees.role.coach');
       default: return role;
     }
   };
@@ -49,7 +49,7 @@ export const EmployeeCard: React.FC<EmployeeCardProps> = ({
     switch (role) {
       case 'owner': return 'bg-purple-100 text-purple-700';
       case 'admin': return 'bg-blue-100 text-blue-700';
-      case 'trainer': return 'bg-green-100 text-green-700';
+      case 'coach': return 'bg-green-100 text-green-700';
       default: return 'bg-gray-100 text-gray-700';
     }
   };

@@ -186,7 +186,7 @@ export const SelectedDateTrainings: React.FC<SelectedDateTrainingsProps> = ({
                           </div>
                           <div>
                             <p className="text-xs text-gray-400">Тренер</p>
-                            <p className="text-sm font-medium truncate">{training.trainer_name}</p>
+                            <p className="text-sm font-medium truncate">{training.coach_name}</p>
                           </div>
                         </div>
 

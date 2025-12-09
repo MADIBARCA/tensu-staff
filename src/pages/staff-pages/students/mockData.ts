@@ -4,7 +4,7 @@ import type { AttendanceRecord, PaymentRecord } from './types';
 const today = new Date();
 
 // Generate attendance records - нет API для истории посещений
-export const generateAttendanceRecords = (studentId: number, sectionName?: string, groupName?: string, trainerName?: string): AttendanceRecord[] => {
+export const generateAttendanceRecords = (studentId: number, sectionName?: string, groupName?: string, coachName?: string): AttendanceRecord[] => {
   const records: AttendanceRecord[] = [];
   const numRecords = Math.floor(Math.random() * 15) + 5;
   
@@ -22,7 +22,7 @@ export const generateAttendanceRecords = (studentId: number, sectionName?: strin
       training_type: sectionName || 'Групповая тренировка',
       section_name: sectionName || '',
       group_name: groupName,
-      trainer_name: trainerName || '',
+      coach_name: coachName || '',
       status: Math.random() > 0.1 ? 'present' : (Math.random() > 0.5 ? 'late' : 'absent'),
     });
   }

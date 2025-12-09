@@ -74,7 +74,7 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [loadingGroups, setLoadingGroups] = useState(true);
   const [name, setName] = useState(section.name);
-  const [trainerIds, setTrainerIds] = useState<number[]>(section.trainer_ids);
+  const [coachIds, setTrainerIds] = useState<number[]>(section.coach_ids);
   const [groups, setGroups] = useState<GroupForm[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -86,21 +86,21 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
     return clubRole ? (clubRole.role === 'owner' || clubRole.role === 'admin' || clubRole.is_owner) : false;
   }, [section.club_id, clubRoles, currentUser]);
 
-  // Check if current user is owner of the club (for showing self as trainer option)
+  // Check if current user is owner of the club (for showing self as coach option)
   const isOwnerOfClub = useMemo(() => {
     if (!currentUser) return false;
     const clubRole = clubRoles.find(cr => cr.club.id === section.club_id);
     return clubRole?.role === 'owner' || clubRole?.is_owner;
   }, [section.club_id, clubRoles, currentUser]);
 
-  // Get trainers for the club, including current user if they are owner
-  const trainers = useMemo(() => {
-    const clubTrainers = employees.filter(
-      e => e.role === 'trainer' && e.club_ids.includes(section.club_id)
+  // Get coaches for the club, including current user if they are owner
+  const coaches = useMemo(() => {
+    const clubCoaches = employees.filter(
+      e => e.role === 'coach' && e.club_ids.includes(section.club_id)
     );
     
     if (isOwnerOfClub && currentUser) {
-      const currentUserAlreadyInList = clubTrainers.some(t => t.id === currentUser.id);
+      const currentUserAlreadyInList = clubCoaches.some(t => t.id === currentUser.id);
       if (!currentUserAlreadyInList) {
         return [
           {
@@ -116,12 +116,12 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
             created_at: currentUser.created_at,
             isCurrentUser: true,
           },
-          ...clubTrainers.map(t => ({ ...t, isCurrentUser: t.id === currentUser?.id })),
+          ...clubCoaches.map(t => ({ ...t, isCurrentUser: t.id === currentUser?.id })),
         ];
       }
     }
     
-    return clubTrainers.map(t => ({ ...t, isCurrentUser: t.id === currentUser?.id }));
+    return clubCoaches.map(t => ({ ...t, isCurrentUser: t.id === currentUser?.id }));
   }, [employees, section.club_id, isOwnerOfClub, currentUser]);
 
   // Check permissions on mount - close modal if user doesn't have permission
@@ -187,13 +187,13 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
     loadGroups();
   }, [section.id, initDataRaw]);
 
-  const handleTrainerToggle = (trainerId: number) => {
+  const handleTrainerToggle = (coachId: number) => {
     setTrainerIds(prev =>
-      prev.includes(trainerId)
-        ? prev.filter(id => id !== trainerId)
-        : [...prev, trainerId]
+      prev.includes(coachId)
+        ? prev.filter(id => id !== coachId)
+        : [...prev, coachId]
     );
-    setErrors({ ...errors, trainers: '' });
+    setErrors({ ...errors, coaches: '' });
   };
 
   // Build schedule entry for API
@@ -283,7 +283,7 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
     if (!name.trim()) newErrors.name = t('management.sections.errors.nameRequired');
-    if (trainerIds.length === 0) newErrors.trainers = t('management.sections.errors.trainerRequired');
+    if (coachIds.length === 0) newErrors.coaches = t('management.sections.errors.coachRequired');
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -304,7 +304,7 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
         club_id: section.club_id,
         name: name.trim(),
         description: '',
-        coach_id: trainerIds[0],
+        coach_id: coachIds[0],
         active: true,
       }, section.id, initDataRaw);
 
@@ -324,7 +324,7 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
           price: Number(grp.price) || 0,
           capacity: Number(grp.capacity) || 0,
           level: grp.level || 'all',
-          coach_id: trainerIds[0],
+          coach_id: coachIds[0],
           tags: [],
           active: true,
         };
@@ -418,29 +418,29 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
             {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
           </div>
 
-          {/* Trainers (Checkboxes) */}
+          {/* Coaches (Checkboxes) */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('management.sections.trainers')} *
+              {t('management.sections.coaches')} *
             </label>
-            {trainers.length === 0 ? (
-              <p className="text-sm text-gray-500">{t('management.sections.noTrainers')}</p>
+            {coaches.length === 0 ? (
+              <p className="text-sm text-gray-500">{t('management.sections.noCoaches')}</p>
             ) : (
             <div className="space-y-2">
-              {trainers.map(trainer => (
+              {coaches.map(coach => (
                 <label
-                  key={trainer.id}
+                  key={coach.id}
                   className="flex items-center gap-2 p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50"
                 >
                   <input
                     type="checkbox"
-                    checked={trainerIds.includes(trainer.id)}
-                    onChange={() => handleTrainerToggle(trainer.id)}
+                    checked={coachIds.includes(coach.id)}
+                    onChange={() => handleTrainerToggle(coach.id)}
                     className="w-4 h-4 text-blue-600 rounded"
                   />
                     <span className="text-gray-900">
-                      {trainer.first_name} {trainer.last_name}
-                      {(trainer as any).isCurrentUser && (
+                      {coach.first_name} {coach.last_name}
+                      {(coach as any).isCurrentUser && (
                         <span className="text-blue-500 text-sm ml-1">
                           ({t('management.sections.selectSelf') || 'вы'})
                         </span>
@@ -450,7 +450,7 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
               ))}
             </div>
             )}
-            {errors.trainers && <p className="text-red-500 text-xs mt-1">{errors.trainers}</p>}
+            {errors.coaches && <p className="text-red-500 text-xs mt-1">{errors.coaches}</p>}
           </div>
 
           {/* Groups */}

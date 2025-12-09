@@ -8,7 +8,7 @@ interface CreateTrainingModalProps {
   clubs: Club[];
   sections: Section[];
   groups: Group[];
-  trainers: Trainer[];
+  coaches: Trainer[];
   clubRoles: ClubWithRole[];
   currentUser: CreateStaffResponse | null;
   selectedDate?: string;
@@ -20,7 +20,7 @@ export const CreateTrainingModal: React.FC<CreateTrainingModalProps> = ({
   clubs,
   sections,
   groups,
-  trainers,
+  coaches,
   clubRoles,
   currentUser,
   selectedDate,
@@ -32,7 +32,7 @@ export const CreateTrainingModal: React.FC<CreateTrainingModalProps> = ({
     club_id: clubs[0]?.id || 0,
     section_id: 0,
     group_id: undefined,
-    trainer_id: 0,
+    coach_id: 0,
     date: selectedDate || new Date().toISOString().split('T')[0],
     time: '',
     duration: 60,
@@ -41,7 +41,7 @@ export const CreateTrainingModal: React.FC<CreateTrainingModalProps> = ({
     notes: '',
   });
 
-  const [trainerIds, setTrainerIds] = useState<number[]>([]);
+  const [coachIds, setTrainerIds] = useState<number[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Check if user is admin or owner of a club
@@ -75,16 +75,16 @@ export const CreateTrainingModal: React.FC<CreateTrainingModalProps> = ({
   // Filter groups by selected section
   const availableGroups = groups.filter(g => g.section_id === formData.section_id);
   
-  // Filter trainers by selected club
-  const availableTrainers = trainers.filter(t => t.club_id === formData.club_id);
+  // Filter coaches by selected club
+  const availableCoaches = coaches.filter(t => t.club_id === formData.club_id);
 
-  const handleTrainerToggle = (trainerId: number) => {
+  const handleTrainerToggle = (coachId: number) => {
     setTrainerIds(prev =>
-      prev.includes(trainerId)
-        ? prev.filter(id => id !== trainerId)
-        : [...prev, trainerId]
+      prev.includes(coachId)
+        ? prev.filter(id => id !== coachId)
+        : [...prev, coachId]
     );
-    setErrors({ ...errors, trainer_id: '' });
+    setErrors({ ...errors, coach_id: '' });
   };
 
   useEffect(() => {
@@ -115,8 +115,8 @@ export const CreateTrainingModal: React.FC<CreateTrainingModalProps> = ({
     if (!formData.section_id) {
       newErrors.section_id = t('training.errors.sectionRequired');
     }
-    if (trainerIds.length === 0) {
-      newErrors.trainer_id = t('training.errors.trainerRequired');
+    if (coachIds.length === 0) {
+      newErrors.coach_id = t('training.errors.coachRequired');
     }
     if (!formData.date) {
       newErrors.date = t('training.errors.dateRequired');
@@ -153,15 +153,15 @@ export const CreateTrainingModal: React.FC<CreateTrainingModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validate()) {
-      // Use first selected trainer for API (since API only accepts single trainer_id)
+      // Use first selected coach for API (since API only accepts single coach_id)
       onCreate({
         ...formData,
-        trainer_id: trainerIds[0],
+        coach_id: coachIds[0],
       });
     }
   };
 
-  const isFormValid = formData.club_id && formData.section_id && trainerIds.length > 0 && 
+  const isFormValid = formData.club_id && formData.section_id && coachIds.length > 0 && 
                       formData.date && formData.time && formData.location && formData.duration > 0;
 
   return (
@@ -260,35 +260,35 @@ export const CreateTrainingModal: React.FC<CreateTrainingModalProps> = ({
             </div>
           )}
 
-          {/* Trainers (Checkboxes) */}
+          {/* Coaches (Checkboxes) */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('training.trainer')} *
+              {t('training.coach')} *
             </label>
-            {availableTrainers.length === 0 ? (
+            {availableCoaches.length === 0 ? (
               <p className="text-sm text-gray-500">
-                {t('training.noTrainersAvailable') || 'Нет доступных тренеров'}
+                {t('training.noCoachesAvailable') || 'Нет доступных тренеров'}
               </p>
             ) : (
               <div className="space-y-2">
-                {availableTrainers.map((trainer) => (
+                {availableCoaches.map((coach) => (
                   <label
-                    key={trainer.id}
+                    key={coach.id}
                     className="flex items-center gap-2 p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50"
                   >
                     <input
                       type="checkbox"
-                      checked={trainerIds.includes(trainer.id)}
-                      onChange={() => handleTrainerToggle(trainer.id)}
+                      checked={coachIds.includes(coach.id)}
+                      onChange={() => handleTrainerToggle(coach.id)}
                       className="w-4 h-4 text-blue-600 rounded"
                     />
-                    <span className="text-gray-900">{trainer.name}</span>
+                    <span className="text-gray-900">{coach.name}</span>
                   </label>
                 ))}
               </div>
             )}
-            {errors.trainer_id && (
-              <p className="text-red-500 text-xs mt-1">{errors.trainer_id}</p>
+            {errors.coach_id && (
+              <p className="text-red-500 text-xs mt-1">{errors.coach_id}</p>
             )}
           </div>
 

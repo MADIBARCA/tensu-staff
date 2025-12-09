@@ -1,6 +1,6 @@
 // Types for Management page
 
-export type EmployeeRole = 'owner' | 'admin' | 'trainer' | 'coach';
+export type EmployeeRole = 'owner' | 'admin' | 'coach' | 'coach';
 export type EmployeeStatus = 'active' | 'pending' | 'deactivated' | 'declined';
 export type PaymentType = 'monthly' | 'semi_annual' | 'annual' | 'session_pack';
 export type PackageType = 'full_club' | 'full_section' | 'single_group' | 'multiple_groups';
@@ -31,8 +31,8 @@ export interface Section {
   name: string;
   club_id: number;
   club_name: string;
-  trainer_ids: number[];
-  trainers: { id: number; name: string }[];
+  coach_ids: number[];
+  coaches: { id: number; name: string }[];
   groups: Group[];
   created_at: string;
 }
@@ -91,12 +91,12 @@ export interface UpdateEmployeeData {
 export interface CreateSectionData {
   name: string;
   club_id: number;
-  trainer_ids: number[];
+  coach_ids: number[];
 }
 
 export interface UpdateSectionData {
   name: string;
-  trainer_ids: number[];
+  coach_ids: number[];
 }
 
 export interface CreateGroupData {
@@ -138,5 +138,5 @@ export interface EmployeeFilters {
 export interface SectionFilters {
   search: string;
   club_id?: number;
-  trainer_id?: number;
+  coach_id?: number;
 }

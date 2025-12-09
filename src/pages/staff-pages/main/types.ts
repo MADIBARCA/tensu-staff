@@ -1,4 +1,4 @@
-// Types for trainer main page
+// Types for coach main page
 
 export type TrainingStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
 export type TrainingType = 'single' | 'recurring';
@@ -35,8 +35,8 @@ export interface Training {
   section_name: string;
   group_id?: number;
   group_name?: string;
-  trainer_id: number;
-  trainer_name: string;
+  coach_id: number;
+  coach_name: string;
   date: string; // YYYY-MM-DD
   time: string; // HH:mm
   duration: number; // minutes
@@ -52,14 +52,14 @@ export interface Training {
 
 export interface Filters {
   clubId: number | null;
-  trainerId: number | null;
+  coachId: number | null;
 }
 
 export interface CreateTrainingData {
   club_id: number;
   section_id: number;
   group_id?: number;
-  trainer_id: number;
+  coach_id: number;
   date: string;
   time: string;
   duration: number;
@@ -71,6 +71,6 @@ export interface CreateTrainingData {
 export interface UpdateTrainingData {
   date?: string;
   time?: string;
-  trainer_id?: number;
+  coach_id?: number;
   status?: TrainingStatus;
 }

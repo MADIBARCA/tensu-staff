@@ -118,7 +118,7 @@ export default function ProfilePage() {
         } else if (clubsResponse.data.clubs.some(c => c.role === 'admin')) {
           setUser(prev => prev ? { ...prev, role: 'admin' } : prev);
         } else {
-          setUser(prev => prev ? { ...prev, role: 'trainer' } : prev);
+          setUser(prev => prev ? { ...prev, role: 'coach' } : prev);
         }
       }
     } catch (error) {

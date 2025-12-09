@@ -5,14 +5,14 @@ import type { Club, Trainer, Filters } from '../types';
 
 interface TrainingFiltersProps {
   clubs: Club[];
-  trainers: Trainer[];
+  coaches: Trainer[];
   filters: Filters;
   onFiltersChange: (filters: Filters) => void;
 }
 
 export const TrainingFilters: React.FC<TrainingFiltersProps> = ({
   clubs,
-  trainers,
+  coaches,
   filters,
   onFiltersChange,
 }) => {
@@ -23,35 +23,35 @@ export const TrainingFilters: React.FC<TrainingFiltersProps> = ({
     onFiltersChange({
       ...filters,
       clubId,
-      trainerId: null, // Reset trainer when club changes
+      coachId: null, // Reset coach when club changes
     });
   };
 
-  const handleTrainerChange = (trainerId: number | null) => {
+  const handleTrainerChange = (coachId: number | null) => {
     onFiltersChange({
       ...filters,
-      trainerId,
+      coachId,
     });
   };
 
   const handleReset = () => {
     onFiltersChange({
       clubId: null,
-      trainerId: null,
+      coachId: null,
     });
   };
 
-  const hasActiveFilters = filters.clubId !== null || filters.trainerId !== null;
+  const hasActiveFilters = filters.clubId !== null || filters.coachId !== null;
 
-  // Filter trainers by selected club
-  const availableTrainers = filters.clubId
-    ? trainers.filter(t => t.club_id === filters.clubId)
-    : trainers;
+  // Filter coaches by selected club
+  const availableCoaches = filters.clubId
+    ? coaches.filter(t => t.club_id === filters.clubId)
+    : coaches;
 
   const getActiveFiltersCount = () => {
     let count = 0;
     if (filters.clubId) count++;
-    if (filters.trainerId) count++;
+    if (filters.coachId) count++;
     return count;
   };
 
@@ -99,9 +99,9 @@ export const TrainingFilters: React.FC<TrainingFiltersProps> = ({
                 </button>
               </span>
             )}
-            {filters.trainerId && (
+            {filters.coachId && (
               <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-50 text-green-700 rounded-full text-sm">
-                {trainers.find(t => t.id === filters.trainerId)?.name}
+                {coaches.find(t => t.id === filters.coachId)?.name}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -143,18 +143,18 @@ export const TrainingFilters: React.FC<TrainingFiltersProps> = ({
             {/* Trainer Filter */}
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">
-                {t('schedule.filters.trainer')}
+                {t('schedule.filters.coach')}
               </label>
               <select
-                value={filters.trainerId || ''}
+                value={filters.coachId || ''}
                 onChange={(e) => handleTrainerChange(e.target.value ? Number(e.target.value) : null)}
                 className="w-full border border-gray-200 rounded-lg p-2.5 text-sm bg-gray-50 focus:bg-white focus:border-blue-300 focus:ring-2 focus:ring-blue-100 transition-all disabled:opacity-50"
-                disabled={filters.clubId !== null && availableTrainers.length === 0}
+                disabled={filters.clubId !== null && availableCoaches.length === 0}
               >
-                <option value="">{t('schedule.filters.allTrainers')}</option>
-                {availableTrainers.map((trainer) => (
-                  <option key={trainer.id} value={trainer.id}>
-                    {trainer.name}
+                <option value="">{t('schedule.filters.allCoaches')}</option>
+                {availableCoaches.map((coach) => (
+                  <option key={coach.id} value={coach.id}>
+                    {coach.name}
                   </option>
                 ))}
               </select>

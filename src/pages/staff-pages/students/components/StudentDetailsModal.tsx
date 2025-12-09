@@ -31,7 +31,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
       student.id, 
       student.section_name, 
       student.group_name, 
-      student.trainer_name
+      student.coach_name
     ));
     setPaymentRecords(generatePaymentRecords(
       student.id, 
@@ -199,10 +199,10 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                   {student.group_name}
                 </p>
               )}
-              {student.trainer_name && (
+              {student.coach_name && (
                 <p className="text-sm text-gray-600">
-                  <span className="font-medium">{t('students.details.trainer')}:</span>{' '}
-                  {student.trainer_name}
+                  <span className="font-medium">{t('students.details.coach')}:</span>{' '}
+                  {student.coach_name}
                 </p>
               )}
             </div>
@@ -271,7 +271,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                           </span>
                         </div>
                         <p className="text-gray-600">{record.training_type}</p>
-                        <p className="text-gray-500 text-xs">{record.trainer_name}</p>
+                        <p className="text-gray-500 text-xs">{record.coach_name}</p>
                       </div>
                     ))}
                   </div>

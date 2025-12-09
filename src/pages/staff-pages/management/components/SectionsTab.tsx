@@ -30,7 +30,7 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingSection, setEditingSection] = useState<Section | null>(null);
 
-  const trainers = employees.filter(e => e.role === 'trainer');
+  const coaches = employees.filter(e => e.role === 'coach');
 
   const filteredSections = useMemo(() => {
     return sections.filter(section => {
@@ -48,7 +48,7 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
       }
 
       // Trainer filter
-      if (filters.trainer_id && !section.trainer_ids.includes(filters.trainer_id)) {
+      if (filters.coach_id && !section.coach_ids.includes(filters.coach_id)) {
         return false;
       }
 
@@ -77,7 +77,7 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
     setFilters({ search: '' });
   };
 
-  const hasActiveFilters = filters.club_id || filters.trainer_id;
+  const hasActiveFilters = filters.club_id || filters.coach_id;
 
   return (
     <div className="space-y-4">
@@ -144,17 +144,17 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
 
             <div>
               <label className="block text-sm text-gray-600 mb-1">
-                {t('management.sections.trainer')}
+                {t('management.sections.coach')}
               </label>
               <select
-                value={filters.trainer_id || ''}
-                onChange={(e) => setFilters({ ...filters, trainer_id: e.target.value ? Number(e.target.value) : undefined })}
+                value={filters.coach_id || ''}
+                onChange={(e) => setFilters({ ...filters, coach_id: e.target.value ? Number(e.target.value) : undefined })}
                 className="w-full border border-gray-200 rounded-lg p-2 text-sm"
               >
-                <option value="">{t('management.sections.allTrainers')}</option>
-                {trainers.map(trainer => (
-                  <option key={trainer.id} value={trainer.id}>
-                    {trainer.first_name} {trainer.last_name}
+                <option value="">{t('management.sections.allCoaches')}</option>
+                {coaches.map(coach => (
+                  <option key={coach.id} value={coach.id}>
+                    {coach.first_name} {coach.last_name}
                   </option>
                 ))}
               </select>

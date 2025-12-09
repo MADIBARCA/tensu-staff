@@ -26,7 +26,7 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
     first_name: '',
     last_name: '',
     phone: '+7',
-    role: 'trainer',
+    role: 'coach',
     club_ids: [],
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -200,7 +200,7 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
               onChange={(e) => setFormData({ ...formData, role: e.target.value as EmployeeRole })}
               className="w-full border border-gray-200 rounded-lg p-2"
             >
-              <option value="trainer">{t('management.employees.role.trainer')}</option>
+              <option value="coach">{t('management.employees.role.coach')}</option>
               <option value="admin">{t('management.employees.role.admin')}</option>
             </select>
           </div>

@@ -29,19 +29,19 @@ export const SectionCard: React.FC<SectionCardProps> = ({ section, canEdit, onEd
         )}
       </div>
 
-      {/* Trainers */}
+      {/* Coaches */}
       <div className="mb-3">
         <div className="flex items-center gap-1 text-sm text-gray-600 mb-1">
           <Users size={14} />
-          <span>{t('management.sections.trainers')}:</span>
+          <span>{t('management.sections.coaches')}:</span>
         </div>
         <div className="flex flex-wrap gap-1">
-          {section.trainers.map(trainer => (
+          {section.coaches.map(coach => (
             <span
-              key={trainer.id}
+              key={coach.id}
               className="px-2 py-0.5 text-xs bg-blue-50 text-blue-600 rounded"
             >
-              {trainer.name}
+              {coach.name}
             </span>
           ))}
         </div>

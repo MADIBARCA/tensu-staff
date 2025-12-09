@@ -16,8 +16,8 @@ export interface Student {
   section_name?: string;
   group_id?: number;
   group_name?: string;
-  trainer_id?: number;
-  trainer_name?: string;
+  coach_id?: number;
+  coach_name?: string;
   membership: StudentMembership | null;
   created_at: string;
 }
@@ -47,7 +47,7 @@ export interface AttendanceRecord {
   training_type: string;
   section_name: string;
   group_name?: string;
-  trainer_name: string;
+  coach_name: string;
   status: 'present' | 'absent' | 'late';
 }
 
@@ -78,7 +78,7 @@ export interface Group {
 export interface StudentFilters {
   search: string;
   status: MembershipStatus | 'all';
-  trainerIds: number[];
+  coachIds: number[];
   groupIds: number[];
 }
 

@@ -5,7 +5,7 @@ import type { Training, Trainer, UpdateTrainingData } from '../types';
 
 interface EditTrainingModalProps {
   training: Training;
-  trainers: Trainer[];
+  coaches: Trainer[];
   onClose: () => void;
   onSave: (data: UpdateTrainingData, changeType?: 'single' | 'series') => void;
   onCancel: (changeType?: 'single' | 'series') => void;
@@ -13,7 +13,7 @@ interface EditTrainingModalProps {
 
 export const EditTrainingModal: React.FC<EditTrainingModalProps> = ({
   training,
-  trainers,
+  coaches,
   onClose,
   onSave,
   onCancel,
@@ -22,7 +22,7 @@ export const EditTrainingModal: React.FC<EditTrainingModalProps> = ({
   const [formData, setFormData] = useState<UpdateTrainingData>({
     date: training.date,
     time: training.time,
-    trainer_id: training.trainer_id,
+    coach_id: training.coach_id,
     status: training.status,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -30,7 +30,7 @@ export const EditTrainingModal: React.FC<EditTrainingModalProps> = ({
   const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   const isRecurring = training.training_type === 'recurring';
-  const availableTrainers = trainers.filter(t => t.club_id === training.club_id);
+  const availableCoaches = coaches.filter(t => t.club_id === training.club_id);
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -152,18 +152,18 @@ export const EditTrainingModal: React.FC<EditTrainingModalProps> = ({
             {/* Trainer */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t('training.trainer')} *
+                {t('training.coach')} *
               </label>
               <select
-                value={formData.trainer_id || ''}
+                value={formData.coach_id || ''}
                 onChange={(e) =>
-                  setFormData({ ...formData, trainer_id: Number(e.target.value) })
+                  setFormData({ ...formData, coach_id: Number(e.target.value) })
                 }
                 className="w-full border border-gray-200 rounded-lg p-2"
               >
-                {availableTrainers.map((trainer) => (
-                  <option key={trainer.id} value={trainer.id}>
-                    {trainer.name}
+                {availableCoaches.map((coach) => (
+                  <option key={coach.id} value={coach.id}>
+                    {coach.name}
                   </option>
                 ))}
               </select>

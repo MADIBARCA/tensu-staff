@@ -38,8 +38,8 @@ export const UserProfileSection: React.FC<UserProfileSectionProps> = ({ user, on
         return t('profile.role.owner');
       case 'admin':
         return t('profile.role.admin');
-      case 'trainer':
-        return t('profile.role.trainer');
+      case 'coach':
+        return t('profile.role.coach');
       default:
         return role;
     }

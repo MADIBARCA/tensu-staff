@@ -5,7 +5,7 @@ import type { Club, Trainer, Filters } from '../SchedulePage';
 
 interface FiltersModalProps {
   clubs: Club[];
-  trainers: Trainer[];
+  coaches: Trainer[];
   filters: Filters;
   onFiltersChange: (filters: Filters) => void;
   onClose: () => void;
@@ -13,27 +13,27 @@ interface FiltersModalProps {
 
 export const FiltersModal: React.FC<FiltersModalProps> = ({
   clubs,
-  trainers,
+  coaches,
   filters,
   onFiltersChange,
   onClose,
 }) => {
   const { t } = useI18n();
 
-  const filteredTrainers = filters.clubId
-    ? trainers.filter(tr => tr.club_id === filters.clubId)
-    : trainers;
+  const filteredCoaches = filters.clubId
+    ? coaches.filter(tr => tr.club_id === filters.clubId)
+    : coaches;
 
   const handleClubChange = (clubId: number | null) => {
     onFiltersChange({
       ...filters,
       clubId,
-      // Reset trainer if switching clubs
-      trainerId: clubId && filters.trainerId 
-        ? trainers.find(t => t.id === filters.trainerId)?.club_id === clubId 
-          ? filters.trainerId 
+      // Reset coach if switching clubs
+      coachId: clubId && filters.coachId 
+        ? coaches.find(t => t.id === filters.coachId)?.club_id === clubId 
+          ? filters.coachId 
           : null
-        : filters.trainerId,
+        : filters.coachId,
     });
   };
 
@@ -41,15 +41,15 @@ export const FiltersModal: React.FC<FiltersModalProps> = ({
     onFiltersChange({ ...filters, sectionsType: type });
   };
 
-  const handleTrainerChange = (trainerId: number | null) => {
-    onFiltersChange({ ...filters, trainerId });
+  const handleTrainerChange = (coachId: number | null) => {
+    onFiltersChange({ ...filters, coachId });
   };
 
   const handleReset = () => {
     onFiltersChange({
       clubId: null,
       sectionsType: 'all',
-      trainerId: null,
+      coachId: null,
     });
   };
 
@@ -139,36 +139,36 @@ export const FiltersModal: React.FC<FiltersModalProps> = ({
           {/* Trainer Filter */}
           <div className="mb-6">
             <h3 className="text-sm font-medium text-gray-900 mb-3">
-              {t('schedule.filters.trainer')}
+              {t('schedule.filters.coach')}
             </h3>
             <div className="space-y-2">
               <button
                 onClick={() => handleTrainerChange(null)}
                 className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border transition-colors ${
-                  !filters.trainerId
+                  !filters.coachId
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-200 hover:bg-gray-50'
                 }`}
               >
-                <span className={!filters.trainerId ? 'text-blue-700 font-medium' : 'text-gray-700'}>
-                  {t('schedule.filters.allTrainers')}
+                <span className={!filters.coachId ? 'text-blue-700 font-medium' : 'text-gray-700'}>
+                  {t('schedule.filters.allCoaches')}
                 </span>
-                {!filters.trainerId && <Check size={18} className="text-blue-500" />}
+                {!filters.coachId && <Check size={18} className="text-blue-500" />}
               </button>
-              {filteredTrainers.map((trainer) => (
+              {filteredCoaches.map((coach) => (
                 <button
-                  key={trainer.id}
-                  onClick={() => handleTrainerChange(trainer.id)}
+                  key={coach.id}
+                  onClick={() => handleTrainerChange(coach.id)}
                   className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border transition-colors ${
-                    filters.trainerId === trainer.id
+                    filters.coachId === coach.id
                       ? 'border-blue-500 bg-blue-50'
                       : 'border-gray-200 hover:bg-gray-50'
                   }`}
                 >
-                  <span className={filters.trainerId === trainer.id ? 'text-blue-700 font-medium' : 'text-gray-700'}>
-                    {trainer.name}
+                  <span className={filters.coachId === coach.id ? 'text-blue-700 font-medium' : 'text-gray-700'}>
+                    {coach.name}
                   </span>
-                  {filters.trainerId === trainer.id && <Check size={18} className="text-blue-500" />}
+                  {filters.coachId === coach.id && <Check size={18} className="text-blue-500" />}
                 </button>
               ))}
             </div>

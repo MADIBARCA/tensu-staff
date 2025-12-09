@@ -66,8 +66,8 @@ const transformLessonToTraining = (lesson: Lesson, clubName: string): Training =
     section_name: lesson.group?.name || '',
     group_id: lesson.group_id,
     group_name: lesson.group?.name,
-    trainer_id: lesson.coach_id,
-    trainer_name: `${lesson.coach?.first_name || ''} ${lesson.coach?.last_name || ''}`.trim(),
+    coach_id: lesson.coach_id,
+    coach_name: `${lesson.coach?.first_name || ''} ${lesson.coach?.last_name || ''}`.trim(),
     date: lesson.effective_date,
     time: lesson.effective_start_time,
     duration: lesson.duration_minutes,
@@ -90,14 +90,14 @@ export default function StaffMainPage() {
   const [clubs, setClubs] = useState<Club[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
-  const [trainers, setTrainers] = useState<Trainer[]>([]);
+  const [coaches, setCoaches] = useState<Trainer[]>([]);
   const [clubRoles, setClubRoles] = useState<ClubWithRole[]>([]);
   const [currentUser, setCurrentUser] = useState<CreateStaffResponse | null>(null);
   
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<Filters>({
     clubId: null,
-    trainerId: null,
+    coachId: null,
   });
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTraining, setSelectedTraining] = useState<Training | null>(null);
@@ -156,17 +156,17 @@ export default function StaffMainPage() {
         setGroups(transformedGroups);
       }
 
-      // Load team (trainers)
+      // Load team (coaches)
       const teamResponse = await teamApi.get(initDataRaw);
       if (teamResponse.data?.staff_members) {
-        const transformedTrainers: Trainer[] = teamResponse.data.staff_members
+        const transformedCoaches: Trainer[] = teamResponse.data.staff_members
           .filter(member => member.clubs_and_roles.some(cr => cr.role === 'coach'))
           .map(member => ({
             id: member.id,
             name: `${member.first_name} ${member.last_name}`.trim(),
             club_id: member.clubs_and_roles[0]?.club_id || 0,
           }));
-        setTrainers(transformedTrainers);
+        setCoaches(transformedCoaches);
       }
 
       // Load schedule for current week
@@ -239,8 +239,8 @@ export default function StaffMainPage() {
       filtered = filtered.filter((t) => t.club_id === filters.clubId);
     }
 
-    if (filters.trainerId !== null) {
-      filtered = filtered.filter((t) => t.trainer_id === filters.trainerId);
+    if (filters.coachId !== null) {
+      filtered = filtered.filter((t) => t.coach_id === filters.coachId);
     }
 
     return filtered;
@@ -286,7 +286,7 @@ export default function StaffMainPage() {
         planned_date: data.date,
         planned_start_time: data.time,
         duration_minutes: data.duration,
-        coach_id: data.trainer_id,
+        coach_id: data.coach_id,
         location: data.location,
         notes: data.notes || '',
       }, initDataRaw);
@@ -315,8 +315,8 @@ export default function StaffMainPage() {
         group_name: data.group_id
           ? groups.find((g) => g.id === data.group_id)?.name
           : undefined,
-        trainer_id: data.trainer_id,
-        trainer_name: trainers.find((t) => t.id === data.trainer_id)?.name || '',
+        coach_id: data.coach_id,
+        coach_name: coaches.find((t) => t.id === data.coach_id)?.name || '',
         date: data.date,
         time: data.time,
         duration: data.duration,
@@ -368,7 +368,7 @@ export default function StaffMainPage() {
         actual_start_time: data.time || selectedTraining.time,
         duration_minutes: selectedTraining.duration,
         status: apiStatus,
-        coach_id: data.trainer_id || selectedTraining.trainer_id,
+        coach_id: data.coach_id || selectedTraining.coach_id,
         location: selectedTraining.location,
         notes: selectedTraining.notes || '',
       }, initDataRaw);
@@ -418,7 +418,7 @@ export default function StaffMainPage() {
 
     if (initDataRaw) {
       try {
-        await scheduleApi.cancelLesson(selectedTraining.id, { reason: 'Cancelled by trainer' }, initDataRaw);
+        await scheduleApi.cancelLesson(selectedTraining.id, { reason: 'Cancelled by coach' }, initDataRaw);
       } catch (error) {
         console.error('Error cancelling training:', error);
       }
@@ -511,7 +511,7 @@ export default function StaffMainPage() {
             <div className="flex items-center gap-3 text-sm text-gray-500">
               <span>{nextTraining.time}</span>
               <span>•</span>
-              <span>{nextTraining.trainer_name}</span>
+              <span>{nextTraining.coach_name}</span>
               {nextTraining.max_participants && (
                 <>
                   <span>•</span>
@@ -525,7 +525,7 @@ export default function StaffMainPage() {
         {/* Filters */}
         <TrainingFilters
           clubs={clubs}
-          trainers={trainers}
+          coaches={coaches}
           filters={filters}
           onFiltersChange={setFilters}
         />
@@ -573,7 +573,7 @@ export default function StaffMainPage() {
             clubs={clubs}
             sections={sections}
             groups={groups}
-            trainers={trainers}
+            coaches={coaches}
             clubRoles={clubRoles}
             currentUser={currentUser}
             selectedDate={selectedDate?.toISOString().split('T')[0]}
@@ -585,7 +585,7 @@ export default function StaffMainPage() {
         {showEditModal && selectedTraining && (
           <EditTrainingModal
             training={selectedTraining}
-            trainers={trainers}
+            coaches={coaches}
             onClose={() => {
               setShowEditModal(false);
               setSelectedTraining(null);

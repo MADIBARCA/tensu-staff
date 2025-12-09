@@ -4,7 +4,7 @@ import { useI18n } from '@/i18n/i18n';
 import type { Trainer, Group, StudentFilters, MembershipStatus } from '../types';
 
 interface StudentFiltersModalProps {
-  trainers: Trainer[];
+  coaches: Trainer[];
   groups: Group[];
   filters: StudentFilters;
   onApply: (filters: StudentFilters) => void;
@@ -12,7 +12,7 @@ interface StudentFiltersModalProps {
 }
 
 export const StudentFiltersModal: React.FC<StudentFiltersModalProps> = ({
-  trainers,
+  coaches,
   groups,
   filters: initialFilters,
   onApply,
@@ -29,12 +29,12 @@ export const StudentFiltersModal: React.FC<StudentFiltersModalProps> = ({
     { value: 'expired', label: t('students.status.expired') },
   ];
 
-  const handleTrainerToggle = (trainerId: number) => {
+  const handleTrainerToggle = (coachId: number) => {
     setLocalFilters((prev) => ({
       ...prev,
-      trainerIds: prev.trainerIds.includes(trainerId)
-        ? prev.trainerIds.filter((id) => id !== trainerId)
-        : [...prev.trainerIds, trainerId],
+      coachIds: prev.coachIds.includes(coachId)
+        ? prev.coachIds.filter((id) => id !== coachId)
+        : [...prev.coachIds, coachId],
     }));
   };
 
@@ -55,7 +55,7 @@ export const StudentFiltersModal: React.FC<StudentFiltersModalProps> = ({
     const resetFilters: StudentFilters = {
       search: '',
       status: 'all',
-      trainerIds: [],
+      coachIds: [],
       groupIds: [],
     };
     setLocalFilters(resetFilters);
@@ -105,24 +105,24 @@ export const StudentFiltersModal: React.FC<StudentFiltersModalProps> = ({
             </div>
           </div>
 
-          {/* Trainers Filter */}
+          {/* Coaches Filter */}
           <div>
             <h3 className="font-medium text-gray-900 mb-3">
-              {t('students.filter.trainers')}
+              {t('students.filter.coaches')}
             </h3>
             <div className="space-y-2">
-              {trainers.map((trainer) => (
+              {coaches.map((coach) => (
                 <button
-                  key={trainer.id}
-                  onClick={() => handleTrainerToggle(trainer.id)}
+                  key={coach.id}
+                  onClick={() => handleTrainerToggle(coach.id)}
                   className={`w-full flex items-center justify-between p-3 rounded-lg border transition-colors ${
-                    localFilters.trainerIds.includes(trainer.id)
+                    localFilters.coachIds.includes(coach.id)
                       ? 'border-blue-500 bg-blue-50'
                       : 'border-gray-200 hover:bg-gray-50'
                   }`}
                 >
-                  <span className="text-gray-900">{trainer.name}</span>
-                  {localFilters.trainerIds.includes(trainer.id) && (
+                  <span className="text-gray-900">{coach.name}</span>
+                  {localFilters.coachIds.includes(coach.id) && (
                     <Check size={18} className="text-blue-500" />
                   )}
                 </button>

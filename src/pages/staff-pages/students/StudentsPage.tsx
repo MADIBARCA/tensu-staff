@@ -17,12 +17,12 @@ export default function StudentsPage() {
   
   const [loading, setLoading] = useState(true);
   const [students, setStudents] = useState<Student[]>([]);
-  const [trainers, setTrainers] = useState<Trainer[]>([]);
+  const [coaches, setCoaches] = useState<Trainer[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [filters, setFilters] = useState<StudentFilters>({
     search: '',
     status: 'all',
-    trainerIds: [],
+    coachIds: [],
     groupIds: [],
   });
   const [showFiltersModal, setShowFiltersModal] = useState(false);
@@ -58,8 +58,8 @@ export default function StudentsPage() {
           section_name: undefined,
           group_id: undefined,
           group_name: undefined,
-          trainer_id: undefined,
-          trainer_name: undefined,
+          coach_id: undefined,
+          coach_name: undefined,
           // Note: Membership info not available from basic students API
           membership: null,
           created_at: s.created_at,
@@ -67,17 +67,17 @@ export default function StudentsPage() {
         setStudents(transformedStudents);
       }
 
-      // Load trainers (from team)
+      // Load coaches (from team)
       const teamResponse = await teamApi.get(initDataRaw);
       if (teamResponse.data?.staff_members) {
-        const transformedTrainers: Trainer[] = teamResponse.data.staff_members
+        const transformedCoaches: Trainer[] = teamResponse.data.staff_members
           .filter(member => member.clubs_and_roles.some(cr => cr.role === 'coach'))
           .map(member => ({
             id: member.id,
             name: `${member.first_name} ${member.last_name}`.trim(),
             club_id: member.clubs_and_roles[0]?.club_id || 0,
           }));
-        setTrainers(transformedTrainers);
+        setCoaches(transformedCoaches);
       }
 
       // Load groups
@@ -124,10 +124,10 @@ export default function StudentsPage() {
       );
     }
 
-    // Filter by trainers
-    if (filters.trainerIds.length > 0) {
+    // Filter by coaches
+    if (filters.coachIds.length > 0) {
       result = result.filter(
-        (student) => student.trainer_id && filters.trainerIds.includes(student.trainer_id)
+        (student) => student.coach_id && filters.coachIds.includes(student.coach_id)
       );
     }
 
@@ -143,7 +143,7 @@ export default function StudentsPage() {
 
   const hasActiveFilters =
     filters.status !== 'all' ||
-    filters.trainerIds.length > 0 ||
+    filters.coachIds.length > 0 ||
     filters.groupIds.length > 0;
 
   const handleStudentClick = (student: Student) => {
@@ -326,7 +326,7 @@ export default function StudentsPage() {
           {t('students.filter.button')}
           {hasActiveFilters && (
             <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">
-              {filters.trainerIds.length + filters.groupIds.length + (filters.status !== 'all' ? 1 : 0)}
+              {filters.coachIds.length + filters.groupIds.length + (filters.status !== 'all' ? 1 : 0)}
             </span>
           )}
         </button>
@@ -356,7 +356,7 @@ export default function StudentsPage() {
         {/* Modals */}
         {showFiltersModal && (
           <StudentFiltersModal
-            trainers={trainers}
+            coaches={coaches}
             groups={groups}
             filters={filters}
             onApply={handleApplyFilters}

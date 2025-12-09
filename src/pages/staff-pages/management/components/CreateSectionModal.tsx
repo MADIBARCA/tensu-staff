@@ -66,7 +66,7 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
   const [sectionData, setSectionData] = useState({
     name: '',
     club_id: 0,
-    trainer_ids: [] as number[],
+    coach_ids: [] as number[],
     description: '',
   });
   
@@ -89,17 +89,17 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
     return clubRole?.role === 'owner' || clubRole?.is_owner;
   }, [sectionData.club_id, clubRoles, currentUser]);
 
-  // Get trainers for selected club, including current user if they are owner
-  const trainers = useMemo(() => {
+  // Get coaches for selected club, including current user if they are owner
+  const coaches = useMemo(() => {
     if (!sectionData.club_id) return [];
     
-    const clubTrainers = employees.filter(
-      e => e.role === 'trainer' && e.club_ids.includes(sectionData.club_id)
+    const clubCoaches = employees.filter(
+      e => e.role === 'coach' && e.club_ids.includes(sectionData.club_id)
     );
     
-    // Add current user as trainer option if they are owner of the club
+    // Add current user as coach option if they are owner of the club
     if (isOwnerOfSelectedClub && currentUser) {
-      const currentUserAlreadyInList = clubTrainers.some(t => t.id === currentUser.id);
+      const currentUserAlreadyInList = clubCoaches.some(t => t.id === currentUser.id);
       if (!currentUserAlreadyInList) {
         return [
           {
@@ -115,22 +115,22 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
             created_at: currentUser.created_at,
             isCurrentUser: true,
           },
-          ...clubTrainers.map(t => ({ ...t, isCurrentUser: false })),
+          ...clubCoaches.map(t => ({ ...t, isCurrentUser: false })),
         ];
       }
     }
     
-    return clubTrainers.map(t => ({ ...t, isCurrentUser: t.id === currentUser?.id }));
+    return clubCoaches.map(t => ({ ...t, isCurrentUser: t.id === currentUser?.id }));
   }, [employees, sectionData.club_id, isOwnerOfSelectedClub, currentUser]);
 
-  const handleTrainerToggle = (trainerId: number) => {
+  const handleTrainerToggle = (coachId: number) => {
     setSectionData(prev => ({
       ...prev,
-      trainer_ids: prev.trainer_ids.includes(trainerId)
-        ? prev.trainer_ids.filter(id => id !== trainerId)
-        : [...prev.trainer_ids, trainerId],
+      coach_ids: prev.coach_ids.includes(coachId)
+        ? prev.coach_ids.filter(id => id !== coachId)
+        : [...prev.coach_ids, coachId],
     }));
-    setErrors({ ...errors, trainers: '' });
+    setErrors({ ...errors, coaches: '' });
   };
 
   // Build schedule entry for API
@@ -213,7 +213,7 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
     const newErrors: Record<string, string> = {};
     if (!sectionData.name.trim()) newErrors.name = t('management.sections.errors.nameRequired');
     if (!sectionData.club_id) newErrors.club = t('management.sections.errors.clubRequired');
-    if (sectionData.trainer_ids.length === 0) newErrors.trainers = t('management.sections.errors.trainerRequired');
+    if (sectionData.coach_ids.length === 0) newErrors.coaches = t('management.sections.errors.coachRequired');
     
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -226,7 +226,7 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
         club_id: sectionData.club_id,
         name: sectionData.name,
         description: sectionData.description || '',
-        coach_id: sectionData.trainer_ids[0], // API accepts single coach_id
+        coach_id: sectionData.coach_ids[0], // API accepts single coach_id
         active: true,
       }, initDataRaw);
       
@@ -268,7 +268,7 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
           price: Number(grp.price) || 0,
           capacity: Number(grp.capacity) || 0,
           level: grp.level || 'all',
-          coach_id: sectionData.trainer_ids[0],
+          coach_id: sectionData.coach_ids[0],
           tags: [],
           active: true,
         };
@@ -336,7 +336,7 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
             <select
               value={sectionData.club_id}
               onChange={(e) => {
-                setSectionData({ ...sectionData, club_id: Number(e.target.value), trainer_ids: [] });
+                setSectionData({ ...sectionData, club_id: Number(e.target.value), coach_ids: [] });
                 setErrors({ ...errors, club: '' });
               }}
               className={`w-full border rounded-lg p-2 ${errors.club ? 'border-red-500' : 'border-gray-200'}`}
@@ -367,30 +367,30 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
             {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
           </div>
 
-              {/* Trainers (Checkboxes) */}
+              {/* Coaches (Checkboxes) */}
           {sectionData.club_id > 0 && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t('management.sections.trainers')} *
+                {t('management.sections.coaches')} *
               </label>
-              {trainers.length === 0 ? (
-                <p className="text-sm text-gray-500">{t('management.sections.noTrainers')}</p>
+              {coaches.length === 0 ? (
+                <p className="text-sm text-gray-500">{t('management.sections.noCoaches')}</p>
               ) : (
                 <div className="space-y-2">
-                  {trainers.map(trainer => (
+                  {coaches.map(coach => (
                     <label
-                      key={trainer.id}
+                      key={coach.id}
                       className="flex items-center gap-2 p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50"
                     >
                       <input
                         type="checkbox"
-                        checked={sectionData.trainer_ids.includes(trainer.id)}
-                        onChange={() => handleTrainerToggle(trainer.id)}
+                        checked={sectionData.coach_ids.includes(coach.id)}
+                        onChange={() => handleTrainerToggle(coach.id)}
                         className="w-4 h-4 text-blue-600 rounded"
                       />
                           <span className="text-gray-900">
-                            {trainer.first_name} {trainer.last_name}
-                            {(trainer as any).isCurrentUser && (
+                            {coach.first_name} {coach.last_name}
+                            {(coach as any).isCurrentUser && (
                               <span className="text-blue-500 text-sm ml-1">
                                 ({t('management.sections.selectSelf') || 'вы'})
                               </span>
@@ -400,7 +400,7 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
                   ))}
                 </div>
               )}
-              {errors.trainers && <p className="text-red-500 text-xs mt-1">{errors.trainers}</p>}
+              {errors.coaches && <p className="text-red-500 text-xs mt-1">{errors.coaches}</p>}
             </div>
           )}
             </>
@@ -561,7 +561,7 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
           </button>
           <button
             onClick={handleFinish}
-            disabled={loading || (!sectionCreated && (!sectionData.name || !sectionData.club_id || sectionData.trainer_ids.length === 0))}
+            disabled={loading || (!sectionCreated && (!sectionData.name || !sectionData.club_id || sectionData.coach_ids.length === 0))}
             className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
           >
             {loading ? (

@@ -169,7 +169,7 @@ export const TrainingDetailsModal: React.FC<TrainingDetailsModalProps> = ({
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-gray-400 uppercase tracking-wide">Тренер</p>
-                <p className="font-medium text-gray-900">{training.trainer_name}</p>
+                <p className="font-medium text-gray-900">{training.coach_name}</p>
               </div>
             </div>
 

@@ -161,7 +161,7 @@ export const EmployeesTab: React.FC<EmployeesTabProps> = ({
                 <option value="">{t('management.employees.allRoles')}</option>
                 <option value="owner">{t('management.employees.role.owner')}</option>
                 <option value="admin">{t('management.employees.role.admin')}</option>
-                <option value="trainer">{t('management.employees.role.trainer')}</option>
+                <option value="coach">{t('management.employees.role.coach')}</option>
               </select>
             </div>
 
