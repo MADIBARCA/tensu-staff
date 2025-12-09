@@ -245,6 +245,8 @@ export default function ManagementPage() {
           <EmployeesTab
             employees={employees}
             clubs={clubs}
+            clubRoles={clubRoles}
+            currentUser={currentUser}
             onAddEmployee={handleAddEmployee}
             onEditEmployee={handleEditEmployee}
           />

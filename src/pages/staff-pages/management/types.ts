@@ -84,8 +84,6 @@ export interface CreateEmployeeData {
 }
 
 export interface UpdateEmployeeData {
-  first_name: string;
-  last_name: string;
   role: EmployeeRole;
   club_ids: number[];
 }

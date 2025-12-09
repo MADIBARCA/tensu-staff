@@ -1,11 +1,14 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Phone, MessageCircle, Edit2 } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import type { Employee, Club } from '../types';
+import type { ClubWithRole, CreateStaffResponse } from '@/functions/axios/responses';
 
 interface EmployeeCardProps {
   employee: Employee;
   clubs: Club[];
+  clubRoles: ClubWithRole[];
+  currentUser: CreateStaffResponse | null;
   onEdit: () => void;
   onCall: () => void;
   onMessage: () => void;
@@ -14,11 +17,24 @@ interface EmployeeCardProps {
 export const EmployeeCard: React.FC<EmployeeCardProps> = ({
   employee,
   clubs,
+  clubRoles,
+  currentUser,
   onEdit,
   onCall,
   onMessage,
 }) => {
   const { t } = useI18n();
+
+  // Check if user can edit this employee (must be owner or admin of at least one club where employee works)
+  const canEditEmployee = useMemo(() => {
+    if (!currentUser) return false;
+    
+    // Check if user is owner or admin of any club where this employee works
+    return employee.club_ids.some(clubId => {
+      const clubRole = clubRoles.find(cr => cr.club.id === clubId);
+      return clubRole ? (clubRole.role === 'owner' || clubRole.role === 'admin' || clubRole.is_owner) : false;
+    });
+  }, [employee.club_ids, clubRoles, currentUser]);
 
   const getRoleLabel = (role: string): string => {
     switch (role) {
@@ -124,13 +140,15 @@ export const EmployeeCard: React.FC<EmployeeCardProps> = ({
           <MessageCircle size={16} />
           {t('management.employees.message')}
         </button>
-        <button
-          onClick={onEdit}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors ml-auto"
-        >
-          <Edit2 size={16} />
-          {t('management.employees.edit')}
-        </button>
+        {canEditEmployee && (
+          <button
+            onClick={onEdit}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors ml-auto"
+          >
+            <Edit2 size={16} />
+            {t('management.employees.edit')}
+          </button>
+        )}
       </div>
     </div>
   );

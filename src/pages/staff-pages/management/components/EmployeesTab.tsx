@@ -5,10 +5,13 @@ import { EmployeeCard } from './EmployeeCard';
 import { AddEmployeeModal } from './AddEmployeeModal';
 import { EditEmployeeModal } from './EditEmployeeModal';
 import type { Employee, Club, EmployeeFilters, CreateEmployeeData, UpdateEmployeeData, EmployeeRole } from '../types';
+import type { ClubWithRole, CreateStaffResponse } from '@/functions/axios/responses';
 
 interface EmployeesTabProps {
   employees: Employee[];
   clubs: Club[];
+  clubRoles: ClubWithRole[];
+  currentUser: CreateStaffResponse | null;
   onAddEmployee: (data: CreateEmployeeData) => void;
   onEditEmployee: (id: number, data: UpdateEmployeeData) => void;
 }
@@ -16,6 +19,8 @@ interface EmployeesTabProps {
 export const EmployeesTab: React.FC<EmployeesTabProps> = ({
   employees,
   clubs,
+  clubRoles,
+  currentUser,
   onAddEmployee,
   onEditEmployee,
 }) => {
@@ -180,6 +185,8 @@ export const EmployeesTab: React.FC<EmployeesTabProps> = ({
               key={employee.id}
               employee={employee}
               clubs={clubs}
+              clubRoles={clubRoles}
+              currentUser={currentUser}
               onEdit={() => setEditingEmployee(employee)}
               onCall={() => handleCall(employee.phone)}
               onMessage={() => handleMessage(employee.telegram_username)}
