@@ -93,7 +93,7 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center *:">
+    <div className="fixed inset-0 z-50 flex items-center bg-white justify-center *:">
       <div className="bg-white w-full max-w-md rounded-xl max-h-screen overflow-hidden flex flex-col">
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">
