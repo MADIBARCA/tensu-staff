@@ -376,9 +376,10 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white bg-opacity-80">
-      <div className="bg-white w-full max-w-lg rounded-xl max-h-screen overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+    <div className="fixed inset-0 z-50 bg-white overflow-y-auto">
+      <div className="min-h-full w-full max-w-lg mx-auto flex flex-col">
+        {/* Header with mt-20 to avoid Telegram UI buttons */}
+        <div className="sticky top-0 bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200 mt-20">
           <h2 className="text-lg font-semibold text-gray-900">
             {t('management.sections.editTitle')}
           </h2>
@@ -387,7 +388,7 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 p-4 space-y-4">
           {/* Club (read-only) */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -603,7 +604,8 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
           </div>
         </div>
 
-        <div className="p-4 border-t border-gray-200 space-y-2">
+        {/* Footer with safe bottom padding */}
+        <div className="sticky bottom-0 bg-white p-4 border-t border-gray-200 space-y-2 pb-8">
           <div className="flex gap-3">
             <button
               onClick={onClose}

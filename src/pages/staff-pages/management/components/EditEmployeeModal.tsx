@@ -165,9 +165,10 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center bg-white justify-center *:">
-      <div className="bg-white w-full max-w-md rounded-xl max-h-screen overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+    <div className="fixed inset-0 z-50 bg-white overflow-y-auto">
+      <div className="min-h-full w-full max-w-md mx-auto flex flex-col">
+        {/* Header with mt-20 to avoid Telegram UI buttons */}
+        <div className="sticky top-0 bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200 mt-20">
           <h2 className="text-lg font-semibold text-gray-900">
             {t('management.employees.editTitle')}
           </h2>
@@ -176,7 +177,7 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 space-y-4">
+        <form onSubmit={handleSubmit} className="flex-1 p-4 space-y-4">
           {/* Pending Invitation Banner */}
           {isPendingInvitation && (
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
@@ -411,7 +412,8 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
           </div>
         )}
 
-        <div className={`p-4 ${isPendingInvitation && onDeleteInvitation ? '' : 'border-t border-gray-200'} flex gap-3`}>
+        {/* Footer with safe bottom padding */}
+        <div className={`sticky bottom-0 bg-white p-4 pb-8 ${isPendingInvitation && onDeleteInvitation ? '' : 'border-t border-gray-200'} flex gap-3`}>
           <button
             type="button"
             onClick={onClose}

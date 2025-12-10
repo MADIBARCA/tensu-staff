@@ -15,8 +15,34 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
+/* Make text cursor visible (black) on white backgrounds */
+input,
+textarea,
+select,
+[contenteditable="true"] {
+  caret-color: #000000;
+}
+
+/* Phone input styles */
+.PhoneInput {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .PhoneInputInput {
+  flex: 1;
   outline: none;
+  border: none;
+  background: transparent;
+  font-size: inherit;
+  caret-color: #000000;
+}
+
+.PhoneInputCountry {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .PhoneInputCountrySelect {
@@ -24,6 +50,9 @@ body {
   align-items: center;
   justify-content: center;
   outline: none;
+  background: transparent;
+  border: none;
+  cursor: pointer;
 }
 
 .PhoneInputCountryIcon {
@@ -31,11 +60,18 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 24px;
+  height: 18px;
 }
 
 .PhoneInputCountryIcon--border {
-  background-color: none;
+  background-color: transparent;
   box-shadow: none;
+}
+
+.PhoneInputCountrySelectArrow {
+  margin-left: 4px;
+  opacity: 0.6;
 }
 
 /* Hide number-input spinners in Chrome, Safari, Edge, Opera */
@@ -48,4 +84,11 @@ input[type="number"].no-spinner::-webkit-inner-spin-button {
 /* Hide number-input spinner in Firefox */
 input[type="number"].no-spinner {
   -moz-appearance: textfield;
+}
+
+/* Ensure modals can scroll properly */
+.modal-scrollable {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }

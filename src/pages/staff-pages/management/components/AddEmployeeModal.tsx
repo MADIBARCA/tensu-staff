@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { X, AlertCircle, AlertTriangle, Crown, Shield, Dumbbell } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
+import { PhoneInput } from '@/components/PhoneInput';
+import { isValidPhoneNumber } from 'libphonenumber-js';
 import type { CreateEmployeeData, Club, EmployeeRole, Employee } from '../types';
 import type { ClubWithRole, CreateStaffResponse } from '@/functions/axios/responses';
 
@@ -23,7 +25,7 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
 }) => {
   const { t } = useI18n();
   const [formData, setFormData] = useState<CreateEmployeeData>({
-    phone: '+7',
+    phone: '',
     role: 'coach',
     club_ids: [],
   });
@@ -88,8 +90,12 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
   };
 
   const isPhoneValid = useMemo(() => {
-    const cleanPhone = formData.phone.replace(/[^0-9+]/g, '');
-    return cleanPhone.length === 12; // +7 + 10 digits
+    if (!formData.phone) return false;
+    try {
+      return isValidPhoneNumber(formData.phone);
+    } catch {
+      return false;
+    }
   }, [formData.phone]);
 
   const validate = (): boolean => {
@@ -111,16 +117,7 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
   };
 
   const handlePhoneChange = (value: string) => {
-    // Keep +7 prefix
-    if (!value.startsWith('+7')) {
-      value = '+7' + value.replace(/^\+7/, '');
-    }
-    // Remove non-numeric characters except +
-    const cleaned = '+7' + value.slice(2).replace(/[^0-9]/g, '');
-    // Limit to +7 + 10 digits
-    const limited = cleaned.slice(0, 12);
-    
-    setFormData({ ...formData, phone: limited });
+    setFormData({ ...formData, phone: value });
     setErrors({ ...errors, phone: '' });
   };
 
@@ -146,9 +143,10 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">
-      <div className="bg-white w-full max-w-md rounded-xl max-h-screen overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 mt-15">
+    <div className="fixed inset-0 z-50 bg-white overflow-y-auto">
+      <div className="min-h-full w-full max-w-md mx-auto flex flex-col">
+        {/* Header with mt-20 to avoid Telegram UI buttons */}
+        <div className="sticky top-0 bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200 mt-20">
           <h2 className="text-lg font-semibold text-gray-900">
             {t('management.employees.addTitle')}
           </h2>
@@ -157,20 +155,17 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 space-y-4">
+        <form onSubmit={handleSubmit} className="flex-1 p-4 space-y-4">
           {/* Phone */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               {t('management.employees.phone')} *
             </label>
-            <input
-              type="tel"
+            <PhoneInput
               value={formData.phone}
-              onChange={(e) => handlePhoneChange(e.target.value)}
-              className={`w-full border rounded-lg p-2 ${
-                errors.phone || phoneExists ? 'border-red-500' : 'border-gray-200'
-              }`}
-              placeholder="+7 XXX XXX XX XX"
+              onChange={handlePhoneChange}
+              hasError={!!errors.phone || phoneExists}
+              placeholder={t('management.employees.phonePlaceholder') || 'Введите номер телефона'}
             />
             {(errors.phone || phoneExists) && (
               <div className="flex items-center gap-1 mt-1">
@@ -268,7 +263,8 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
           </div>
         </form>
 
-        <div className="p-4 border-t border-gray-200 flex gap-3">
+        {/* Footer with safe bottom padding */}
+        <div className="sticky bottom-0 bg-white p-4 border-t border-gray-200 flex gap-3 pb-8">
           <button
             type="button"
             onClick={onClose}

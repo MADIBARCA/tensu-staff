@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { X, Plus } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
+import { PhoneInput } from '@/components/PhoneInput';
+import { isValidPhoneNumber } from 'libphonenumber-js';
 import type { CreateClubData, MembershipTariff } from '../types';
 import { cities, availableTags } from '../mockData';
 
@@ -45,8 +47,16 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
     if (!formData.address.trim()) {
       newErrors.address = t('profile.createClub.errors.addressRequired');
     }
-    if (!formData.phone.trim()) {
+    if (!formData.phone) {
       newErrors.phone = t('profile.createClub.errors.phoneRequired');
+    } else {
+      try {
+        if (!isValidPhoneNumber(formData.phone)) {
+          newErrors.phone = t('profile.createClub.errors.phoneInvalid') || 'Некорректный номер телефона';
+        }
+      } catch {
+        newErrors.phone = t('profile.createClub.errors.phoneInvalid') || 'Некорректный номер телефона';
+      }
     }
 
     setErrors(newErrors);
@@ -80,9 +90,10 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-opacity-30 z-50 flex items-center justify-center">
-      <div className="bg-white w-full max-w-md rounded-xl max-h-screen overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 mt-20">
+    <div className="fixed inset-0 z-50 bg-white overflow-y-auto">
+      <div className="min-h-full w-full max-w-md mx-auto flex flex-col">
+        {/* Header with mt-20 to avoid Telegram UI buttons */}
+        <div className="sticky top-0 bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200 mt-20">
           <h2 className="text-lg font-semibold text-gray-900">
             {t('profile.createClub.title')}
           </h2>
@@ -94,7 +105,7 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 space-y-4">
+        <form onSubmit={handleSubmit} className="flex-1 p-4 space-y-4">
           {/* Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -169,14 +180,11 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
             <label className="block text-sm font-medium text-gray-700 mb-1">
               {t('profile.createClub.phone')} *
             </label>
-            <input
-              type="tel"
+            <PhoneInput
               value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className={`w-full border rounded-lg p-2 ${
-                errors.phone ? 'border-red-500' : 'border-gray-200'
-              }`}
-              placeholder="+7 XXX XXX XX XX"
+              onChange={(value) => setFormData({ ...formData, phone: value })}
+              hasError={!!errors.phone}
+              placeholder={t('profile.createClub.phonePlaceholder') || 'Введите номер телефона'}
             />
             {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
           </div>
@@ -312,7 +320,8 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
           </div>
         </form>
 
-        <div className="p-4 border-t border-gray-200 flex gap-3">
+        {/* Footer with safe bottom padding */}
+        <div className="sticky bottom-0 bg-white p-4 border-t border-gray-200 flex gap-3 pb-8">
           <button
             type="button"
             onClick={onClose}
