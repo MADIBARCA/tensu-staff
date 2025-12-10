@@ -389,22 +389,24 @@ export default function ProfilePage() {
   };
 
   const handleDeactivateConfirm = async () => {
-    if (!selectedClub) return;
+    if (!selectedClub || !initDataRaw) return;
 
-    if (initDataRaw) {
-      try {
-        await clubsApi.delete(selectedClub.id.toString(), initDataRaw);
-        
-        // Reload data to get updated club list
-        await loadData();
-        
-        setShowDeactivateModal(false);
-        setSelectedClub(null);
-        window.Telegram?.WebApp?.showAlert(t('profile.clubDeactivated'));
-      } catch (error) {
-        console.error('Error deactivating club:', error);
-        window.Telegram?.WebApp?.showAlert(t('profile.errors.deactivateFailed') || 'Не удалось деактивировать клуб');
-      }
+    try {
+      await clubsApi.delete(selectedClub.id.toString(), initDataRaw);
+      
+      // Show success message
+      window.Telegram?.WebApp?.showAlert(t('profile.clubDeactivated'));
+      
+      // Close modals
+      setShowDeactivateModal(false);
+      setShowClubDetailsModal(false);
+      setSelectedClub(null);
+      
+      // Reload all data to get fresh state from server
+      await loadData();
+    } catch (error) {
+      console.error('Error deactivating club:', error);
+      window.Telegram?.WebApp?.showAlert(t('profile.errors.deactivateFailed'));
     }
   };
 

@@ -255,23 +255,27 @@ export default function ManagementPage() {
 
   // Employee handlers
   const handleAddEmployee = async (data: CreateEmployeeData) => {
-    if (initDataRaw && data.club_ids.length > 0) {
-      try {
-        // Create invitations for all selected clubs
-        for (const clubId of data.club_ids) {
-          await invitationsApi.create(clubId.toString(), {
-            phone_number: data.phone,
-            role: data.role,
-          }, initDataRaw);
-        }
-        
-        // Reload data to get updated employee list with new invitations
-        await loadData();
-        window.Telegram?.WebApp?.showAlert(t('management.employees.added'));
-      } catch (error) {
-        console.error('Error creating invitation:', error);
-        window.Telegram?.WebApp?.showAlert(t('management.employees.errors.createFailed') || 'Не удалось добавить сотрудника');
-      }
+    if (!initDataRaw || data.club_ids.length === 0) {
+      window.Telegram?.WebApp?.showAlert(t('management.employees.errors.clubRequired'));
+      return;
+    }
+
+    try {
+      // Create invitation via API
+      const clubId = data.club_ids[0].toString();
+      await invitationsApi.create(clubId, {
+        phone_number: data.phone,
+        role: data.role,
+      }, initDataRaw);
+      
+      // Show success message
+      window.Telegram?.WebApp?.showAlert(t('management.employees.added'));
+      
+      // Reload all data to get fresh state from server
+      await loadData();
+    } catch (error) {
+      console.error('Error creating invitation:', error);
+      window.Telegram?.WebApp?.showAlert(t('management.employees.errors.addFailed'));
     }
   };
 
