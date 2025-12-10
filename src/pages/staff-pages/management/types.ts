@@ -7,18 +7,28 @@ export type PackageType = 'full_club' | 'full_section' | 'single_group' | 'multi
 export type ScheduleType = 'single' | 'recurring';
 export type WeekDay = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
+// Role assignment per club
+export interface ClubRoleAssignment {
+  club_id: number;
+  role: EmployeeRole;
+  status: EmployeeStatus;
+  invitation_id?: number; // If this is a pending invitation
+}
+
 export interface Employee {
   id: number;
   first_name: string;
   last_name: string;
   phone: string;
   telegram_username?: string;
-  role: EmployeeRole;
+  role: EmployeeRole; // Primary/highest role for backward compatibility
   status: EmployeeStatus;
   club_ids: number[];
   photo_url?: string;
   invitation_id?: number; // ID of pending invitation if this is an invitation
   created_at: string;
+  // Per-club role assignments (for multi-role scenarios)
+  club_roles?: ClubRoleAssignment[];
 }
 
 export interface Club {

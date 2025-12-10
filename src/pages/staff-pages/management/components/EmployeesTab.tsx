@@ -14,6 +14,7 @@ interface EmployeesTabProps {
   currentUser: CreateStaffResponse | null;
   onAddEmployee: (data: CreateEmployeeData) => void;
   onEditEmployee: (id: number, data: UpdateEmployeeData) => void;
+  onDeleteInvitation?: (invitationId: number) => Promise<void>;
 }
 
 export const EmployeesTab: React.FC<EmployeesTabProps> = ({
@@ -23,6 +24,7 @@ export const EmployeesTab: React.FC<EmployeesTabProps> = ({
   currentUser,
   onAddEmployee,
   onEditEmployee,
+  onDeleteInvitation,
 }) => {
   const { t } = useI18n();
   const [filters, setFilters] = useState<EmployeeFilters>({ search: '' });
@@ -231,6 +233,7 @@ export const EmployeesTab: React.FC<EmployeesTabProps> = ({
           currentUser={currentUser}
           onClose={() => setEditingEmployee(null)}
           onSave={handleEditEmployee}
+          onDeleteInvitation={onDeleteInvitation}
         />
       )}
     </div>

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import type { Employee, Club, EmployeeRole, UpdateEmployeeData } from '../types';
 import type { ClubWithRole, CreateStaffResponse } from '@/functions/axios/responses';
@@ -11,6 +11,7 @@ interface EditEmployeeModalProps {
   currentUser: CreateStaffResponse | null;
   onClose: () => void;
   onSave: (data: UpdateEmployeeData) => void;
+  onDeleteInvitation?: (invitationId: number) => Promise<void>;
 }
 
 export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
@@ -20,8 +21,14 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
   currentUser,
   onClose,
   onSave,
+  onDeleteInvitation,
 }) => {
   const { t } = useI18n();
+  
+  // Check if this is a pending invitation
+  const isPendingInvitation = employee.invitation_id && employee.status === 'pending';
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // Filter clubs to show only those where user is owner or admin
   const availableClubs = useMemo(() => {
@@ -105,17 +112,42 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 space-y-4">
+          {/* Pending Invitation Banner */}
+          {isPendingInvitation && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-5 h-5 text-amber-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-amber-800">
+                    {t('management.employees.pendingInvitationInfo')}
+                  </p>
+                  <p className="text-xs text-amber-600 mt-1">
+                    {t('management.employees.pendingInvitationHint')}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Name (Read-only) */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               {t('management.employees.name')}
             </label>
-            <input
-              type="text"
-              value={`${employee.first_name} ${employee.last_name}`}
-              readOnly
-              className="w-full border border-gray-200 rounded-lg p-2 bg-gray-50 text-gray-500"
-            />
+            {isPendingInvitation ? (
+              <div className="w-full border border-gray-200 rounded-lg p-2 bg-gray-50 text-gray-400 italic">
+                {t('management.employees.nameNotAvailable')}
+              </div>
+            ) : (
+              <input
+                type="text"
+                value={`${employee.first_name} ${employee.last_name}`}
+                readOnly
+                className="w-full border border-gray-200 rounded-lg p-2 bg-gray-50 text-gray-500"
+              />
+            )}
           </div>
 
           {/* Phone (Read-only) */}
@@ -182,7 +214,64 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
           </div>
         </form>
 
-        <div className="p-4 border-t border-gray-200 flex gap-3">
+        {/* Delete Invitation Button for pending invitations */}
+        {isPendingInvitation && onDeleteInvitation && (
+          <div className="p-4 border-t border-gray-200">
+            {!showDeleteConfirm ? (
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(true)}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 text-red-600 bg-red-50 rounded-xl hover:bg-red-100 transition-colors"
+              >
+                <Trash2 size={18} />
+                {t('management.employees.deleteInvitation')}
+              </button>
+            ) : (
+              <div className="bg-red-50 rounded-xl p-4">
+                <p className="text-sm text-red-800 text-center mb-3">
+                  {t('management.employees.deleteInvitationConfirm')}
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteConfirm(false)}
+                    disabled={deleting}
+                    className="flex-1 px-3 py-2 text-sm border border-gray-200 text-gray-700 rounded-lg hover:bg-white transition-colors disabled:opacity-50"
+                  >
+                    {t('common.cancel')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (employee.invitation_id && onDeleteInvitation) {
+                        setDeleting(true);
+                        try {
+                          await onDeleteInvitation(employee.invitation_id);
+                          onClose();
+                        } catch (error) {
+                          console.error('Error deleting invitation:', error);
+                        } finally {
+                          setDeleting(false);
+                        }
+                      }
+                    }}
+                    disabled={deleting}
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                  >
+                    {deleting ? (
+                      <Loader2 size={16} className="animate-spin" />
+                    ) : (
+                      <Trash2 size={16} />
+                    )}
+                    {t('common.delete')}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className={`p-4 ${isPendingInvitation && onDeleteInvitation ? '' : 'border-t border-gray-200'} flex gap-3`}>
           <button
             type="button"
             onClick={onClose}
@@ -190,12 +279,14 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
           >
             {t('common.cancel')}
           </button>
-          <button
-            onClick={handleSubmit}
-            className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-          >
-            {t('management.employees.saveChanges')}
-          </button>
+          {!isPendingInvitation && (
+            <button
+              onClick={handleSubmit}
+              className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+            >
+              {t('management.employees.saveChanges')}
+            </button>
+          )}
         </div>
       </div>
     </div>

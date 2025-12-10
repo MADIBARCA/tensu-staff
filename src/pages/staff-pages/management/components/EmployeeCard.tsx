@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Phone, MessageCircle, Edit2 } from 'lucide-react';
+import { Phone, MessageCircle, Edit2, Crown, Shield, Dumbbell } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import type { Employee, Club } from '../types';
 import type { ClubWithRole, CreateStaffResponse } from '@/functions/axios/responses';
@@ -54,6 +54,15 @@ export const EmployeeCard: React.FC<EmployeeCardProps> = ({
     }
   };
 
+  const getRoleIcon = (role: string) => {
+    switch (role) {
+      case 'owner': return Crown;
+      case 'admin': return Shield;
+      case 'coach': return Dumbbell;
+      default: return Dumbbell;
+    }
+  };
+
   const getStatusLabel = (status: string): string => {
     switch (status) {
       case 'active': return t('management.employees.status.active');
@@ -82,6 +91,19 @@ export const EmployeeCard: React.FC<EmployeeCardProps> = ({
     ? t('management.employees.pendingInvitation') 
     : `${employee.first_name} ${employee.last_name}`.trim();
   const avatarLetter = isPendingInvitation ? '?' : (employee.first_name?.charAt(0)?.toUpperCase() || '?');
+
+  // Check if employee has multiple roles across clubs
+  const hasMultipleRoles = useMemo(() => {
+    if (!employee.club_roles || employee.club_roles.length <= 1) return false;
+    const uniqueRoles = new Set(employee.club_roles.map(cr => cr.role));
+    return uniqueRoles.size > 1;
+  }, [employee.club_roles]);
+
+  // Get club name by ID
+  const getClubName = (clubId: number): string => {
+    const club = clubs.find(c => c.id === clubId);
+    return club?.name || '';
+  };
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-4">
@@ -119,18 +141,60 @@ export const EmployeeCard: React.FC<EmployeeCardProps> = ({
 
           <p className="text-sm text-gray-600 mb-2">{employee.phone}</p>
 
-          {/* Clubs */}
+          {/* Clubs with per-club roles */}
           {employeeClubs.length > 0 && (
-            <div className="flex flex-wrap gap-1">
-              {employeeClubs.map(club => (
-                <span
-                  key={club.id}
-                  className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded"
-                >
-                  {club.name}
-                </span>
-              ))}
+            <div className="flex flex-wrap gap-1.5">
+              {employee.club_roles && employee.club_roles.length > 0 ? (
+                // Show per-club roles when available
+                employee.club_roles.map((clubRole) => {
+                  const RoleIcon = getRoleIcon(clubRole.role);
+                  const clubName = getClubName(clubRole.club_id);
+                  const isPending = clubRole.status === 'pending';
+                  
+                  return (
+                    <div
+                      key={`${clubRole.club_id}-${clubRole.role}`}
+                      className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs ${
+                        isPending 
+                          ? 'bg-amber-50 border border-amber-200' 
+                          : 'bg-gray-50 border border-gray-200'
+                      }`}
+                    >
+                      <RoleIcon size={12} className={
+                        clubRole.role === 'owner' ? 'text-purple-500' :
+                        clubRole.role === 'admin' ? 'text-blue-500' :
+                        'text-green-500'
+                      } />
+                      <span className={`font-medium ${isPending ? 'text-amber-700' : 'text-gray-700'}`}>
+                        {clubName}
+                      </span>
+                      {isPending && (
+                        <span className="text-amber-600">
+                          ({t('management.employees.status.pending')})
+                        </span>
+                      )}
+                    </div>
+                  );
+                })
+              ) : (
+                // Fallback: show clubs without per-club role info
+                employeeClubs.map(club => (
+                  <span
+                    key={club.id}
+                    className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded"
+                  >
+                    {club.name}
+                  </span>
+                ))
+              )}
             </div>
+          )}
+
+          {/* Multi-role indicator */}
+          {hasMultipleRoles && (
+            <p className="text-xs text-gray-400 mt-1.5">
+              {t('management.employees.multiRoleHint')}
+            </p>
           )}
         </div>
       </div>

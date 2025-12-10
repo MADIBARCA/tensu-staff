@@ -76,23 +76,46 @@ export default function ManagementPage() {
       const teamResponse = await teamApi.get(initDataRaw);
       let transformedEmployees: Employee[] = [];
       if (teamResponse.data?.staff_members) {
-        transformedEmployees = teamResponse.data.staff_members.map(member => ({
-          id: member.id,
-          first_name: member.first_name,
-          last_name: member.last_name,
-          phone: member.phone_number,
-          telegram_username: member.username,
-          role: (member.clubs_and_roles[0]?.role === 'coach' ? 'coach' : (member.clubs_and_roles[0]?.role === 'owner' ? 'owner' : member.clubs_and_roles[0]?.role === 'admin' ? 'admin' : 'coach')) as EmployeeRole,
-          status: member.clubs_and_roles[0]?.is_active ? 'active' : 'pending',
-          club_ids: member.clubs_and_roles.map(cr => cr.club_id),
-          photo_url: member.photo_url,
-          created_at: member.created_at,
-        }));
+        transformedEmployees = teamResponse.data.staff_members.map(member => {
+          // Determine the highest/primary role
+          const rolePriority = { owner: 3, admin: 2, coach: 1 };
+          const sortedRoles = [...member.clubs_and_roles].sort((a, b) => 
+            (rolePriority[b.role as keyof typeof rolePriority] || 0) - 
+            (rolePriority[a.role as keyof typeof rolePriority] || 0)
+          );
+          const primaryRole = sortedRoles[0]?.role || 'coach';
+          
+          return {
+            id: member.id,
+            first_name: member.first_name,
+            last_name: member.last_name,
+            phone: member.phone_number,
+            telegram_username: member.username,
+            role: primaryRole as EmployeeRole,
+            status: member.clubs_and_roles.some(cr => cr.is_active) ? 'active' : 'pending' as const,
+            club_ids: member.clubs_and_roles.map(cr => cr.club_id),
+            photo_url: member.photo_url,
+            created_at: member.created_at,
+            // Per-club roles for multi-role display
+            club_roles: member.clubs_and_roles.map(cr => ({
+              club_id: cr.club_id,
+              role: cr.role as EmployeeRole,
+              status: cr.is_active ? 'active' : 'pending' as const,
+            })),
+          };
+        });
       }
 
       // Load pending invitations for all clubs
       const clubIds = clubsResponse.data?.clubs?.map(c => c.club.id) || [];
-      const pendingInvitations: Employee[] = [];
+      interface PendingInvitationData {
+        id: number;
+        phone: string;
+        role: EmployeeRole;
+        club_id: number;
+        created_at: string;
+      }
+      const pendingInvitationsData: PendingInvitationData[] = [];
       
       for (const clubId of clubIds) {
         try {
@@ -103,28 +126,97 @@ export default function ManagementPage() {
               .filter(inv => inv.status === 'pending' && !inv.is_used)
               .map(inv => ({
                 id: inv.id,
-                first_name: '',
-                last_name: '',
                 phone: inv.phone_number,
-                telegram_username: undefined,
                 role: inv.role as EmployeeRole,
-                status: 'pending' as const,
-                club_ids: [inv.club_id],
-                invitation_id: inv.id,
+                club_id: inv.club_id,
                 created_at: inv.created_at,
               }));
-            pendingInvitations.push(...clubPendingInvitations);
+            pendingInvitationsData.push(...clubPendingInvitations);
           }
         } catch (error) {
           console.error(`Error loading invitations for club ${clubId}:`, error);
         }
       }
 
-      // Combine employees and pending invitations (avoid duplicates by phone)
-      const existingPhones = new Set(transformedEmployees.map(e => e.phone));
-      const uniquePendingInvitations = pendingInvitations.filter(inv => !existingPhones.has(inv.phone));
+      // Merge pending invitations with existing employees
+      // If phone exists: add pending invitation to their club_roles
+      // If phone doesn't exist: create new pending employee entry
+      const employeeByPhone = new Map<string, Employee>();
+      transformedEmployees.forEach(emp => employeeByPhone.set(emp.phone, emp));
       
-      setEmployees([...transformedEmployees, ...uniquePendingInvitations]);
+      const newPendingEmployees: Employee[] = [];
+      
+      pendingInvitationsData.forEach(inv => {
+        const existingEmployee = employeeByPhone.get(inv.phone);
+        
+        if (existingEmployee) {
+          // User already exists - add this club invitation to their club_roles
+          if (!existingEmployee.club_roles) {
+            existingEmployee.club_roles = [];
+          }
+          
+          // Check if this club role already exists
+          const existingClubRole = existingEmployee.club_roles.find(
+            cr => cr.club_id === inv.club_id
+          );
+          
+          if (!existingClubRole) {
+            // Add the pending invitation as a new club role
+            existingEmployee.club_roles.push({
+              club_id: inv.club_id,
+              role: inv.role,
+              status: 'pending',
+              invitation_id: inv.id,
+            });
+            
+            // Also add club_id if not present
+            if (!existingEmployee.club_ids.includes(inv.club_id)) {
+              existingEmployee.club_ids.push(inv.club_id);
+            }
+          }
+        } else {
+          // Check if we already created a pending employee for this phone
+          const existingPending = newPendingEmployees.find(e => e.phone === inv.phone);
+          
+          if (existingPending) {
+            // Add this club to their pending invitations
+            if (!existingPending.club_roles) {
+              existingPending.club_roles = [];
+            }
+            existingPending.club_roles.push({
+              club_id: inv.club_id,
+              role: inv.role,
+              status: 'pending',
+              invitation_id: inv.id,
+            });
+            if (!existingPending.club_ids.includes(inv.club_id)) {
+              existingPending.club_ids.push(inv.club_id);
+            }
+          } else {
+            // New pending employee
+            newPendingEmployees.push({
+              id: inv.id,
+              first_name: '',
+              last_name: '',
+              phone: inv.phone,
+              telegram_username: undefined,
+              role: inv.role,
+              status: 'pending',
+              club_ids: [inv.club_id],
+              invitation_id: inv.id,
+              created_at: inv.created_at,
+              club_roles: [{
+                club_id: inv.club_id,
+                role: inv.role,
+                status: 'pending',
+                invitation_id: inv.id,
+              }],
+            });
+          }
+        }
+      });
+      
+      setEmployees([...transformedEmployees, ...newPendingEmployees]);
 
       // Load sections
       const sectionsResponse = await sectionsApi.getMy(initDataRaw);
@@ -196,6 +288,21 @@ export default function ManagementPage() {
       e.id === id ? { ...e, ...data } : e
     ));
     window.Telegram?.WebApp?.showAlert(t('management.employees.updated'));
+  };
+
+  const handleDeleteInvitation = async (invitationId: number) => {
+    if (!initDataRaw) return;
+    
+    try {
+      await invitationsApi.delete(invitationId.toString(), initDataRaw);
+      // Remove from local state
+      setEmployees(employees.filter(e => e.invitation_id !== invitationId));
+      window.Telegram?.WebApp?.showAlert(t('management.employees.invitationDeleted'));
+    } catch (error) {
+      console.error('Error deleting invitation:', error);
+      window.Telegram?.WebApp?.showAlert(t('management.employees.invitationDeleteError'));
+      throw error;
+    }
   };
 
   // Section handlers are now in CreateSectionModal and EditSectionModal which call APIs directly
@@ -285,6 +392,7 @@ export default function ManagementPage() {
             currentUser={currentUser}
             onAddEmployee={handleAddEmployee}
             onEditEmployee={handleEditEmployee}
+            onDeleteInvitation={handleDeleteInvitation}
           />
         )}
 
