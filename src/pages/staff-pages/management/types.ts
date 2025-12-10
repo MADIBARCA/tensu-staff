@@ -97,6 +97,11 @@ export interface CreateEmployeeData {
 export interface UpdateEmployeeData {
   role: EmployeeRole;
   club_ids: number[];
+  // Per-club role assignments for updates
+  club_role_updates?: Array<{
+    club_id: number;
+    role: EmployeeRole;
+  }>;
 }
 
 export interface CreateSectionData {

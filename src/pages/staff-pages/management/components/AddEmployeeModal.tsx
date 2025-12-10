@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { X, AlertCircle } from 'lucide-react';
+import { X, AlertCircle, AlertTriangle, Crown, Shield, Dumbbell } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import type { CreateEmployeeData, Club, EmployeeRole, Employee } from '../types';
 import type { ClubWithRole, CreateStaffResponse } from '@/functions/axios/responses';
@@ -46,11 +46,48 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
     });
   }, [clubs, clubRoles, currentUser]);
 
-  const phoneExists = useMemo(() => {
-    if (formData.phone.length < 12) return false;
+  // Find existing employee by phone
+  const existingEmployeeByPhone = useMemo(() => {
+    if (formData.phone.length < 12) return null;
     const cleanPhone = formData.phone.replace(/\s/g, '');
-    return existingEmployees.some(e => e.phone.replace(/\s/g, '') === cleanPhone);
+    return existingEmployees.find(e => e.phone.replace(/\s/g, '') === cleanPhone) || null;
   }, [formData.phone, existingEmployees]);
+
+  const phoneExists = !!existingEmployeeByPhone;
+
+  // Check which selected clubs already have this person
+  const conflictingClubs = useMemo(() => {
+    if (!existingEmployeeByPhone) return [];
+    
+    return formData.club_ids
+      .filter(clubId => existingEmployeeByPhone.club_ids.includes(clubId))
+      .map(clubId => {
+        const club = clubs.find(c => c.id === clubId);
+        const clubRole = existingEmployeeByPhone.club_roles?.find(cr => cr.club_id === clubId);
+        return {
+          id: clubId,
+          name: club?.name || '',
+          role: clubRole?.role || existingEmployeeByPhone.role,
+        };
+      });
+  }, [existingEmployeeByPhone, formData.club_ids, clubs]);
+
+  // Get role icon
+  const getRoleIcon = (role: string) => {
+    switch (role) {
+      case 'owner': return Crown;
+      case 'admin': return Shield;
+      default: return Dumbbell;
+    }
+  };
+
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case 'owner': return 'text-purple-600';
+      case 'admin': return 'text-blue-600';
+      default: return 'text-green-600';
+    }
+  };
 
   const isPhoneValid = useMemo(() => {
     const cleanPhone = formData.phone.replace(/[^0-9+]/g, '');
@@ -69,11 +106,12 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
     if (!isPhoneValid) {
       newErrors.phone = t('management.employees.errors.phoneInvalid');
     }
-    if (phoneExists) {
-      newErrors.phone = t('management.employees.errors.phoneExists');
-    }
     if (formData.club_ids.length === 0) {
       newErrors.clubs = t('management.employees.errors.clubRequired');
+    }
+    // Check for conflicting clubs (person already has role in selected clubs)
+    if (conflictingClubs.length > 0) {
+      newErrors.clubs = t('management.employees.errors.alreadyInClub');
     }
 
     setErrors(newErrors);
@@ -216,20 +254,60 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
               </p>
             ) : (
               <div className="space-y-2">
-                {availableClubs.map(club => (
-                  <label
-                    key={club.id}
-                    className="flex items-center gap-2 p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={formData.club_ids.includes(club.id)}
-                      onChange={() => handleClubToggle(club.id)}
-                      className="w-4 h-4 text-blue-600 rounded"
-                    />
-                    <span className="text-gray-900">{club.name}</span>
-                  </label>
-                ))}
+                {availableClubs.map(club => {
+                  // Check if this person already has a role in this club
+                  const existingRole = existingEmployeeByPhone?.club_roles?.find(
+                    cr => cr.club_id === club.id
+                  );
+                  const hasRoleInClub = existingRole || 
+                    (existingEmployeeByPhone?.club_ids.includes(club.id) && existingEmployeeByPhone);
+                  const roleInClub = existingRole?.role || existingEmployeeByPhone?.role;
+                  const RoleIcon = roleInClub ? getRoleIcon(roleInClub) : null;
+                  
+                  return (
+                    <div key={club.id}>
+                      <label
+                        className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-colors ${
+                          hasRoleInClub && formData.club_ids.includes(club.id)
+                            ? 'border-amber-300 bg-amber-50'
+                            : formData.club_ids.includes(club.id)
+                            ? 'border-blue-300 bg-blue-50'
+                            : 'border-gray-200 hover:bg-gray-50'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={formData.club_ids.includes(club.id)}
+                          onChange={() => handleClubToggle(club.id)}
+                          className="w-4 h-4 text-blue-600 rounded"
+                        />
+                        <span className="flex-1 text-gray-900">{club.name}</span>
+                        {hasRoleInClub && RoleIcon && (
+                          <div className="flex items-center gap-1">
+                            <RoleIcon size={14} className={getRoleColor(roleInClub || '')} />
+                            <span className={`text-xs ${getRoleColor(roleInClub || '')}`}>
+                              {t(`management.employees.role.${roleInClub}`)}
+                            </span>
+                          </div>
+                        )}
+                      </label>
+                      
+                      {/* Warning for clubs where person already has role */}
+                      {hasRoleInClub && formData.club_ids.includes(club.id) && (
+                        <div className="mt-1 ml-6 flex items-start gap-2 p-2 bg-amber-50 rounded-lg border border-amber-200">
+                          <AlertTriangle size={14} className="text-amber-600 shrink-0 mt-0.5" />
+                          <p className="text-xs text-amber-700">
+                            {t('management.employees.alreadyHasRole', {
+                              name: existingEmployeeByPhone?.first_name || t('management.employees.thisPerson'),
+                              role: t(`management.employees.role.${roleInClub}`),
+                              club: club.name,
+                            })}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
             {errors.clubs && <p className="text-red-500 text-xs mt-1">{errors.clubs}</p>}
@@ -246,7 +324,7 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
           </button>
           <button
             onClick={handleSubmit}
-            disabled={phoneExists}
+            disabled={conflictingClubs.length > 0}
             className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
           >
             + {t('management.employees.add')}

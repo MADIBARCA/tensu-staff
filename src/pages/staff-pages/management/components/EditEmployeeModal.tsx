@@ -1,8 +1,15 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { X, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
+import { X, Trash2, AlertTriangle, Loader2, Crown, Shield, Dumbbell, Clock } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import type { Employee, Club, EmployeeRole, UpdateEmployeeData } from '../types';
 import type { ClubWithRole, CreateStaffResponse } from '@/functions/axios/responses';
+
+interface ClubRoleState {
+  club_id: number;
+  role: EmployeeRole;
+  status: 'active' | 'pending';
+  enabled: boolean;
+}
 
 interface EditEmployeeModalProps {
   employee: Employee;
@@ -26,7 +33,7 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
   const { t } = useI18n();
   
   // Check if this is a pending invitation
-  const isPendingInvitation = employee.invitation_id && employee.status === 'pending';
+  const isPendingInvitation = employee.invitation_id && employee.status === 'pending' && !employee.first_name;
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -45,32 +52,70 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
     });
   }, [clubs, clubRoles, currentUser]);
 
-  // Initialize form data with only available clubs
-  const initialClubIds = useMemo(() => {
-    const availableClubIds = availableClubs.map(club => club.id);
-    return employee.club_ids.filter(clubId => availableClubIds.includes(clubId));
-  }, [employee.club_ids, availableClubs]);
+  // Helper to normalize status to only 'active' or 'pending'
+  const normalizeStatus = (status: string | undefined, isInClub: boolean): 'active' | 'pending' => {
+    if (status === 'active') return 'active';
+    if (status === 'pending') return 'pending';
+    return isInClub ? 'active' : 'pending';
+  };
 
-  const [formData, setFormData] = useState<UpdateEmployeeData>({
-    role: employee.role,
-    club_ids: initialClubIds,
+  // Initialize per-club role state
+  const [clubRoleStates, setClubRoleStates] = useState<ClubRoleState[]>(() => {
+    return availableClubs.map(club => {
+      // Check if employee has a role in this club
+      const existingClubRole = employee.club_roles?.find(cr => cr.club_id === club.id);
+      const isInClub = employee.club_ids.includes(club.id);
+      
+      return {
+        club_id: club.id,
+        role: existingClubRole?.role || employee.role || 'coach',
+        status: normalizeStatus(existingClubRole?.status, isInClub),
+        enabled: isInClub,
+      };
+    });
   });
+
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Update form data when employee or available clubs change
+  // Update club role states when employee or available clubs change
   useEffect(() => {
-    const availableClubIds = availableClubs.map(club => club.id);
-    const filteredClubIds = employee.club_ids.filter(clubId => availableClubIds.includes(clubId));
-    setFormData(prev => ({
-      ...prev,
-      club_ids: filteredClubIds,
-    }));
-  }, [employee.club_ids, availableClubs]);
+    setClubRoleStates(
+      availableClubs.map(club => {
+        const existingClubRole = employee.club_roles?.find(cr => cr.club_id === club.id);
+        const isInClub = employee.club_ids.includes(club.id);
+        
+        return {
+          club_id: club.id,
+          role: existingClubRole?.role || employee.role || 'coach',
+          status: normalizeStatus(existingClubRole?.status, isInClub),
+          enabled: isInClub,
+        };
+      })
+    );
+  }, [employee, availableClubs]);
+
+  // Get role icon
+  const getRoleIcon = (role: string) => {
+    switch (role) {
+      case 'owner': return Crown;
+      case 'admin': return Shield;
+      default: return Dumbbell;
+    }
+  };
+
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case 'owner': return 'bg-purple-100 border-purple-200';
+      case 'admin': return 'bg-blue-100 border-blue-200';
+      default: return 'bg-green-100 border-green-200';
+    }
+  };
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (formData.club_ids.length === 0) {
+    const enabledClubs = clubRoleStates.filter(s => s.enabled);
+    if (enabledClubs.length === 0) {
       newErrors.clubs = t('management.employees.errors.clubRequired');
     }
 
@@ -79,23 +124,43 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
   };
 
   const handleClubToggle = (clubId: number) => {
-    setFormData(prev => ({
-      ...prev,
-      club_ids: prev.club_ids.includes(clubId)
-        ? prev.club_ids.filter(id => id !== clubId)
-        : [...prev.club_ids, clubId],
-    }));
+    setClubRoleStates(prev => prev.map(state => 
+      state.club_id === clubId 
+        ? { ...state, enabled: !state.enabled }
+        : state
+    ));
     setErrors({ ...errors, clubs: '' });
+  };
+
+  const handleRoleChange = (clubId: number, role: EmployeeRole) => {
+    setClubRoleStates(prev => prev.map(state => 
+      state.club_id === clubId 
+        ? { ...state, role }
+        : state
+    ));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validate()) {
-      // Filter out clubs that are not available (where user is only coach)
-      const filteredClubIds = formData.club_ids.filter(clubId => 
-        availableClubs.some(club => club.id === clubId)
-      );
-      onSave({ ...formData, club_ids: filteredClubIds });
+      const enabledStates = clubRoleStates.filter(s => s.enabled);
+      
+      // Determine primary role (highest priority)
+      const rolePriority = { owner: 3, admin: 2, coach: 1 };
+      const primaryRole = enabledStates.reduce((highest, current) => {
+        const currentPriority = rolePriority[current.role as keyof typeof rolePriority] || 0;
+        const highestPriority = rolePriority[highest as keyof typeof rolePriority] || 0;
+        return currentPriority > highestPriority ? current.role : highest;
+      }, 'coach' as EmployeeRole);
+      
+      onSave({
+        role: primaryRole,
+        club_ids: enabledStates.map(s => s.club_id),
+        club_role_updates: enabledStates.map(s => ({
+          club_id: s.club_id,
+          role: s.role,
+        })),
+      });
     }
   };
 
@@ -164,50 +229,125 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
             <p className="text-xs text-gray-400 mt-1">{t('management.employees.phoneReadOnly')}</p>
           </div>
 
-          {/* Role */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('management.employees.role')} *
-            </label>
-            <select
-              value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value as EmployeeRole })}
-              className="w-full border border-gray-200 rounded-lg p-2"
-              disabled={employee.role === 'owner'}
-            >
-              {employee.role === 'owner' && (
-                <option value="owner">{t('management.employees.role.owner')}</option>
-              )}
-              <option value="coach">{t('management.employees.role.coach')}</option>
-              <option value="admin">{t('management.employees.role.admin')}</option>
-            </select>
-          </div>
-
-          {/* Clubs */}
+          {/* Per-Club Role Assignment */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('management.employees.clubs')} *
+              {t('management.employees.clubsAndRoles')} *
             </label>
+            <p className="text-xs text-gray-500 mb-3">
+              {t('management.employees.clubsAndRolesHint')}
+            </p>
+            
             {availableClubs.length === 0 ? (
               <p className="text-sm text-gray-500">
                 {t('management.employees.noClubsAvailable')}
               </p>
             ) : (
-              <div className="space-y-2">
-                {availableClubs.map(club => (
-                  <label
-                    key={club.id}
-                    className="flex items-center gap-2 p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={formData.club_ids.includes(club.id)}
-                      onChange={() => handleClubToggle(club.id)}
-                      className="w-4 h-4 text-blue-600 rounded"
-                    />
-                    <span className="text-gray-900">{club.name}</span>
-                  </label>
-                ))}
+              <div className="space-y-3">
+                {availableClubs.map(club => {
+                  const clubState = clubRoleStates.find(s => s.club_id === club.id);
+                  const isEnabled = clubState?.enabled || false;
+                  const currentRole = clubState?.role || 'coach';
+                  const isPending = clubState?.status === 'pending';
+                  const isOwnerRole = currentRole === 'owner';
+                  const RoleIcon = getRoleIcon(currentRole);
+                  
+                  return (
+                    <div 
+                      key={club.id} 
+                      className={`border rounded-xl overflow-hidden transition-all ${
+                        isEnabled 
+                          ? getRoleColor(currentRole) 
+                          : 'bg-gray-50 border-gray-200'
+                      }`}
+                    >
+                      {/* Club Header with Toggle */}
+                      <div 
+                        className="flex items-center gap-3 p-3 cursor-pointer"
+                        onClick={() => !isOwnerRole && handleClubToggle(club.id)}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isEnabled}
+                          onChange={() => handleClubToggle(club.id)}
+                          disabled={isOwnerRole}
+                          className="w-4 h-4 text-blue-600 rounded disabled:cursor-not-allowed"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className={`font-medium ${isEnabled ? 'text-gray-900' : 'text-gray-500'}`}>
+                              {club.name}
+                            </span>
+                            {isPending && (
+                              <span className="flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 text-xs rounded-full">
+                                <Clock size={10} />
+                                {t('management.employees.status.pending')}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {isEnabled && (
+                          <div className={`flex items-center gap-1 px-2 py-1 rounded-full ${
+                            currentRole === 'owner' ? 'bg-purple-200 text-purple-700' :
+                            currentRole === 'admin' ? 'bg-blue-200 text-blue-700' :
+                            'bg-green-200 text-green-700'
+                          }`}>
+                            <RoleIcon size={14} />
+                            <span className="text-xs font-medium">
+                              {t(`management.employees.role.${currentRole}`)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Role Selector - shown when enabled */}
+                      {isEnabled && !isOwnerRole && (
+                        <div className="px-3 pb-3 pt-1 border-t border-white/50">
+                          <label className="block text-xs text-gray-600 mb-2">
+                            {t('management.employees.roleInThisClub')}
+                          </label>
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleRoleChange(club.id, 'coach')}
+                              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                                currentRole === 'coach'
+                                  ? 'bg-green-500 text-white shadow-sm'
+                                  : 'bg-white/70 text-gray-600 hover:bg-white'
+                              }`}
+                            >
+                              <Dumbbell size={14} />
+                              {t('management.employees.role.coach')}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRoleChange(club.id, 'admin')}
+                              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                                currentRole === 'admin'
+                                  ? 'bg-blue-500 text-white shadow-sm'
+                                  : 'bg-white/70 text-gray-600 hover:bg-white'
+                              }`}
+                            >
+                              <Shield size={14} />
+                              {t('management.employees.role.admin')}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Owner role note */}
+                      {isOwnerRole && (
+                        <div className="px-3 pb-3 pt-1 border-t border-white/50">
+                          <p className="text-xs text-purple-600 flex items-center gap-1">
+                            <Crown size={12} />
+                            {t('management.employees.ownerCannotChange')}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
             {errors.clubs && <p className="text-red-500 text-xs mt-1">{errors.clubs}</p>}
