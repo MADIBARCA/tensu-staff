@@ -179,6 +179,13 @@ export const invitationsApi = {
       token
     ),
   
+  getByClub: (clubId: string, token: string) =>
+    axiosRequest<GetMyInvitationsResponse>(
+      ENDPOINTS.INVITATIONS.CLUB(clubId),
+      'GET',
+      token
+    ),
+  
   getById: (id: string, token: string) =>
     axiosRequest(ENDPOINTS.INVITATIONS.BY_ID(id), 'GET', token),
   

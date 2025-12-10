@@ -75,24 +75,35 @@ export const EmployeeCard: React.FC<EmployeeCardProps> = ({
   };
 
   const employeeClubs = clubs.filter(c => employee.club_ids.includes(c.id));
+  
+  // Check if this is a pending invitation (no name)
+  const isPendingInvitation = !employee.first_name && !employee.last_name && employee.status === 'pending';
+  const displayName = isPendingInvitation 
+    ? t('management.employees.pendingInvitation') 
+    : `${employee.first_name} ${employee.last_name}`.trim();
+  const avatarLetter = isPendingInvitation ? '?' : (employee.first_name?.charAt(0)?.toUpperCase() || '?');
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-4">
       <div className="flex items-start gap-3">
         {/* Avatar */}
-        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold flex-shrink-0">
+        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0 ${
+          isPendingInvitation 
+            ? 'bg-gradient-to-br from-yellow-400 to-orange-500' 
+            : 'bg-gradient-to-br from-blue-400 to-blue-600'
+        }`}>
           {employee.photo_url ? (
             <img src={employee.photo_url} alt="" className="w-full h-full rounded-full object-cover" />
           ) : (
-            employee.first_name.charAt(0).toUpperCase()
+            avatarLetter
           )}
         </div>
 
         {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-1">
-            <h3 className="font-semibold text-gray-900">
-              {employee.first_name} {employee.last_name}
+            <h3 className={`font-semibold ${isPendingInvitation ? 'text-gray-500 italic' : 'text-gray-900'}`}>
+              {displayName}
             </h3>
             <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getRoleColor(employee.role)}`}>
               {getRoleLabel(employee.role)}

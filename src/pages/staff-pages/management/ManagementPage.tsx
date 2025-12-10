@@ -74,8 +74,9 @@ export default function ManagementPage() {
 
       // Load team (employees)
       const teamResponse = await teamApi.get(initDataRaw);
+      let transformedEmployees: Employee[] = [];
       if (teamResponse.data?.staff_members) {
-        const transformedEmployees: Employee[] = teamResponse.data.staff_members.map(member => ({
+        transformedEmployees = teamResponse.data.staff_members.map(member => ({
           id: member.id,
           first_name: member.first_name,
           last_name: member.last_name,
@@ -87,8 +88,43 @@ export default function ManagementPage() {
           photo_url: member.photo_url,
           created_at: member.created_at,
         }));
-        setEmployees(transformedEmployees);
       }
+
+      // Load pending invitations for all clubs
+      const clubIds = clubsResponse.data?.clubs?.map(c => c.club.id) || [];
+      const pendingInvitations: Employee[] = [];
+      
+      for (const clubId of clubIds) {
+        try {
+          const invitationsResponse = await invitationsApi.getByClub(clubId.toString(), initDataRaw);
+          if (invitationsResponse.data?.invitations) {
+            // Filter only pending invitations (status === 'pending' and not used)
+            const clubPendingInvitations = invitationsResponse.data.invitations
+              .filter(inv => inv.status === 'pending' && !inv.is_used)
+              .map(inv => ({
+                id: inv.id,
+                first_name: '',
+                last_name: '',
+                phone: inv.phone_number,
+                telegram_username: undefined,
+                role: inv.role as EmployeeRole,
+                status: 'pending' as const,
+                club_ids: [inv.club_id],
+                invitation_id: inv.id,
+                created_at: inv.created_at,
+              }));
+            pendingInvitations.push(...clubPendingInvitations);
+          }
+        } catch (error) {
+          console.error(`Error loading invitations for club ${clubId}:`, error);
+        }
+      }
+
+      // Combine employees and pending invitations (avoid duplicates by phone)
+      const existingPhones = new Set(transformedEmployees.map(e => e.phone));
+      const uniquePendingInvitations = pendingInvitations.filter(inv => !existingPhones.has(inv.phone));
+      
+      setEmployees([...transformedEmployees, ...uniquePendingInvitations]);
 
       // Load sections
       const sectionsResponse = await sectionsApi.getMy(initDataRaw);

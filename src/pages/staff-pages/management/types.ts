@@ -17,6 +17,7 @@ export interface Employee {
   status: EmployeeStatus;
   club_ids: number[];
   photo_url?: string;
+  invitation_id?: number; // ID of pending invitation if this is an invitation
   created_at: string;
 }
 

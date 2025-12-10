@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Layout, PageContainer } from '@/components/Layout';
 import { useI18n } from '@/i18n/i18n';
-import { Plus, Loader2, Check, X } from 'lucide-react';
+import { Plus, Loader2, Check, X, AlertTriangle, MessageCircle } from 'lucide-react';
 import { UserProfileSection } from './components/UserProfileSection';
 import { ClubCard } from './components/ClubCard';
 import { CreateClubModal } from './components/CreateClubModal';
@@ -11,7 +11,7 @@ import { DeactivateClubModal } from './components/DeactivateClubModal';
 import { SettingsSection } from './components/SettingsSection';
 import { useTelegram } from '@/hooks/useTelegram';
 import { staffApi, clubsApi, invitationsApi } from '@/functions/axios/axiosFunctions';
-import type { ClubWithRole, CreateStaffResponse, Invitation } from '@/functions/axios/responses';
+import type { ClubWithRole, CreateStaffResponse, Invitation, GetClubsLimitCheckResponse } from '@/functions/axios/responses';
 // Note: These mocks are kept because there's no API for payments, analytics, and membership tariffs
 import {
   mockClubAnalytics,
@@ -39,6 +39,11 @@ export default function ProfilePage() {
   // Invitations state
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [invitationLoading, setInvitationLoading] = useState(false);
+  
+  // Club limits state
+  const [showLimitsModal, setShowLimitsModal] = useState(false);
+  const [limitsInfo, setLimitsInfo] = useState<GetClubsLimitCheckResponse | null>(null);
+  const [checkingLimits, setCheckingLimits] = useState(false);
 
   // Load data from API
   const loadData = useCallback(async () => {
@@ -216,6 +221,34 @@ export default function ProfilePage() {
         return t('profile.role.coach');
       default:
         return role;
+    }
+  };
+
+  // Check limits before creating a club
+  const handleCreateClubClick = async () => {
+    if (!initDataRaw) return;
+    
+    try {
+      setCheckingLimits(true);
+      const response = await clubsApi.getLimitsCheck(initDataRaw);
+      
+      if (response.data) {
+        setLimitsInfo(response.data);
+        
+        if (response.data.can_create) {
+          // User can create a club, show the create modal
+          setShowCreateClubModal(true);
+        } else {
+          // User has reached the limit, show the limits modal
+          setShowLimitsModal(true);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking limits:', error);
+      // On error, still try to show create modal
+      setShowCreateClubModal(true);
+    } finally {
+      setCheckingLimits(false);
     }
   };
 
@@ -398,13 +431,6 @@ export default function ProfilePage() {
     return mockPaymentHistory.filter(p => p.club_id === clubId);
   };
 
-  // Check if user can create more clubs (based on role)
-  const maxClubs = user?.role === 'owner' ? 5 : user?.role === 'admin' ? 2 : 0;
-  const canCreateClub = clubs.length < maxClubs;
-
-  // Check if any club is frozen (hide create functionality)
-  const hasFreeze = clubs.some(c => c.status === 'frozen' || c.status === 'pending');
-
   if (loading) {
     return (
       <Layout title={t('nav.profile')}>
@@ -495,28 +521,33 @@ export default function ProfilePage() {
             <h2 className="text-lg font-semibold text-gray-900">
               {t('profile.myClubs')}
             </h2>
-            {canCreateClub && !hasFreeze && (
-              <button
-                onClick={() => setShowCreateClubModal(true)}
-                className="flex items-center gap-1 px-3 py-1.5 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors"
-              >
+            <button
+              onClick={handleCreateClubClick}
+              disabled={checkingLimits}
+              className="flex items-center gap-1 px-3 py-1.5 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
+            >
+              {checkingLimits ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
                 <Plus size={16} />
-                {t('profile.createClub')}
-              </button>
-            )}
+              )}
+              {t('profile.createClub')}
+            </button>
           </div>
 
           {clubs.length === 0 ? (
             <div className="text-center py-8 bg-gray-50 rounded-lg">
               <p className="text-gray-600 mb-4">{t('profile.noClubs')}</p>
-              {canCreateClub && (
-                <button
-                  onClick={() => setShowCreateClubModal(true)}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                >
-                  {t('profile.createFirstClub')}
-                </button>
-              )}
+              <button
+                onClick={handleCreateClubClick}
+                disabled={checkingLimits}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
+              >
+                {checkingLimits ? (
+                  <Loader2 size={16} className="animate-spin inline mr-2" />
+                ) : null}
+                {t('profile.createFirstClub')}
+              </button>
             </div>
           ) : (
             <div className="space-y-3">
@@ -592,6 +623,69 @@ export default function ProfilePage() {
             }}
             onConfirm={handleDeactivateConfirm}
           />
+        )}
+
+        {/* Club Limits Modal */}
+        {showLimitsModal && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white w-full max-w-sm rounded-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-8 text-center">
+                <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <AlertTriangle className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-white">
+                  {t('profile.limits.title')}
+                </h3>
+              </div>
+              
+              {/* Content */}
+              <div className="p-6">
+                <p className="text-gray-600 text-center mb-4">
+                  {t('profile.limits.message')}
+                </p>
+                
+                {limitsInfo && (
+                  <div className="bg-gray-50 rounded-xl p-4 mb-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm text-gray-500">{t('profile.limits.currentClubs')}</span>
+                      <span className="font-semibold text-gray-900">{limitsInfo.current_clubs}</span>
+                    </div>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm text-gray-500">{t('profile.limits.maxClubs')}</span>
+                      <span className="font-semibold text-gray-900">{limitsInfo.max_clubs}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-500">{t('profile.limits.remaining')}</span>
+                      <span className="font-semibold text-amber-600">{limitsInfo.remaining}</span>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="bg-blue-50 rounded-xl p-4 mb-6">
+                  <p className="text-sm text-blue-800 text-center">
+                    {t('profile.limits.contactSupport')}
+                  </p>
+                  <a
+                    href="https://t.me/admintensu"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 mt-3 text-blue-600 font-medium hover:text-blue-700"
+                  >
+                    <MessageCircle size={18} />
+                    @admintensu
+                  </a>
+                </div>
+                
+                <button
+                  onClick={() => setShowLimitsModal(false)}
+                  className="w-full px-4 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors"
+                >
+                  {t('common.close')}
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </PageContainer>
     </Layout>
