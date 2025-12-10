@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Filter, Plus } from 'lucide-react';
+import { Search, Filter, Plus, Crown, Shield, Dumbbell, Info, ChevronDown, ChevronUp } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import { EmployeeCard } from './EmployeeCard';
 import { AddEmployeeModal } from './AddEmployeeModal';
@@ -31,6 +31,7 @@ export const EmployeesTab: React.FC<EmployeesTabProps> = ({
   const [showFilters, setShowFilters] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  const [showRoleLegend, setShowRoleLegend] = useState(false);
 
   const filteredEmployees = useMemo(() => {
     return employees.filter(employee => {
@@ -134,6 +135,71 @@ export const EmployeesTab: React.FC<EmployeesTabProps> = ({
           </button>
         )}
       </div>
+
+      {/* Role Legend Toggle */}
+      <button
+        onClick={() => setShowRoleLegend(!showRoleLegend)}
+        className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+      >
+        <Info size={16} />
+        <span>{t('management.employees.roleLegend')}</span>
+        {showRoleLegend ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+      </button>
+
+      {/* Role Legend Panel */}
+      {showRoleLegend && (
+        <div className="bg-gradient-to-br from-gray-50 to-slate-50 rounded-xl p-4 border border-gray-200">
+          <h4 className="text-sm font-semibold text-gray-700 mb-3">
+            {t('management.employees.roleIconsTitle')}
+          </h4>
+          <div className="grid grid-cols-1 gap-3">
+            {/* Owner */}
+            <div className="flex items-start gap-3 p-3 bg-white rounded-lg border border-purple-100">
+              <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center shrink-0">
+                <Crown size={20} className="text-purple-600" />
+              </div>
+              <div className="flex-1">
+                <h5 className="font-medium text-purple-700 text-sm">
+                  {t('management.employees.role.owner')}
+                </h5>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {t('management.employees.roleDescription.owner')}
+                </p>
+              </div>
+            </div>
+            
+            {/* Admin */}
+            <div className="flex items-start gap-3 p-3 bg-white rounded-lg border border-blue-100">
+              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                <Shield size={20} className="text-blue-600" />
+              </div>
+              <div className="flex-1">
+                <h5 className="font-medium text-blue-700 text-sm">
+                  {t('management.employees.role.admin')}
+                </h5>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {t('management.employees.roleDescription.admin')}
+                </p>
+              </div>
+            </div>
+            
+            {/* Coach */}
+            <div className="flex items-start gap-3 p-3 bg-white rounded-lg border border-green-100">
+              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                <Dumbbell size={20} className="text-green-600" />
+              </div>
+              <div className="flex-1">
+                <h5 className="font-medium text-green-700 text-sm">
+                  {t('management.employees.role.coach')}
+                </h5>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {t('management.employees.roleDescription.coach')}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Filters Panel */}
       {showFilters && (

@@ -457,6 +457,11 @@ const RU: Dict = {
   'management.employees.errors.clubRequired': 'Выберите хотя бы один клуб',
   'management.employees.noClubsAvailable': 'Нет доступных клубов',
   'management.employees.multiRoleHint': 'Разные роли в разных клубах',
+  'management.employees.roleLegend': 'Что означают иконки ролей?',
+  'management.employees.roleIconsTitle': 'Роли сотрудников',
+  'management.employees.roleDescription.owner': 'Полный доступ к клубу: управление секциями, сотрудниками и настройками',
+  'management.employees.roleDescription.admin': 'Управление секциями и расписанием, добавление тренеров',
+  'management.employees.roleDescription.coach': 'Проведение тренировок и работа с учениками',
   // Sections
   'management.sections.searchPlaceholder': 'Поиск по названию секции',
   'management.sections.filters': 'Фильтры',
@@ -1016,6 +1021,11 @@ const KK: Dict = {
   'management.employees.errors.clubRequired': 'Кем дегенде бір клуб таңдаңыз',
   'management.employees.noClubsAvailable': 'Қолжетімді клубтар жоқ',
   'management.employees.multiRoleHint': 'Әртүрлі клубтарда әртүрлі рөлдер',
+  'management.employees.roleLegend': 'Рөл белгішелері нені білдіреді?',
+  'management.employees.roleIconsTitle': 'Қызметкерлердің рөлдері',
+  'management.employees.roleDescription.owner': 'Клубқа толық қол жетімділік: секцияларды, қызметкерлерді және баптауларды басқару',
+  'management.employees.roleDescription.admin': 'Секцияларды және кестені басқару, жаттықтырушыларды қосу',
+  'management.employees.roleDescription.coach': 'Жаттығуларды өткізу және оқушылармен жұмыс істеу',
   // Sections part
   'management.sections.searchPlaceholder': 'Бөлім атауы бойынша іздеу',
   'management.sections.filters': 'Сүзгілер',

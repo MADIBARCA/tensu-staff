@@ -455,7 +455,7 @@ export default function ProfilePage() {
     <Layout title={t('nav.profile')}>
       <PageContainer>
         {/* User Profile Section */}
-        <UserProfileSection user={user} onSave={handleSaveProfile} />
+        <UserProfileSection user={user} clubRoles={clubRoles} onSave={handleSaveProfile} />
 
         {/* Invitations Section */}
         {invitations.length > 0 && (

@@ -8,7 +8,6 @@ import { SelectedDateTrainings } from './components/SelectedDateTrainings';
 import { CreateTrainingModal } from './components/CreateTrainingModal';
 import { EditTrainingModal } from './components/EditTrainingModal';
 import { TrainingDetailsModal } from './components/TrainingDetailsModal';
-import { UserRoleSummary } from './components/UserRoleSummary';
 import { useTelegram } from '@/hooks/useTelegram';
 import { clubsApi, sectionsApi, groupsApi, teamApi, scheduleApi, staffApi } from '@/functions/axios/axiosFunctions';
 import type { Lesson, ClubWithRole, CreateStaffResponse } from '@/functions/axios/responses';
@@ -499,12 +498,6 @@ export default function StaffMainPage() {
   return (
     <Layout title={t('nav.home')}>
       <PageContainer className="pb-24">
-        
-        {/* User Role Summary */}
-        <UserRoleSummary 
-          clubRoles={clubRoles} 
-          currentUser={currentUser}
-        />
 
         {/* Next Training Card */}
         {nextTraining && (
