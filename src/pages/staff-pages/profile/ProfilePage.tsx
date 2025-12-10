@@ -72,7 +72,11 @@ export default function ProfilePage() {
       try {
         const invitationsResponse = await invitationsApi.getMyPending(initDataRaw);
         if (invitationsResponse.data?.invitations) {
-          setInvitations(invitationsResponse.data.invitations);
+          // Filter out invitations with null or missing club data
+          const validInvitations = invitationsResponse.data.invitations.filter(
+            (inv) => inv.club && inv.club.name
+          );
+          setInvitations(validInvitations);
         }
       } catch (error) {
         console.error('Error loading invitations:', error);
@@ -435,46 +439,51 @@ export default function ProfilePage() {
                 {t('profile.invitations.title')} ({invitations.length})
               </h3>
               <div className="space-y-3">
-                {invitations.map((invitation) => (
-                  <div
-                    key={invitation.id}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-gray-900">
-                        {invitation.club.name}
+                {invitations.map((invitation) => {
+                  // Skip rendering if club data is missing (defensive check)
+                  if (!invitation.club) return null;
+                  
+                  return (
+                    <div
+                      key={invitation.id}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-gray-900">
+                          {invitation.club.name}
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          {t('profile.invitations.roleInClub')}{' '}
+                          <span className="font-semibold text-blue-600">
+                            {getRoleLabel(invitation.role)}
+                          </span>
+                        </div>
                       </div>
-                      <div className="text-xs text-gray-600">
-                        {t('profile.invitations.roleInClub')}{' '}
-                        <span className="font-semibold text-blue-600">
-                          {getRoleLabel(invitation.role)}
-                        </span>
+                      <div className="flex items-center gap-2 ml-3">
+                        {invitationLoading ? (
+                          <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => handleAcceptInvitation(invitation.id)}
+                              className="flex items-center gap-1 px-3 py-1.5 bg-blue-500 text-white text-xs font-medium rounded-lg hover:bg-blue-600 transition-colors"
+                            >
+                              <Check size={14} />
+                              {t('profile.invitations.accept')}
+                            </button>
+                            <button
+                              onClick={() => handleDeclineInvitation(invitation.id)}
+                              className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 text-red-600 text-xs font-medium rounded-lg hover:bg-red-50 transition-colors"
+                            >
+                              <X size={14} />
+                              {t('profile.invitations.decline')}
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 ml-3">
-                      {invitationLoading ? (
-                        <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
-                      ) : (
-                        <>
-                          <button
-                            onClick={() => handleAcceptInvitation(invitation.id)}
-                            className="flex items-center gap-1 px-3 py-1.5 bg-blue-500 text-white text-xs font-medium rounded-lg hover:bg-blue-600 transition-colors"
-                          >
-                            <Check size={14} />
-                            {t('profile.invitations.accept')}
-                          </button>
-                          <button
-                            onClick={() => handleDeclineInvitation(invitation.id)}
-                            className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 text-red-600 text-xs font-medium rounded-lg hover:bg-red-50 transition-colors"
-                          >
-                            <X size={14} />
-                            {t('profile.invitations.decline')}
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
