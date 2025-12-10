@@ -60,13 +60,19 @@ select,
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 18px;
+  font-size: 1.25rem;
+  line-height: 1;
 }
 
 .PhoneInputCountryIcon--border {
   background-color: transparent;
   box-shadow: none;
+  border: none;
+}
+
+/* Hide the default img flag if using emoji */
+.PhoneInputCountryIcon img {
+  display: none;
 }
 
 .PhoneInputCountrySelectArrow {

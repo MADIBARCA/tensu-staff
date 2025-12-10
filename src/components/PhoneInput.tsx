@@ -1,6 +1,32 @@
 import React from 'react';
 import PhoneInputLib from 'react-phone-number-input';
+import type { FlagProps } from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
+
+// Convert country code to emoji flag
+// Each letter is converted to regional indicator symbol (A=🇦, B=🇧, etc.)
+const countryCodeToEmoji = (countryCode: string): string => {
+  if (!countryCode) return '';
+  const codePoints = countryCode
+    .toUpperCase()
+    .split('')
+    .map(char => 127397 + char.charCodeAt(0));
+  return String.fromCodePoint(...codePoints);
+};
+
+// Custom emoji flag component
+const EmojiFlag: React.FC<FlagProps> = ({ country }) => {
+  if (!country) return null;
+  return (
+    <span 
+      className="text-xl leading-none" 
+      role="img" 
+      aria-label={country}
+    >
+      {countryCodeToEmoji(country)}
+    </span>
+  );
+};
 
 interface PhoneInputProps {
   value: string;
@@ -37,6 +63,7 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
         placeholder={placeholder}
         disabled={disabled}
         className="w-full"
+        flagComponent={EmojiFlag}
       />
     </div>
   );
