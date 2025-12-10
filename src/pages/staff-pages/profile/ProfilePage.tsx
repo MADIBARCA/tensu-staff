@@ -394,23 +394,18 @@ export default function ProfilePage() {
     if (initDataRaw) {
       try {
         await clubsApi.delete(selectedClub.id.toString(), initDataRaw);
+        
+        // Reload data to get updated club list
+        await loadData();
+        
+        setShowDeactivateModal(false);
+        setSelectedClub(null);
+        window.Telegram?.WebApp?.showAlert(t('profile.clubDeactivated'));
       } catch (error) {
         console.error('Error deactivating club:', error);
+        window.Telegram?.WebApp?.showAlert(t('profile.errors.deactivateFailed') || 'Не удалось деактивировать клуб');
       }
     }
-
-    setClubs((prevClubs) =>
-      prevClubs.map((club) => {
-        if (club.id === selectedClub.id) {
-          return { ...club, status: 'deactivated' };
-        }
-        return club;
-      })
-    );
-
-    setShowDeactivateModal(false);
-    setSelectedClub(null);
-    window.Telegram?.WebApp?.showAlert(t('profile.clubDeactivated'));
   };
 
   // Note: Analytics are mock-only since there's no analytics API

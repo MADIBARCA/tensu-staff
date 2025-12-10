@@ -23,8 +23,6 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
 }) => {
   const { t } = useI18n();
   const [formData, setFormData] = useState<CreateEmployeeData>({
-    first_name: '',
-    last_name: '',
     phone: '+7',
     role: 'coach',
     club_ids: [],
@@ -97,12 +95,6 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.first_name.trim()) {
-      newErrors.first_name = t('management.employees.errors.firstNameRequired');
-    }
-    if (!formData.last_name.trim()) {
-      newErrors.last_name = t('management.employees.errors.lastNameRequired');
-    }
     if (!isPhoneValid) {
       newErrors.phone = t('management.employees.errors.phoneInvalid');
     }
@@ -166,44 +158,6 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 space-y-4">
-          {/* First Name */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('management.employees.firstName')} *
-            </label>
-            <input
-              type="text"
-              value={formData.first_name}
-              onChange={(e) => {
-                setFormData({ ...formData, first_name: e.target.value });
-                setErrors({ ...errors, first_name: '' });
-              }}
-              className={`w-full border rounded-lg p-2 ${
-                errors.first_name ? 'border-red-500' : 'border-gray-200'
-              }`}
-            />
-            {errors.first_name && <p className="text-red-500 text-xs mt-1">{errors.first_name}</p>}
-          </div>
-
-          {/* Last Name */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('management.employees.lastName')} *
-            </label>
-            <input
-              type="text"
-              value={formData.last_name}
-              onChange={(e) => {
-                setFormData({ ...formData, last_name: e.target.value });
-                setErrors({ ...errors, last_name: '' });
-              }}
-              className={`w-full border rounded-lg p-2 ${
-                errors.last_name ? 'border-red-500' : 'border-gray-200'
-              }`}
-            />
-            {errors.last_name && <p className="text-red-500 text-xs mt-1">{errors.last_name}</p>}
-          </div>
-
           {/* Phone */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">

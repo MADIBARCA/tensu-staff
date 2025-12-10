@@ -257,30 +257,22 @@ export default function ManagementPage() {
   const handleAddEmployee = async (data: CreateEmployeeData) => {
     if (initDataRaw && data.club_ids.length > 0) {
       try {
-        // Create invitation via API
-        const clubId = data.club_ids[0].toString();
-        await invitationsApi.create(clubId, {
-          phone_number: data.phone,
-          role: data.role,
-        }, initDataRaw);
+        // Create invitations for all selected clubs
+        for (const clubId of data.club_ids) {
+          await invitationsApi.create(clubId.toString(), {
+            phone_number: data.phone,
+            role: data.role,
+          }, initDataRaw);
+        }
+        
+        // Reload data to get updated employee list with new invitations
+        await loadData();
+        window.Telegram?.WebApp?.showAlert(t('management.employees.added'));
       } catch (error) {
         console.error('Error creating invitation:', error);
+        window.Telegram?.WebApp?.showAlert(t('management.employees.errors.createFailed') || 'Не удалось добавить сотрудника');
       }
     }
-
-    // Add to local state
-    const newEmployee: Employee = {
-      id: Date.now(),
-      first_name: data.first_name,
-      last_name: data.last_name,
-      phone: data.phone,
-      role: data.role,
-      status: 'pending',
-      club_ids: data.club_ids,
-      created_at: new Date().toISOString(),
-    };
-    setEmployees([...employees, newEmployee]);
-    window.Telegram?.WebApp?.showAlert(t('management.employees.added'));
   };
 
   const handleEditEmployee = (id: number, data: UpdateEmployeeData) => {

@@ -87,8 +87,6 @@ export interface Tariff {
 
 // Form Data Types
 export interface CreateEmployeeData {
-  first_name: string;
-  last_name: string;
   phone: string;
   role: EmployeeRole;
   club_ids: number[];
