@@ -314,6 +314,13 @@ export interface LessonGroupInfo {
   id: number;
   name: string;
   section_id: number;
+  capacity?: number;
+  section?: {
+    id: number;
+    name: string;
+    club_id: number;
+    club_name?: string;
+  };
 }
 
 export interface LessonCoachInfo {

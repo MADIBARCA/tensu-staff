@@ -173,10 +173,21 @@ export default function StaffMainPage() {
         setCoaches(transformedCoaches);
       }
 
-      // Load schedule for current week
-      const today = new Date().toISOString().split('T')[0];
-      const scheduleResponse = await scheduleApi.getWeekSchedule(today, initDataRaw);
-      if (scheduleResponse.data?.days) {
+      // Load schedule for 3 months (current + 2 months ahead)
+      const today = new Date();
+      const startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      const endDate = new Date(today.getFullYear(), today.getMonth() + 3, 0);
+      
+      const formatDate = (d: Date) => d.toISOString().split('T')[0];
+      
+      const lessonsResponse = await scheduleApi.getLessons({
+        page: 1,
+        size: 500,
+        date_from: formatDate(startDate),
+        date_to: formatDate(endDate),
+      }, initDataRaw);
+      
+      if (lessonsResponse.data?.lessons) {
         const allLessons: Training[] = [];
         const clubNameMap = new Map(loadedClubs.map(c => [c.id, c.name]));
         // Create section name map from sections response data
@@ -184,15 +195,13 @@ export default function StaffMainPage() {
           (sectionsResponse.data || []).map(s => [s.id, s.name] as [number, string])
         );
         
-        scheduleResponse.data.days.forEach(day => {
-          day.lessons.forEach(lesson => {
-            // Get club name from group's section
-            const sectionId = lesson.group?.section_id;
-            const section = (sectionsResponse.data || []).find(s => s.id === sectionId);
-            const clubId = section?.club_id || 0;
-            const clubName = clubNameMap.get(clubId) || 'Клуб';
-            allLessons.push(transformLessonToTraining(lesson, clubName, sectionNameMap));
-          });
+        lessonsResponse.data.lessons.forEach(lesson => {
+          // Get club name from group's section
+          const sectionId = lesson.group?.section_id;
+          const section = (sectionsResponse.data || []).find(s => s.id === sectionId);
+          const clubId = section?.club_id || 0;
+          const clubName = clubNameMap.get(clubId) || 'Клуб';
+          allLessons.push(transformLessonToTraining(lesson, clubName, sectionNameMap));
         });
         
         setTrainings(allLessons);

@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Layout, PageContainer } from '@/components/Layout';
 import { useI18n } from '@/i18n/i18n';
-import { Filter, List, CalendarDays, X } from 'lucide-react';
+import { Filter, List, CalendarDays, X, Loader2 } from 'lucide-react';
 import { TrainingCard } from './components/TrainingCard';
 import { CalendarView } from './components/CalendarView';
 import { FiltersModal } from './components/FiltersModal';
@@ -72,11 +72,74 @@ export default function SchedulePage() {
 
   // Calendar
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [loadingLessons, setLoadingLessons] = useState(false);
+  const loadedClubsRef = useRef<Club[]>([]);
 
   // Helper functions
   const formatDate = (date: Date): string => {
     return date.toISOString().split('T')[0];
   };
+
+  // Load lessons for a specific month
+  const loadLessonsForMonth = useCallback(async (targetMonth: Date) => {
+    if (!initDataRaw) return;
+
+    setLoadingLessons(true);
+    try {
+      // Get first and last day of month with buffer for surrounding weeks
+      const year = targetMonth.getFullYear();
+      const month = targetMonth.getMonth();
+      
+      // Start from first day of previous month (to cover prev week overflow)
+      const startDate = new Date(year, month - 1, 1);
+      // End at last day of next month (to cover next week overflow)
+      const endDate = new Date(year, month + 2, 0);
+
+      const clubNameMap = new Map(loadedClubsRef.current.map(c => [c.id, c.name]));
+
+      // Use getLessons API with date range
+      const lessonsResponse = await scheduleApi.getLessons({
+        page: 1,
+        size: 500, // Get plenty of lessons
+        date_from: formatDate(startDate),
+        date_to: formatDate(endDate),
+      }, initDataRaw);
+
+      if (lessonsResponse.data?.lessons) {
+        const allTrainings: Training[] = lessonsResponse.data.lessons.map(lesson => ({
+          id: lesson.id,
+          section_name: lesson.group?.section?.name || lesson.group?.name || '',
+          group_name: lesson.group?.name,
+          coach_name: `${lesson.coach?.first_name || ''} ${lesson.coach?.last_name || ''}`.trim(),
+          coach_id: lesson.coach_id,
+          club_id: lesson.group?.section?.club_id || 0,
+          club_name: clubNameMap.get(lesson.group?.section?.club_id || 0) || 'Клуб',
+          date: lesson.effective_date || lesson.planned_date,
+          time: lesson.effective_start_time || lesson.planned_start_time,
+          location: lesson.location || '',
+          max_participants: lesson.group?.capacity || 15,
+          current_participants: 0,
+          participants: [],
+          notes: lesson.notes,
+          is_booked: false,
+          is_in_waitlist: false,
+        }));
+
+        setTrainings(allTrainings);
+      }
+    } catch (err) {
+      console.error('Failed to load lessons for month:', err);
+    } finally {
+      setLoadingLessons(false);
+    }
+  }, [initDataRaw]);
+
+  // Handle calendar month change
+  const handleMonthChange = useCallback((newMonth: Date) => {
+    setCurrentMonth(newMonth);
+    loadLessonsForMonth(newMonth);
+  }, [loadLessonsForMonth]);
 
   const loadData = useCallback(async () => {
     if (!initDataRaw) {
@@ -96,6 +159,7 @@ export default function SchedulePage() {
           name: c.club.name,
         }));
         setClubs(loadedClubs);
+        loadedClubsRef.current = loadedClubs;
       }
 
       // Load coaches
@@ -111,36 +175,40 @@ export default function SchedulePage() {
         setCoaches(loadedCoaches);
       }
 
-      // Load schedule
-      const today = formatDate(new Date());
-      const scheduleResponse = await scheduleApi.getWeekSchedule(today, initDataRaw);
-      if (scheduleResponse.data?.days) {
-        const clubNameMap = new Map(loadedClubs.map(c => [c.id, c.name]));
-        const allTrainings: Training[] = [];
-        
-        scheduleResponse.data.days.forEach(day => {
-          day.lessons.forEach(lesson => {
-            allTrainings.push({
-              id: lesson.id,
-              section_name: lesson.group?.name || '',
-              group_name: lesson.group?.name,
-              coach_name: `${lesson.coach?.first_name || ''} ${lesson.coach?.last_name || ''}`.trim(),
-              coach_id: lesson.coach_id,
-              club_id: lesson.group?.section_id || 0,
-              club_name: clubNameMap.get(lesson.group?.section_id || 0) || 'Клуб',
-              date: lesson.effective_date,
-              time: lesson.effective_start_time,
-              location: lesson.location || '',
-              max_participants: 15,
-              current_participants: 0,
-              participants: [],
-              notes: lesson.notes,
-              is_booked: false,
-              is_in_waitlist: false,
-            });
-          });
-        });
-        
+      // Load lessons for current month (3 months range)
+      const today = new Date();
+      const startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      const endDate = new Date(today.getFullYear(), today.getMonth() + 3, 0);
+
+      const clubNameMap = new Map(loadedClubs.map(c => [c.id, c.name]));
+
+      const lessonsResponse = await scheduleApi.getLessons({
+        page: 1,
+        size: 500,
+        date_from: formatDate(startDate),
+        date_to: formatDate(endDate),
+      }, initDataRaw);
+
+      if (lessonsResponse.data?.lessons) {
+        const allTrainings: Training[] = lessonsResponse.data.lessons.map(lesson => ({
+          id: lesson.id,
+          section_name: lesson.group?.section?.name || lesson.group?.name || '',
+          group_name: lesson.group?.name,
+          coach_name: `${lesson.coach?.first_name || ''} ${lesson.coach?.last_name || ''}`.trim(),
+          coach_id: lesson.coach_id,
+          club_id: lesson.group?.section?.club_id || 0,
+          club_name: clubNameMap.get(lesson.group?.section?.club_id || 0) || 'Клуб',
+          date: lesson.effective_date || lesson.planned_date,
+          time: lesson.effective_start_time || lesson.planned_start_time,
+          location: lesson.location || '',
+          max_participants: lesson.group?.capacity || 15,
+          current_participants: 0,
+          participants: [],
+          notes: lesson.notes,
+          is_booked: false,
+          is_in_waitlist: false,
+        }));
+
         setTrainings(allTrainings);
       }
       
@@ -417,6 +485,9 @@ export default function SchedulePage() {
             onCancelBooking={handleCancelBooking}
             onWaitlist={handleWaitlist}
             onShowParticipants={handleShowParticipants}
+            currentMonth={currentMonth}
+            onMonthChange={handleMonthChange}
+            loadingLessons={loadingLessons}
           />
         )}
 

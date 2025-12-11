@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useI18n } from '@/i18n/i18n';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Loader2 } from 'lucide-react';
 import { TrainingCard } from './TrainingCard';
 import type { Training } from '../SchedulePage';
 
@@ -14,6 +14,9 @@ interface CalendarViewProps {
   onCancelBooking: (trainingId: number) => void;
   onWaitlist: (trainingId: number) => void;
   onShowParticipants: (training: Training) => void;
+  currentMonth?: Date;
+  onMonthChange?: (date: Date) => void;
+  loadingLessons?: boolean;
 }
 
 export const CalendarView: React.FC<CalendarViewProps> = ({
@@ -25,9 +28,15 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   onCancelBooking,
   onWaitlist,
   onShowParticipants,
+  currentMonth: externalCurrentMonth,
+  onMonthChange,
+  loadingLessons,
 }) => {
   const { t } = useI18n();
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [internalCurrentMonth, setInternalCurrentMonth] = useState(new Date());
+  
+  // Use external month if provided, otherwise use internal
+  const currentMonth = externalCurrentMonth || internalCurrentMonth;
 
   const weekDays = [
     t('schedule.weekdays.mon'),
@@ -112,11 +121,21 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   };
 
   const goToPrevMonth = () => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
+    const newMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1);
+    if (onMonthChange) {
+      onMonthChange(newMonth);
+    } else {
+      setInternalCurrentMonth(newMonth);
+    }
   };
 
   const goToNextMonth = () => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
+    const newMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
+    if (onMonthChange) {
+      onMonthChange(newMonth);
+    } else {
+      setInternalCurrentMonth(newMonth);
+    }
   };
 
   const days = getDaysInMonth(currentMonth);
@@ -127,16 +146,23 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       <div className="flex items-center justify-between mb-4">
         <button
           onClick={goToPrevMonth}
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          disabled={loadingLessons}
+          className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
         >
           <ChevronLeft size={20} />
         </button>
-        <h3 className="font-semibold text-gray-900">
-          {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
-        </h3>
+        <div className="flex items-center gap-2">
+          <h3 className="font-semibold text-gray-900">
+            {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+          </h3>
+          {loadingLessons && (
+            <Loader2 size={16} className="animate-spin text-blue-500" />
+          )}
+        </div>
         <button
           onClick={goToNextMonth}
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          disabled={loadingLessons}
+          className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
         >
           <ChevronRight size={20} />
         </button>

@@ -227,8 +227,32 @@ export const scheduleApi = {
   createManualLesson: (data: CreateManualLessonRequest, token: string | null) =>
     axiosRequest<CreateManualLessonResponse>(ENDPOINTS.SCHEDULE.LESSONS.CREATE_MANUAL, 'POST', token, data),
 
-  getLessons: (token: string) =>
-    axiosRequest<GetLessonsResponse>(ENDPOINTS.SCHEDULE.LESSONS.LIST, 'GET', token),
+  getLessons: (params: {
+    page?: number;
+    size?: number;
+    group_id?: number;
+    club_id?: number;
+    section_id?: number;
+    coach_id?: number;
+    date_from?: string;
+    date_to?: string;
+    status?: string;
+  }, token: string) => {
+    const searchParams = new URLSearchParams();
+    if (params.page) searchParams.append('page', params.page.toString());
+    if (params.size) searchParams.append('size', params.size.toString());
+    if (params.group_id) searchParams.append('group_id', params.group_id.toString());
+    if (params.club_id) searchParams.append('club_id', params.club_id.toString());
+    if (params.section_id) searchParams.append('section_id', params.section_id.toString());
+    if (params.coach_id) searchParams.append('coach_id', params.coach_id.toString());
+    if (params.date_from) searchParams.append('date_from', params.date_from);
+    if (params.date_to) searchParams.append('date_to', params.date_to);
+    if (params.status) searchParams.append('status', params.status);
+    
+    const queryString = searchParams.toString();
+    const url = queryString ? `${ENDPOINTS.SCHEDULE.LESSONS.LIST}?${queryString}` : ENDPOINTS.SCHEDULE.LESSONS.LIST;
+    return axiosRequest<GetLessonsResponse>(url, 'GET', token);
+  },
 
   getLessonById: (lessonId: number | string, token: string) =>
     axiosRequest<Lesson>(ENDPOINTS.SCHEDULE.LESSONS.GET_BY_ID(lessonId), 'GET', token),
