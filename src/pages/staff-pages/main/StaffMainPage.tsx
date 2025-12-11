@@ -182,7 +182,7 @@ export default function StaffMainPage() {
       
       const lessonsResponse = await scheduleApi.getLessons({
         page: 1,
-        size: 500,
+        size: 50,
         date_from: formatDate(startDate),
         date_to: formatDate(endDate),
       }, initDataRaw);
