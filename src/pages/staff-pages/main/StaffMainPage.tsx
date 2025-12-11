@@ -195,13 +195,39 @@ export default function StaffMainPage() {
           (sectionsResponse.data || []).map(s => [s.id, s.name] as [number, string])
         );
         
+        // Helper to check if user can see a lesson based on their role
+        const canSeeLessonLocal = (clubId: number, coachId: number): boolean => {
+          const user = userResponse.data;
+          if (!user) return false;
+          
+          // Find user's role in this club from loaded club roles
+          const clubRole = (clubsResponse.data?.clubs || []).find(cr => cr.club.id === clubId);
+          if (!clubRole) return false;
+          
+          // Owner or admin can see all lessons in the club
+          if (clubRole.role === 'owner' || clubRole.role === 'admin') {
+            return true;
+          }
+          
+          // Coach can only see their own lessons
+          if (clubRole.role === 'coach') {
+            return coachId === user.id;
+          }
+          
+          return false;
+        };
+        
         lessonsResponse.data.lessons.forEach(lesson => {
           // Get club name from group's section
           const sectionId = lesson.group?.section_id;
           const section = (sectionsResponse.data || []).find(s => s.id === sectionId);
           const clubId = section?.club_id || 0;
-          const clubName = clubNameMap.get(clubId) || 'Клуб';
-          allLessons.push(transformLessonToTraining(lesson, clubName, sectionNameMap));
+          
+          // Filter lessons based on user's role
+          if (canSeeLessonLocal(clubId, lesson.coach_id)) {
+            const clubName = clubNameMap.get(clubId) || 'Клуб';
+            allLessons.push(transformLessonToTraining(lesson, clubName, sectionNameMap));
+          }
         });
         
         setTrainings(allLessons);

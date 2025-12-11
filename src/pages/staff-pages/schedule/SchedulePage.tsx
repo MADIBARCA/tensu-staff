@@ -8,7 +8,8 @@ import { FiltersModal } from './components/FiltersModal';
 import { NoMembershipModal } from './components/NoMembershipModal';
 import { ParticipantsModal } from './components/ParticipantsModal';
 import { useTelegram } from '@/hooks/useTelegram';
-import { clubsApi, teamApi, scheduleApi } from '@/functions/axios/axiosFunctions';
+import { clubsApi, teamApi, scheduleApi, staffApi } from '@/functions/axios/axiosFunctions';
+import type { ClubWithRole, CreateStaffResponse } from '@/functions/axios/responses';
 
 export interface Training {
   id: number;
@@ -75,6 +76,33 @@ export default function SchedulePage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [loadingLessons, setLoadingLessons] = useState(false);
   const loadedClubsRef = useRef<Club[]>([]);
+  const clubRolesRef = useRef<ClubWithRole[]>([]);
+  const currentUserRef = useRef<CreateStaffResponse | null>(null);
+
+  // Helper to check if user can see a lesson based on their role
+  const canUserSeeLessonForClub = useCallback((clubId: number, coachId: number): boolean => {
+    const roles = clubRolesRef.current;
+    const user = currentUserRef.current;
+    
+    if (!user) return false;
+    
+    // Find user's role in this club
+    const clubRole = roles.find(cr => cr.club.id === clubId);
+    
+    if (!clubRole) return false; // User has no role in this club
+    
+    // Owner or admin can see all lessons in the club
+    if (clubRole.role === 'owner' || clubRole.role === 'admin') {
+      return true;
+    }
+    
+    // Coach can only see their own lessons
+    if (clubRole.role === 'coach') {
+      return coachId === user.id;
+    }
+    
+    return false;
+  }, []);
 
   // Helper functions
   const formatDate = (date: Date): string => {
@@ -107,24 +135,29 @@ export default function SchedulePage() {
       }, initDataRaw);
 
       if (lessonsResponse.data?.lessons) {
-        const allTrainings: Training[] = lessonsResponse.data.lessons.map(lesson => ({
-          id: lesson.id,
-          section_name: lesson.group?.section?.name || lesson.group?.name || '',
-          group_name: lesson.group?.name,
-          coach_name: `${lesson.coach?.first_name || ''} ${lesson.coach?.last_name || ''}`.trim(),
-          coach_id: lesson.coach_id,
-          club_id: lesson.group?.section?.club_id || 0,
-          club_name: clubNameMap.get(lesson.group?.section?.club_id || 0) || 'Клуб',
-          date: lesson.effective_date || lesson.planned_date,
-          time: lesson.effective_start_time || lesson.planned_start_time,
-          location: lesson.location || '',
-          max_participants: lesson.group?.capacity || 15,
-          current_participants: 0,
-          participants: [],
-          notes: lesson.notes,
-          is_booked: false,
-          is_in_waitlist: false,
-        }));
+        const allTrainings: Training[] = lessonsResponse.data.lessons
+          .filter(lesson => {
+            const clubId = lesson.group?.section?.club_id || 0;
+            return canUserSeeLessonForClub(clubId, lesson.coach_id);
+          })
+          .map(lesson => ({
+            id: lesson.id,
+            section_name: lesson.group?.section?.name || lesson.group?.name || '',
+            group_name: lesson.group?.name,
+            coach_name: `${lesson.coach?.first_name || ''} ${lesson.coach?.last_name || ''}`.trim(),
+            coach_id: lesson.coach_id,
+            club_id: lesson.group?.section?.club_id || 0,
+            club_name: clubNameMap.get(lesson.group?.section?.club_id || 0) || 'Клуб',
+            date: lesson.effective_date || lesson.planned_date,
+            time: lesson.effective_start_time || lesson.planned_start_time,
+            location: lesson.location || '',
+            max_participants: lesson.group?.capacity || 15,
+            current_participants: 0,
+            participants: [],
+            notes: lesson.notes,
+            is_booked: false,
+            is_in_waitlist: false,
+          }));
 
         setTrainings(allTrainings);
       }
@@ -133,7 +166,7 @@ export default function SchedulePage() {
     } finally {
       setLoadingLessons(false);
     }
-  }, [initDataRaw]);
+  }, [initDataRaw, canUserSeeLessonForClub]);
 
   // Handle calendar month change
   const handleMonthChange = useCallback((newMonth: Date) => {
@@ -150,10 +183,20 @@ export default function SchedulePage() {
     setLoading(true);
     setError(null);
     try {
-      // Load clubs
+      // Load current user first
+      const userResponse = await staffApi.getMe(initDataRaw);
+      if (userResponse.data) {
+        currentUserRef.current = userResponse.data;
+      }
+
+      // Load clubs with roles
       let loadedClubs: Club[] = [];
+      let loadedClubRoles: ClubWithRole[] = [];
       const clubsResponse = await clubsApi.getMy(initDataRaw);
       if (clubsResponse.data?.clubs) {
+        loadedClubRoles = clubsResponse.data.clubs;
+        clubRolesRef.current = loadedClubRoles;
+        
         loadedClubs = clubsResponse.data.clubs.map(c => ({
           id: c.club.id,
           name: c.club.name,
@@ -190,24 +233,48 @@ export default function SchedulePage() {
       }, initDataRaw);
 
       if (lessonsResponse.data?.lessons) {
-        const allTrainings: Training[] = lessonsResponse.data.lessons.map(lesson => ({
-          id: lesson.id,
-          section_name: lesson.group?.section?.name || lesson.group?.name || '',
-          group_name: lesson.group?.name,
-          coach_name: `${lesson.coach?.first_name || ''} ${lesson.coach?.last_name || ''}`.trim(),
-          coach_id: lesson.coach_id,
-          club_id: lesson.group?.section?.club_id || 0,
-          club_name: clubNameMap.get(lesson.group?.section?.club_id || 0) || 'Клуб',
-          date: lesson.effective_date || lesson.planned_date,
-          time: lesson.effective_start_time || lesson.planned_start_time,
-          location: lesson.location || '',
-          max_participants: lesson.group?.capacity || 15,
-          current_participants: 0,
-          participants: [],
-          notes: lesson.notes,
-          is_booked: false,
-          is_in_waitlist: false,
-        }));
+        // Helper to check if user can see a lesson
+        const canSeeLessonLocal = (clubId: number, coachId: number): boolean => {
+          const user = userResponse.data;
+          if (!user) return false;
+          
+          const clubRole = loadedClubRoles.find(cr => cr.club.id === clubId);
+          if (!clubRole) return false;
+          
+          if (clubRole.role === 'owner' || clubRole.role === 'admin') {
+            return true;
+          }
+          
+          if (clubRole.role === 'coach') {
+            return coachId === user.id;
+          }
+          
+          return false;
+        };
+
+        const allTrainings: Training[] = lessonsResponse.data.lessons
+          .filter(lesson => {
+            const clubId = lesson.group?.section?.club_id || 0;
+            return canSeeLessonLocal(clubId, lesson.coach_id);
+          })
+          .map(lesson => ({
+            id: lesson.id,
+            section_name: lesson.group?.section?.name || lesson.group?.name || '',
+            group_name: lesson.group?.name,
+            coach_name: `${lesson.coach?.first_name || ''} ${lesson.coach?.last_name || ''}`.trim(),
+            coach_id: lesson.coach_id,
+            club_id: lesson.group?.section?.club_id || 0,
+            club_name: clubNameMap.get(lesson.group?.section?.club_id || 0) || 'Клуб',
+            date: lesson.effective_date || lesson.planned_date,
+            time: lesson.effective_start_time || lesson.planned_start_time,
+            location: lesson.location || '',
+            max_participants: lesson.group?.capacity || 15,
+            current_participants: 0,
+            participants: [],
+            notes: lesson.notes,
+            is_booked: false,
+            is_in_waitlist: false,
+          }));
 
         setTrainings(allTrainings);
       }
