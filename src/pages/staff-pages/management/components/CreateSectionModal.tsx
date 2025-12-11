@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useMemo } from 'react';
-import { X, Plus, Trash2, CheckCircle } from 'lucide-react';
+import { X, Plus, Trash2, CheckCircle, Calendar, Info } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import { useTelegram } from '@/hooks/useTelegram';
 import { sectionsApi, groupsApi } from '@/functions/axios/axiosFunctions';
@@ -46,6 +46,8 @@ interface GroupForm {
   price: number | '';
   description: string;
   schedule: ScheduleRow[];
+  valid_from: string;
+  valid_until: string;
 }
 
 export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
@@ -134,7 +136,7 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
   };
 
   // Build schedule entry for API
-  const buildScheduleEntry = (rows: ScheduleRow[]) => {
+  const buildScheduleEntry = (rows: ScheduleRow[], validFrom: string, validUntil: string) => {
     const pattern: Record<string, { time: string; duration: number }[]> = {};
     rows.forEach(({ day, start, end }) => {
       const engDay = dayMap[day] || day.toLowerCase();
@@ -145,13 +147,18 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
     });
     return {
       weekly_pattern: pattern,
-      valid_from: '',
-      valid_until: '',
+      valid_from: validFrom || '',
+      valid_until: validUntil || '',
     };
   };
 
   // Group handlers
   const addGroup = () => {
+    // Default to today and 3 months from now
+    const today = new Date();
+    const threeMonthsLater = new Date(today);
+    threeMonthsLater.setMonth(threeMonthsLater.getMonth() + 3);
+    
     setGroups([...groups, {
       name: '',
       level: '',
@@ -159,6 +166,8 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
       price: '',
       description: '',
       schedule: [],
+      valid_from: today.toISOString().split('T')[0],
+      valid_until: threeMonthsLater.toISOString().split('T')[0],
     }]);
   };
 
@@ -264,7 +273,7 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
           section_id: createdSection.id,
           name: grp.name,
           description: grp.description || '',
-          schedule: buildScheduleEntry(grp.schedule),
+          schedule: buildScheduleEntry(grp.schedule, grp.valid_from, grp.valid_until),
           price: Number(grp.price) || 0,
           capacity: Number(grp.capacity) || 0,
           level: grp.level || 'all',
@@ -476,8 +485,50 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
                     />
                   </div>
 
-                  {/* Schedule */}
+                  {/* Schedule Period */}
                   <div className="mt-2 pt-2 border-t border-gray-200">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Calendar size={16} className="text-blue-500" />
+                      <span className="text-sm font-medium text-gray-700">
+                        {t('management.sections.schedulePeriod') || 'Период расписания'}
+                      </span>
+                    </div>
+                    
+                    <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 mb-3">
+                      <div className="flex items-start gap-2 mb-2">
+                        <Info size={14} className="text-blue-500 mt-0.5 shrink-0" />
+                        <p className="text-xs text-blue-700">
+                          {t('management.sections.schedulePeriodHint') || 'Укажите период, в течение которого будут отображаться занятия в календаре'}
+                        </p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-xs text-gray-600 mb-1">
+                            {t('management.sections.validFrom') || 'С даты'}
+                          </label>
+                          <input
+                            type="date"
+                            value={group.valid_from}
+                            onChange={(e) => updateGroup(gIdx, 'valid_from', e.target.value)}
+                            className="w-full text-sm border border-gray-200 rounded-lg p-2 bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-600 mb-1">
+                            {t('management.sections.validUntil') || 'По дату'}
+                          </label>
+                          <input
+                            type="date"
+                            value={group.valid_until}
+                            onChange={(e) => updateGroup(gIdx, 'valid_until', e.target.value)}
+                            min={group.valid_from}
+                            className="w-full text-sm border border-gray-200 rounded-lg p-2 bg-white"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Weekly Schedule */}
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs text-gray-600">{t('management.sections.schedules')}</span>
                       <button

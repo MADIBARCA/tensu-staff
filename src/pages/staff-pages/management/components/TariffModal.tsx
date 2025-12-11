@@ -2,11 +2,13 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { X, ChevronDown, ChevronRight, Check } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import type { Tariff, Club, Section, CreateTariffData, PaymentType, PackageType } from '../types';
+import type { ClubWithRole } from '@/functions/axios/responses';
 
 interface TariffModalProps {
   tariff?: Tariff;
   clubs: Club[];
   sections: Section[];
+  clubRoles: ClubWithRole[];
   onClose: () => void;
   onSave: (data: CreateTariffData) => void;
 }
@@ -15,6 +17,7 @@ export const TariffModal: React.FC<TariffModalProps> = ({
   tariff,
   clubs,
   sections,
+  clubRoles,
   onClose,
   onSave,
 }) => {
@@ -40,7 +43,14 @@ export const TariffModal: React.FC<TariffModalProps> = ({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const activeClubs = clubs.filter(c => c.status === 'active');
+  // Filter clubs where user is owner or admin (not just coach)
+  const activeClubs = useMemo(() => {
+    return clubs.filter(c => {
+      if (c.status !== 'active') return false;
+      const clubRole = clubRoles.find(cr => cr.club.id === c.id);
+      return clubRole && (clubRole.role === 'owner' || clubRole.role === 'admin');
+    });
+  }, [clubs, clubRoles]);
 
   // Get all section IDs for a club
   const getClubSectionIds = useCallback((clubId: number): number[] => {

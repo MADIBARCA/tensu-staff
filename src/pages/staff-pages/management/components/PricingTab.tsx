@@ -4,11 +4,13 @@ import { useI18n } from '@/i18n/i18n';
 import { TariffCard } from './TariffCard';
 import { TariffModal } from './TariffModal';
 import type { Tariff, Club, Section, CreateTariffData } from '../types';
+import type { ClubWithRole } from '@/functions/axios/responses';
 
 interface PricingTabProps {
   tariffs: Tariff[];
   clubs: Club[];
   sections: Section[];
+  clubRoles: ClubWithRole[];
   onCreateTariff: (data: CreateTariffData) => void | Promise<void>;
   onUpdateTariff: (id: number, data: CreateTariffData) => void | Promise<void>;
   onDeleteTariff: (id: number) => void | Promise<void>;
@@ -18,6 +20,7 @@ export const PricingTab: React.FC<PricingTabProps> = ({
   tariffs,
   clubs,
   sections,
+  clubRoles,
   onCreateTariff,
   onUpdateTariff,
   onDeleteTariff,
@@ -99,6 +102,7 @@ export const PricingTab: React.FC<PricingTabProps> = ({
         <TariffModal
           clubs={clubs}
           sections={sections}
+          clubRoles={clubRoles}
           onClose={() => setShowCreateModal(false)}
           onSave={handleCreateTariff}
         />
@@ -110,6 +114,7 @@ export const PricingTab: React.FC<PricingTabProps> = ({
           tariff={editingTariff}
           clubs={clubs}
           sections={sections}
+          clubRoles={clubRoles}
           onClose={() => setEditingTariff(null)}
           onSave={handleUpdateTariff}
         />

@@ -530,6 +530,10 @@ const RU: Dict = {
   'management.sections.selectLevel': 'Выберите уровень',
   'management.sections.selectTrainer': 'Выберите тренера',
   'management.sections.scheduleItem': 'Занятие',
+  'management.sections.schedulePeriod': 'Период расписания',
+  'management.sections.schedulePeriodHint': 'Укажите период, в течение которого будут отображаться занятия в календаре',
+  'management.sections.validFrom': 'С даты',
+  'management.sections.validUntil': 'По дату',
   // Pricing
   'management.pricing.count': 'тарифов',
   'management.pricing.notFound': 'Тарифы не найдены',
@@ -1113,6 +1117,10 @@ const KK: Dict = {
   'management.sections.selectLevel': 'Деңгейді таңдаңыз',
   'management.sections.selectTrainer': 'Жаттықтырушыны таңдаңыз',
   'management.sections.scheduleItem': 'Сабақ',
+  'management.sections.schedulePeriod': 'Кесте кезеңі',
+  'management.sections.schedulePeriodHint': 'Күнтізбеде сабақтар көрсетілетін кезеңді көрсетіңіз',
+  'management.sections.validFrom': 'Басталу күні',
+  'management.sections.validUntil': 'Аяқталу күні',
   // Pricing
   'management.pricing.count': 'тариф',
   'management.pricing.notFound': 'Тарифтер табылмады',

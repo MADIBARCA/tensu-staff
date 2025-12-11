@@ -480,6 +480,7 @@ export default function ManagementPage() {
             tariffs={tariffs}
             clubs={clubs}
             sections={sections}
+            clubRoles={clubRoles}
             onCreateTariff={handleCreateTariff}
             onUpdateTariff={handleUpdateTariff}
             onDeleteTariff={handleDeleteTariff}
