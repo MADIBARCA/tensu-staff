@@ -40,7 +40,9 @@ import type {
   SessionResponse,
   ClubLocationResponse,
   TariffResponse,
-  TariffListResponse
+  TariffListResponse,
+  StaffStudentResponse,
+  StaffStudentsListResponse
 } from './responses';
 
 // Staff API
@@ -337,4 +339,63 @@ export const sessionsApi = {
   
   book: (sessionId: number, token: string | null) =>
     axiosRequest<void>(`/students/sessions/${sessionId}/book`, 'POST', token),
+};
+
+// Staff Students API - For staff to manage students
+export const staffStudentsApi = {
+  getList: (params: {
+    page?: number;
+    size?: number;
+    search?: string;
+    status?: string;
+    club_id?: number;
+    section_id?: number;
+    group_ids?: number[];
+    coach_ids?: number[];
+  }, token: string) => {
+    const searchParams = new URLSearchParams();
+    if (params.page) searchParams.append('page', params.page.toString());
+    if (params.size) searchParams.append('size', params.size.toString());
+    if (params.search) searchParams.append('search', params.search);
+    if (params.status) searchParams.append('status', params.status);
+    if (params.club_id) searchParams.append('club_id', params.club_id.toString());
+    if (params.section_id) searchParams.append('section_id', params.section_id.toString());
+    if (params.group_ids?.length) searchParams.append('group_ids', params.group_ids.join(','));
+    if (params.coach_ids?.length) searchParams.append('coach_ids', params.coach_ids.join(','));
+    
+    const queryString = searchParams.toString();
+    const url = queryString ? `${ENDPOINTS.STAFF_STUDENTS.BASE}?${queryString}` : ENDPOINTS.STAFF_STUDENTS.BASE;
+    return axiosRequest<StaffStudentsListResponse>(url, 'GET', token);
+  },
+
+  getById: (studentId: string | number, token: string) =>
+    axiosRequest<StaffStudentResponse>(ENDPOINTS.STAFF_STUDENTS.BY_ID(studentId), 'GET', token),
+
+  enroll: (data: {
+    student_id: number;
+    group_id: number;
+    tariff_id?: number;
+    start_date: string;
+    end_date: string;
+    price?: number;
+    freeze_days_total?: number;
+  }, token: string) =>
+    axiosRequest<{ message: string; enrollment_id: number }>(ENDPOINTS.STAFF_STUDENTS.ENROLL, 'POST', token, data),
+
+  extend: (data: {
+    enrollment_id: number;
+    tariff_id: number;
+    days: number;
+  }, token: string) =>
+    axiosRequest<{ message: string; new_end_date: string }>(ENDPOINTS.STAFF_STUDENTS.EXTEND, 'POST', token, data),
+
+  freeze: (data: {
+    enrollment_id: number;
+    days: number;
+    reason?: string;
+  }, token: string) =>
+    axiosRequest<{ message: string; freeze_end_date: string; new_end_date: string }>(ENDPOINTS.STAFF_STUDENTS.FREEZE, 'POST', token, data),
+
+  unfreeze: (enrollmentId: string | number, token: string) =>
+    axiosRequest<{ message: string; status: string; end_date: string }>(ENDPOINTS.STAFF_STUDENTS.UNFREEZE(enrollmentId), 'POST', token),
 };

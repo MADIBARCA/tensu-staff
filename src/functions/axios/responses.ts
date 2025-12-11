@@ -522,3 +522,56 @@ export interface TariffListResponse {
   pages: number;
   filters?: Record<string, unknown>;
 }
+
+// Staff Students Response Types
+export type StaffStudentStatus = 'active' | 'frozen' | 'expired' | 'cancelled' | 'new';
+
+export interface StaffStudentMembership {
+  id: number;
+  status: StaffStudentStatus;
+  start_date: string;
+  end_date: string;
+  tariff_id?: number;
+  tariff_name?: string;
+  price: number;
+  freeze_days_total: number;
+  freeze_days_used: number;
+  freeze_start_date?: string;
+  freeze_end_date?: string;
+}
+
+export interface StaffStudentResponse {
+  id: number;
+  telegram_id: number;
+  first_name: string;
+  last_name?: string;
+  phone_number: string;
+  username?: string;
+  photo_url?: string;
+  club_id: number;
+  club_name: string;
+  section_id?: number;
+  section_name?: string;
+  group_id?: number;
+  group_name?: string;
+  coach_id?: number;
+  coach_name?: string;
+  membership?: StaffStudentMembership;
+  created_at: string;
+}
+
+export interface StaffStudentsListResponse {
+  students: StaffStudentResponse[];
+  total: number;
+  page: number;
+  size: number;
+  pages: number;
+  filters?: {
+    search?: string;
+    status?: StaffStudentStatus;
+    club_id?: number;
+    section_id?: number;
+    group_ids?: number[];
+    coach_ids?: number[];
+  };
+}

@@ -1,15 +1,15 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Layout, PageContainer } from '@/components/Layout';
 import { useI18n } from '@/i18n/i18n';
-import { Search, Filter, X, Loader2 } from 'lucide-react';
+import { Search, Filter, X, Loader2, Users } from 'lucide-react';
 import { StudentCard } from './components/StudentCard';
 import { StudentFiltersModal } from './components/StudentFiltersModal';
 import { StudentDetailsModal } from './components/StudentDetailsModal';
 import { ExtendMembershipModal } from './components/ExtendMembershipModal';
 import { FreezeMembershipModal } from './components/FreezeMembershipModal';
 import { useTelegram } from '@/hooks/useTelegram';
-import { studentsApi, teamApi, groupsApi } from '@/functions/axios/axiosFunctions';
-import type { Student, StudentFilters, ExtendMembershipData, FreezeMembershipData, Trainer, Group } from './types';
+import { staffStudentsApi, teamApi, groupsApi, clubsApi } from '@/functions/axios/axiosFunctions';
+import type { Student, StudentFilters, ExtendMembershipData, FreezeMembershipData, Trainer, Group, Club } from './types';
 
 export default function StudentsPage() {
   const { t } = useI18n();
@@ -19,9 +19,12 @@ export default function StudentsPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [coaches, setCoaches] = useState<Trainer[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
+  const [clubs, setClubs] = useState<Club[]>([]);
+  const [totalStudents, setTotalStudents] = useState(0);
   const [filters, setFilters] = useState<StudentFilters>({
     search: '',
     status: 'all',
+    clubId: null,
     coachIds: [],
     groupIds: [],
   });
@@ -41,10 +44,29 @@ export default function StudentsPage() {
     try {
       setLoading(true);
 
-      // Load students
-      const studentsResponse = await studentsApi.getList(initDataRaw);
-      if (studentsResponse.data?.users) {
-        const transformedStudents: Student[] = studentsResponse.data.users.map(s => ({
+      // Load clubs first
+      const clubsResponse = await clubsApi.getMy(initDataRaw);
+      if (clubsResponse.data?.clubs) {
+        const loadedClubs: Club[] = clubsResponse.data.clubs.map(c => ({
+          id: c.club.id,
+          name: c.club.name,
+        }));
+        setClubs(loadedClubs);
+      }
+
+      // Load students using the new staff students API
+      const studentsResponse = await staffStudentsApi.getList({
+        page: 1,
+        size: 100,
+        search: filters.search || undefined,
+        status: filters.status !== 'all' ? filters.status : undefined,
+        club_id: filters.clubId || undefined,
+        coach_ids: filters.coachIds.length > 0 ? filters.coachIds : undefined,
+        group_ids: filters.groupIds.length > 0 ? filters.groupIds : undefined,
+      }, initDataRaw);
+      
+      if (studentsResponse.data?.students) {
+        const transformedStudents: Student[] = studentsResponse.data.students.map(s => ({
           id: s.id,
           telegram_id: s.telegram_id,
           first_name: s.first_name,
@@ -52,19 +74,31 @@ export default function StudentsPage() {
           phone_number: s.phone_number,
           username: s.username,
           photo_url: s.photo_url,
-          club_id: 1,
-          club_name: '',
-          section_id: undefined,
-          section_name: undefined,
-          group_id: undefined,
-          group_name: undefined,
-          coach_id: undefined,
-          coach_name: undefined,
-          // Note: Membership info not available from basic students API
-          membership: null,
+          club_id: s.club_id,
+          club_name: s.club_name,
+          section_id: s.section_id,
+          section_name: s.section_name,
+          group_id: s.group_id,
+          group_name: s.group_name,
+          coach_id: s.coach_id,
+          coach_name: s.coach_name,
+          membership: s.membership ? {
+            id: s.membership.id,
+            status: s.membership.status,
+            start_date: s.membership.start_date,
+            end_date: s.membership.end_date,
+            tariff_id: s.membership.tariff_id,
+            tariff_name: s.membership.tariff_name,
+            price: s.membership.price,
+            freeze_days_total: s.membership.freeze_days_total,
+            freeze_days_used: s.membership.freeze_days_used,
+            freeze_start_date: s.membership.freeze_start_date,
+            freeze_end_date: s.membership.freeze_end_date,
+          } : null,
           created_at: s.created_at,
         }));
         setStudents(transformedStudents);
+        setTotalStudents(studentsResponse.data.total);
       }
 
       // Load coaches (from team)
@@ -97,52 +131,27 @@ export default function StudentsPage() {
     } finally {
       setLoading(false);
     }
-  }, [initDataRaw]);
+  }, [initDataRaw, filters.search, filters.status, filters.clubId, filters.coachIds, filters.groupIds]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  // Filter students based on current filters
-  const filteredStudents = useMemo(() => {
-    let result = students;
-
-    // Search by name or phone
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      result = result.filter(
-        (student) =>
-          `${student.first_name} ${student.last_name}`.toLowerCase().includes(searchLower) ||
-          student.phone_number.replace(/\s/g, '').includes(filters.search.replace(/\s/g, ''))
-      );
-    }
-
-    // Filter by status
-    if (filters.status !== 'all') {
-      result = result.filter(
-        (student) => student.membership?.status === filters.status
-      );
-    }
-
-    // Filter by coaches
-    if (filters.coachIds.length > 0) {
-      result = result.filter(
-        (student) => student.coach_id && filters.coachIds.includes(student.coach_id)
-      );
-    }
-
-    // Filter by groups
-    if (filters.groupIds.length > 0) {
-      result = result.filter(
-        (student) => student.group_id && filters.groupIds.includes(student.group_id)
-      );
-    }
-
-    return result;
-  }, [students, filters]);
+  // Debounced search
+  const [debouncedSearch, setDebouncedSearch] = useState(filters.search);
+  
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (debouncedSearch !== filters.search) {
+        setFilters(prev => ({ ...prev, search: debouncedSearch }));
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [debouncedSearch, filters.search]);
 
   const hasActiveFilters =
     filters.status !== 'all' ||
+    filters.clubId !== null ||
     filters.coachIds.length > 0 ||
     filters.groupIds.length > 0;
 
@@ -151,106 +160,112 @@ export default function StudentsPage() {
     setShowDetailsModal(true);
   };
 
-  // Note: Membership extension is mock-only since there's no membership API
-  const handleExtendMembership = (data: ExtendMembershipData) => {
-    if (!selectedStudent) return;
+  const handleExtendMembership = async (data: ExtendMembershipData) => {
+    if (!selectedStudent || !initDataRaw) return;
 
-    // Update student membership
-    setStudents((prevStudents) =>
-      prevStudents.map((student) => {
-        if (student.id === selectedStudent.id && student.membership) {
-          const currentEndDate = new Date(student.membership.end_date);
-          const newEndDate = new Date(
-            currentEndDate.getTime() + data.period * 24 * 60 * 60 * 1000
-          );
+    try {
+      const response = await staffStudentsApi.extend({
+        enrollment_id: data.enrollment_id,
+        tariff_id: data.tariff_id,
+        days: data.days,
+      }, initDataRaw);
+
+      if (response.data) {
+        // Update student in list
+        setStudents(prevStudents =>
+          prevStudents.map(student => {
+            if (student.id === selectedStudent.id && student.membership) {
+              return {
+                ...student,
+                membership: {
+                  ...student.membership,
+                  end_date: response.data!.new_end_date,
+                  status: 'active',
+                  tariff_name: data.tariff_name,
+                  price: data.price || student.membership.price,
+                },
+              };
+            }
+            return student;
+          })
+        );
+
+        // Update selected student
+        setSelectedStudent(prev => {
+          if (!prev || !prev.membership) return prev;
           return {
-            ...student,
+            ...prev,
             membership: {
-              ...student.membership,
-              end_date: newEndDate.toISOString().split('T')[0],
-              tariff_name: data.tariff_name,
-              price: data.price,
+              ...prev.membership,
+              end_date: response.data!.new_end_date,
               status: 'active',
+              tariff_name: data.tariff_name,
+              price: data.price || prev.membership.price,
             },
           };
-        }
-        return student;
-      })
-    );
+        });
 
-    // Update selected student
-    setSelectedStudent((prev) => {
-      if (!prev || !prev.membership) return prev;
-      const currentEndDate = new Date(prev.membership.end_date);
-      const newEndDate = new Date(
-        currentEndDate.getTime() + data.period * 24 * 60 * 60 * 1000
-      );
-      return {
-        ...prev,
-        membership: {
-          ...prev.membership,
-          end_date: newEndDate.toISOString().split('T')[0],
-          tariff_name: data.tariff_name,
-          price: data.price,
-          status: 'active',
-        },
-      };
-    });
-
-    setShowExtendModal(false);
-    
-    // Show success message
-    window.Telegram?.WebApp?.showAlert(t('students.extend.success'));
+        setShowExtendModal(false);
+        window.Telegram?.WebApp?.showAlert(t('students.extend.success'));
+      }
+    } catch (error) {
+      console.error('Error extending membership:', error);
+      window.Telegram?.WebApp?.showAlert(t('students.extend.error'));
+    }
   };
 
-  // Note: Membership freeze is mock-only since there's no membership API
-  const handleFreezeMembership = (data: FreezeMembershipData) => {
-    if (!selectedStudent) return;
+  const handleFreezeMembership = async (data: FreezeMembershipData) => {
+    if (!selectedStudent || !initDataRaw) return;
 
-    // Update student membership
-    setStudents((prevStudents) =>
-      prevStudents.map((student) => {
-        if (student.id === selectedStudent.id && student.membership) {
-          const currentEndDate = new Date(student.membership.end_date);
-          const newEndDate = new Date(
-            currentEndDate.getTime() + data.days * 24 * 60 * 60 * 1000
-          );
+    try {
+      const response = await staffStudentsApi.freeze({
+        enrollment_id: data.enrollment_id,
+        days: data.days,
+        reason: data.reason,
+      }, initDataRaw);
+
+      if (response.data) {
+        // Update student in list
+        setStudents(prevStudents =>
+          prevStudents.map(student => {
+            if (student.id === selectedStudent.id && student.membership) {
+              return {
+                ...student,
+                membership: {
+                  ...student.membership,
+                  status: 'frozen',
+                  end_date: response.data!.new_end_date,
+                  freeze_days_used: student.membership.freeze_days_used + data.days,
+                  freeze_end_date: response.data!.freeze_end_date,
+                },
+              };
+            }
+            return student;
+          })
+        );
+
+        // Update selected student
+        setSelectedStudent(prev => {
+          if (!prev || !prev.membership) return prev;
           return {
-            ...student,
+            ...prev,
             membership: {
-              ...student.membership,
+              ...prev.membership,
               status: 'frozen',
-              end_date: newEndDate.toISOString().split('T')[0],
-              freeze_days_used: student.membership.freeze_days_used + data.days,
+              end_date: response.data!.new_end_date,
+              freeze_days_used: prev.membership.freeze_days_used + data.days,
+              freeze_end_date: response.data!.freeze_end_date,
             },
           };
-        }
-        return student;
-      })
-    );
+        });
 
-    // Update selected student
-    setSelectedStudent((prev) => {
-      if (!prev || !prev.membership) return prev;
-      const currentEndDate = new Date(prev.membership.end_date);
-      const newEndDate = new Date(
-        currentEndDate.getTime() + data.days * 24 * 60 * 60 * 1000
-      );
-      return {
-        ...prev,
-        membership: {
-          ...prev.membership,
-          status: 'frozen',
-          end_date: newEndDate.toISOString().split('T')[0],
-          freeze_days_used: prev.membership.freeze_days_used + data.days,
-        },
-      };
-    });
-
-    setShowFreezeModal(false);
-    
-    // Show success message
-    window.Telegram?.WebApp?.showAlert(t('students.freeze.success'));
+        setShowFreezeModal(false);
+        window.Telegram?.WebApp?.showAlert(t('students.freeze.success'));
+      }
+    } catch (error) {
+      console.error('Error freezing membership:', error);
+      window.Telegram?.WebApp?.showAlert(t('students.freeze.error'));
+    }
   };
 
   const handleMarkAttendance = () => {
@@ -272,7 +287,8 @@ export default function StudentsPage() {
   };
 
   const handleClearSearch = () => {
-    setFilters((prev) => ({ ...prev, search: '' }));
+    setDebouncedSearch('');
+    setFilters(prev => ({ ...prev, search: '' }));
   };
 
   if (loading) {
@@ -288,6 +304,16 @@ export default function StudentsPage() {
   return (
     <Layout title={t('students.title')}>
       <PageContainer>
+        {/* Header with count */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Users size={20} className="text-blue-500" />
+            <span className="text-sm text-gray-600">
+              {t('students.totalCount', { count: totalStudents })}
+            </span>
+          </div>
+        </div>
+
         {/* Search Bar */}
         <div className="relative mb-4">
           <Search
@@ -296,14 +322,12 @@ export default function StudentsPage() {
           />
           <input
             type="text"
-            value={filters.search}
-            onChange={(e) =>
-              setFilters((prev) => ({ ...prev, search: e.target.value }))
-            }
+            value={debouncedSearch}
+            onChange={(e) => setDebouncedSearch(e.target.value)}
             placeholder={t('students.search.placeholder')}
             className="w-full pl-10 pr-10 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          {filters.search && (
+          {debouncedSearch && (
             <button
               onClick={handleClearSearch}
               className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
@@ -326,19 +350,21 @@ export default function StudentsPage() {
           {t('students.filter.button')}
           {hasActiveFilters && (
             <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">
-              {filters.coachIds.length + filters.groupIds.length + (filters.status !== 'all' ? 1 : 0)}
+              {filters.coachIds.length + filters.groupIds.length + (filters.status !== 'all' ? 1 : 0) + (filters.clubId ? 1 : 0)}
             </span>
           )}
         </button>
 
         {/* Students List */}
-        {filteredStudents.length === 0 ? (
+        {students.length === 0 ? (
           <div className="text-center py-8">
-            <p className="text-gray-600">{t('students.empty')}</p>
+            <Users size={48} className="mx-auto mb-4 text-gray-300" />
+            <p className="text-gray-600 mb-2">{t('students.empty')}</p>
+            <p className="text-sm text-gray-400">{t('students.emptyHint')}</p>
           </div>
         ) : (
           <div className="space-y-3">
-            {filteredStudents.map((student) => (
+            {students.map((student) => (
               <StudentCard
                 key={student.id}
                 student={student}
@@ -349,13 +375,16 @@ export default function StudentsPage() {
         )}
 
         {/* Results count */}
-        <div className="mt-4 text-center text-sm text-gray-500">
-          {t('students.count', { count: filteredStudents.length })}
-        </div>
+        {students.length > 0 && (
+          <div className="mt-4 text-center text-sm text-gray-500">
+            {t('students.count', { count: students.length })}
+          </div>
+        )}
 
         {/* Modals */}
         {showFiltersModal && (
           <StudentFiltersModal
+            clubs={clubs}
             coaches={coaches}
             groups={groups}
             filters={filters}

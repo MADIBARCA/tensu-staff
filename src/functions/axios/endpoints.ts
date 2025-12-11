@@ -93,5 +93,14 @@ export const ENDPOINTS = {
     MY: '/tariffs/my',
     BY_ID: (tariffId: string | number) => `/tariffs/${tariffId}`,
     TOGGLE_STATUS: (tariffId: string | number) => `/tariffs/${tariffId}/toggle-status`,
+  },
+
+  STAFF_STUDENTS: {
+    BASE: '/staff/students/',
+    BY_ID: (studentId: string | number) => `/staff/students/${studentId}`,
+    ENROLL: '/staff/students/enroll',
+    EXTEND: '/staff/students/extend',
+    FREEZE: '/staff/students/freeze',
+    UNFREEZE: (enrollmentId: string | number) => `/staff/students/unfreeze/${enrollmentId}`,
   }
 } as const;

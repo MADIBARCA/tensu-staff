@@ -1,12 +1,12 @@
 // Types for students page
 
-export type MembershipStatus = 'active' | 'frozen' | 'expired' | 'new';
+export type MembershipStatus = 'active' | 'frozen' | 'expired' | 'new' | 'cancelled';
 
 export interface Student {
   id: number;
   telegram_id: number;
   first_name: string;
-  last_name: string;
+  last_name?: string;
   phone_number: string;
   username?: string;
   photo_url?: string;
@@ -24,19 +24,16 @@ export interface Student {
 
 export interface StudentMembership {
   id: number;
-  student_id: number;
-  club_id: number;
-  section_id?: number;
-  group_id?: number;
   status: MembershipStatus;
   start_date: string;
   end_date: string;
-  tariff_name: string;
+  tariff_id?: number;
+  tariff_name?: string;
   price: number;
-  freeze_available: boolean;
   freeze_days_total: number;
   freeze_days_used: number;
-  created_at: string;
+  freeze_start_date?: string;
+  freeze_end_date?: string;
 }
 
 export interface AttendanceRecord {
@@ -75,20 +72,29 @@ export interface Group {
   club_id: number;
 }
 
+export interface Club {
+  id: number;
+  name: string;
+}
+
 export interface StudentFilters {
   search: string;
   status: MembershipStatus | 'all';
+  clubId: number | null;
   coachIds: number[];
   groupIds: number[];
 }
 
 export interface ExtendMembershipData {
-  period: number; // days
-  tariff_name: string;
-  price: number;
+  enrollment_id: number;
+  tariff_id: number;
+  days: number;
+  tariff_name?: string;
+  price?: number;
 }
 
 export interface FreezeMembershipData {
-  start_date: string;
+  enrollment_id: number;
   days: number;
+  reason?: string;
 }

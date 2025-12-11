@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { X, Check } from 'lucide-react';
+import { X, Check, Building2 } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
-import type { Trainer, Group, StudentFilters, MembershipStatus } from '../types';
+import type { Trainer, Group, StudentFilters, MembershipStatus, Club } from '../types';
 
 interface StudentFiltersModalProps {
+  clubs: Club[];
   coaches: Trainer[];
   groups: Group[];
   filters: StudentFilters;
@@ -12,6 +13,7 @@ interface StudentFiltersModalProps {
 }
 
 export const StudentFiltersModal: React.FC<StudentFiltersModalProps> = ({
+  clubs,
   coaches,
   groups,
   filters: initialFilters,
@@ -28,6 +30,13 @@ export const StudentFiltersModal: React.FC<StudentFiltersModalProps> = ({
     { value: 'frozen', label: t('students.status.frozen') },
     { value: 'expired', label: t('students.status.expired') },
   ];
+
+  const handleClubToggle = (clubId: number) => {
+    setLocalFilters((prev) => ({
+      ...prev,
+      clubId: prev.clubId === clubId ? null : clubId,
+    }));
+  };
 
   const handleTrainerToggle = (coachId: number) => {
     setLocalFilters((prev) => ({
@@ -55,12 +64,23 @@ export const StudentFiltersModal: React.FC<StudentFiltersModalProps> = ({
     const resetFilters: StudentFilters = {
       search: '',
       status: 'all',
+      clubId: null,
       coachIds: [],
       groupIds: [],
     };
     setLocalFilters(resetFilters);
     onApply(resetFilters);
   };
+
+  // Filter groups by selected club if any
+  const filteredGroups = localFilters.clubId
+    ? groups.filter(g => g.club_id === localFilters.clubId)
+    : groups;
+
+  // Filter coaches by selected club if any
+  const filteredCoaches = localFilters.clubId
+    ? coaches.filter(c => c.club_id === localFilters.clubId)
+    : coaches;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -77,7 +97,48 @@ export const StudentFiltersModal: React.FC<StudentFiltersModalProps> = ({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+        <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-8">
+          {/* Club Filter */}
+          {clubs.length > 1 && (
+            <div>
+              <h3 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
+                <Building2 size={16} className="text-gray-500" />
+                {t('students.filter.clubs')}
+              </h3>
+              <div className="space-y-2">
+                <button
+                  onClick={() => setLocalFilters(prev => ({ ...prev, clubId: null }))}
+                  className={`w-full flex items-center justify-between p-3 rounded-lg border transition-colors ${
+                    localFilters.clubId === null
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 hover:bg-gray-50'
+                  }`}
+                >
+                  <span className="text-gray-900">{t('students.filter.allClubs')}</span>
+                  {localFilters.clubId === null && (
+                    <Check size={18} className="text-blue-500" />
+                  )}
+                </button>
+                {clubs.map((club) => (
+                  <button
+                    key={club.id}
+                    onClick={() => handleClubToggle(club.id)}
+                    className={`w-full flex items-center justify-between p-3 rounded-lg border transition-colors ${
+                      localFilters.clubId === club.id
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    <span className="text-gray-900">{club.name}</span>
+                    {localFilters.clubId === club.id && (
+                      <Check size={18} className="text-blue-500" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Status Filter */}
           <div>
             <h3 className="font-medium text-gray-900 mb-3">
@@ -106,57 +167,61 @@ export const StudentFiltersModal: React.FC<StudentFiltersModalProps> = ({
           </div>
 
           {/* Coaches Filter */}
-          <div>
-            <h3 className="font-medium text-gray-900 mb-3">
-              {t('students.filter.coaches')}
-            </h3>
-            <div className="space-y-2">
-              {coaches.map((coach) => (
-                <button
-                  key={coach.id}
-                  onClick={() => handleTrainerToggle(coach.id)}
-                  className={`w-full flex items-center justify-between p-3 rounded-lg border transition-colors ${
-                    localFilters.coachIds.includes(coach.id)
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:bg-gray-50'
-                  }`}
-                >
-                  <span className="text-gray-900">{coach.name}</span>
-                  {localFilters.coachIds.includes(coach.id) && (
-                    <Check size={18} className="text-blue-500" />
-                  )}
-                </button>
-              ))}
+          {filteredCoaches.length > 0 && (
+            <div>
+              <h3 className="font-medium text-gray-900 mb-3">
+                {t('students.filter.coaches')}
+              </h3>
+              <div className="space-y-2">
+                {filteredCoaches.map((coach) => (
+                  <button
+                    key={coach.id}
+                    onClick={() => handleTrainerToggle(coach.id)}
+                    className={`w-full flex items-center justify-between p-3 rounded-lg border transition-colors ${
+                      localFilters.coachIds.includes(coach.id)
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    <span className="text-gray-900">{coach.name}</span>
+                    {localFilters.coachIds.includes(coach.id) && (
+                      <Check size={18} className="text-blue-500" />
+                    )}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Groups Filter */}
-          <div>
-            <h3 className="font-medium text-gray-900 mb-3">
-              {t('students.filter.groups')}
-            </h3>
-            <div className="space-y-2">
-              {groups.map((group) => (
-                <button
-                  key={group.id}
-                  onClick={() => handleGroupToggle(group.id)}
-                  className={`w-full flex items-center justify-between p-3 rounded-lg border transition-colors ${
-                    localFilters.groupIds.includes(group.id)
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:bg-gray-50'
-                  }`}
-                >
-                  <div className="text-left">
-                    <span className="text-gray-900 block">{group.name}</span>
-                    <span className="text-xs text-gray-500">{group.section_name}</span>
-                  </div>
-                  {localFilters.groupIds.includes(group.id) && (
-                    <Check size={18} className="text-blue-500" />
-                  )}
-                </button>
-              ))}
+          {filteredGroups.length > 0 && (
+            <div>
+              <h3 className="font-medium text-gray-900 mb-3">
+                {t('students.filter.groups')}
+              </h3>
+              <div className="space-y-2">
+                {filteredGroups.map((group) => (
+                  <button
+                    key={group.id}
+                    onClick={() => handleGroupToggle(group.id)}
+                    className={`w-full flex items-center justify-between p-3 rounded-lg border transition-colors ${
+                      localFilters.groupIds.includes(group.id)
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="text-left">
+                      <span className="text-gray-900 block">{group.name}</span>
+                      <span className="text-xs text-gray-500">{group.section_name}</span>
+                    </div>
+                    {localFilters.groupIds.includes(group.id) && (
+                      <Check size={18} className="text-blue-500" />
+                    )}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Actions */}
