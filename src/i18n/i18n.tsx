@@ -398,6 +398,10 @@ const RU: Dict = {
   'profile.deactivate.title': 'Деактивация клуба',
   'profile.deactivate.message': 'Вы уверены, что хотите деактивировать клуб "{name}"?',
   'profile.deactivate.warning': 'Клуб будет скрыт из поиска. Все расписания будут удалены. Это действие можно отменить.',
+  'profile.deactivate.confirmInstruction': 'Для подтверждения введите название клуба:',
+  'profile.deactivate.inputPlaceholder': 'Введите название клуба',
+  'profile.deactivate.nameMismatch': 'Название не совпадает',
+  'profile.deactivate.nameMatch': 'Название совпадает',
   'profile.deactivate.confirm': 'Деактивировать',
   // Invitations
   'profile.invitations.title': 'Приглашения',
@@ -974,6 +978,10 @@ const KK: Dict = {
   'profile.deactivate.title': 'Клубты деактивациялау',
   'profile.deactivate.message': '"{name}" клубын деактивациялауды қалайсыз ба?',
   'profile.deactivate.warning': 'Клуб іздеуден жасырылады. Барлық кестелер жойылады. Бұл әрекетті болдырмауға болады.',
+  'profile.deactivate.confirmInstruction': 'Растау үшін клуб атауын енгізіңіз:',
+  'profile.deactivate.inputPlaceholder': 'Клуб атауын енгізіңіз',
+  'profile.deactivate.nameMismatch': 'Атау сәйкес келмейді',
+  'profile.deactivate.nameMatch': 'Атау сәйкес келеді',
   'profile.deactivate.confirm': 'Деактивациялау',
   // Invitations
   'profile.invitations.title': 'Шақырулар',
