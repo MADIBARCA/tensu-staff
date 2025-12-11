@@ -49,6 +49,13 @@ const mapTrainingStatusToApiStatus = (status: Training['status']): "scheduled" |
   return status;
 };
 
+// Format time to HH:mm (remove seconds if present)
+const formatTimeString = (time: string): string => {
+  if (!time) return '';
+  const parts = time.split(':');
+  return `${parts[0]}:${parts[1]}`;
+};
+
 // Helper function to transform API Lesson to Training
 const transformLessonToTraining = (lesson: Lesson, clubName: string, sectionNameMap: Map<number, string>): Training => {
   const status = mapApiStatusToTrainingStatus(
@@ -72,7 +79,7 @@ const transformLessonToTraining = (lesson: Lesson, clubName: string, sectionName
     coach_id: lesson.coach_id,
     coach_name: `${lesson.coach?.first_name || ''} ${lesson.coach?.last_name || ''}`.trim(),
     date: lesson.effective_date,
-    time: lesson.effective_start_time,
+    time: formatTimeString(lesson.effective_start_time),
     duration: lesson.duration_minutes,
     location: lesson.location || '',
     max_participants: undefined,

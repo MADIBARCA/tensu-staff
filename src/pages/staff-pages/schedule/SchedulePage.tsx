@@ -109,6 +109,13 @@ export default function SchedulePage() {
     return date.toISOString().split('T')[0];
   };
 
+  // Format time to HH:mm (remove seconds if present)
+  const formatTime = (time: string): string => {
+    if (!time) return '';
+    const parts = time.split(':');
+    return `${parts[0]}:${parts[1]}`;
+  };
+
   // Load lessons for a specific month
   const loadLessonsForMonth = useCallback(async (targetMonth: Date) => {
     if (!initDataRaw) return;
@@ -149,7 +156,7 @@ export default function SchedulePage() {
             club_id: lesson.group?.section?.club_id || 0,
             club_name: clubNameMap.get(lesson.group?.section?.club_id || 0) || 'Клуб',
             date: lesson.effective_date || lesson.planned_date,
-            time: lesson.effective_start_time || lesson.planned_start_time,
+            time: formatTime(lesson.effective_start_time || lesson.planned_start_time),
             location: lesson.location || '',
             max_participants: lesson.group?.capacity || 15,
             current_participants: 0,
@@ -266,7 +273,7 @@ export default function SchedulePage() {
             club_id: lesson.group?.section?.club_id || 0,
             club_name: clubNameMap.get(lesson.group?.section?.club_id || 0) || 'Клуб',
             date: lesson.effective_date || lesson.planned_date,
-            time: lesson.effective_start_time || lesson.planned_start_time,
+            time: formatTime(lesson.effective_start_time || lesson.planned_start_time),
             location: lesson.location || '',
             max_participants: lesson.group?.capacity || 15,
             current_participants: 0,
