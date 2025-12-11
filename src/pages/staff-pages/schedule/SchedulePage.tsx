@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Layout, PageContainer } from '@/components/Layout';
 import { useI18n } from '@/i18n/i18n';
-import { Filter, List, CalendarDays, X, Loader2 } from 'lucide-react';
+import { Filter, List, CalendarDays, X } from 'lucide-react';
 import { TrainingCard } from './components/TrainingCard';
 import { CalendarView } from './components/CalendarView';
 import { FiltersModal } from './components/FiltersModal';
