@@ -534,6 +534,9 @@ const RU: Dict = {
   'management.sections.schedulePeriodHint': 'Укажите период, в течение которого будут отображаться занятия в календаре',
   'management.sections.validFrom': 'С даты',
   'management.sections.validUntil': 'По дату',
+  'management.sections.groupsAndLessonsCreated': 'Группы и занятия успешно созданы',
+  'management.sections.updatedWithLessons': 'Секция обновлена, занятия созданы',
+  'management.sections.generatingLessons': 'Создаём занятия...',
   // Pricing
   'management.pricing.count': 'тарифов',
   'management.pricing.notFound': 'Тарифы не найдены',
@@ -1121,6 +1124,9 @@ const KK: Dict = {
   'management.sections.schedulePeriodHint': 'Күнтізбеде сабақтар көрсетілетін кезеңді көрсетіңіз',
   'management.sections.validFrom': 'Басталу күні',
   'management.sections.validUntil': 'Аяқталу күні',
+  'management.sections.groupsAndLessonsCreated': 'Топтар мен сабақтар сәтті құрылды',
+  'management.sections.updatedWithLessons': 'Бөлім жаңартылды, сабақтар құрылды',
+  'management.sections.generatingLessons': 'Сабақтар құрылуда...',
   // Pricing
   'management.pricing.count': 'тариф',
   'management.pricing.notFound': 'Тарифтер табылмады',

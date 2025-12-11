@@ -3,7 +3,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { X, Plus, Trash2, AlertTriangle, Calendar, Info } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import { useTelegram } from '@/hooks/useTelegram';
-import { sectionsApi, groupsApi } from '@/functions/axios/axiosFunctions';
+import { sectionsApi, groupsApi, scheduleApi } from '@/functions/axios/axiosFunctions';
 import type { Section, Employee } from '../types';
 import type { ClubWithRole, CreateStaffResponse, GetMyGroupResponse } from '@/functions/axios/responses';
 import { levelOptions } from '../mockData';
@@ -328,6 +328,8 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
     }
     
     setLoading(true);
+    let lessonsGenerated = 0;
+    
     try {
       // Update section
       await sectionsApi.updateById({
@@ -338,7 +340,7 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
         active: true,
       }, section.id, initDataRaw);
 
-      // Update/create groups
+      // Update/create groups and generate lessons
       for (const grp of groups) {
         if (!grp.name.trim()) {
           window.Telegram?.WebApp?.showAlert('Имя группы не может быть пустым');
@@ -359,14 +361,46 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
           active: true,
         };
 
+        let groupId = grp.id;
+        
         if (grp.id && !grp.isNew) {
+          // Update existing group
           await groupsApi.updateById(payload, grp.id, initDataRaw);
         } else if (grp.name) {
-          await groupsApi.create(payload, initDataRaw);
+          // Create new group
+          const response = await groupsApi.create(payload, initDataRaw);
+          if (response.data) {
+            groupId = response.data.id;
+          }
+        }
+        
+        // Generate lessons if schedule exists and has valid dates
+        if (groupId && grp.schedule.length > 0 && grp.valid_from && grp.valid_until) {
+          try {
+            await scheduleApi.generateLessons(
+              groupId,
+              {
+                start_date: grp.valid_from,
+                end_date: grp.valid_until,
+                overwrite_existing: false, // Don't overwrite existing lessons
+                exclude_holidays: true,
+              },
+              initDataRaw
+            );
+            lessonsGenerated++;
+          } catch (lessonError) {
+            console.error('Error generating lessons for group:', groupId, lessonError);
+            // Continue with other groups even if lesson generation fails
+          }
         }
       }
 
-      window.Telegram?.WebApp?.showAlert(t('management.sections.updated'));
+      // Show success message
+      const message = lessonsGenerated > 0
+        ? t('management.sections.updatedWithLessons') || 'Секция обновлена, занятия созданы'
+        : t('management.sections.updated');
+        
+      window.Telegram?.WebApp?.showAlert(message);
       onRefresh();
       onClose();
     } catch (error) {

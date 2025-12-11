@@ -157,6 +157,7 @@ export interface SectionGroupSummary {
 export type GetMySectionsResponse = CreateSectionResponse[];
 
 export interface CreateGroupResponse {
+  id: number;
   section_id: number;
   name: string;
   description: string;

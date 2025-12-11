@@ -143,7 +143,7 @@ export const sectionsApi = {
 // Groups API
 export const groupsApi = {
   create: (data: CreateGroupRequest, token: string) =>
-    axiosRequest(ENDPOINTS.GROUPS.BASE, 'POST', token, data),
+    axiosRequest<CreateGroupResponse>(ENDPOINTS.GROUPS.BASE, 'POST', token, data),
   
   getBySectionId: (id: number | undefined, token: string) =>
     axiosRequest<GetSectionGroupsResponse>(ENDPOINTS.GROUPS.BY_SECTION_ID(id), 'GET', token),

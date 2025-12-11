@@ -3,7 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { X, Plus, Trash2, CheckCircle, Calendar, Info } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import { useTelegram } from '@/hooks/useTelegram';
-import { sectionsApi, groupsApi } from '@/functions/axios/axiosFunctions';
+import { sectionsApi, groupsApi, scheduleApi } from '@/functions/axios/axiosFunctions';
 import type { Club, Employee } from '../types';
 import type { ClubWithRole, CreateStaffResponse, CreateSectionResponse } from '@/functions/axios/responses';
 import { levelOptions } from '../mockData';
@@ -256,11 +256,13 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
     }
   };
 
-  // Save groups
+  // Save groups and generate lessons
   const handleSaveGroups = async () => {
     if (!initDataRaw || !createdSection) return;
     
     setLoading(true);
+    let lessonsGenerated = 0;
+    
     try {
       for (const grp of groups) {
         if (!grp.name.trim()) {
@@ -282,14 +284,39 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
           active: true,
         };
 
-        await groupsApi.create(payload, initDataRaw);
+        // Create group
+        const groupResponse = await groupsApi.create(payload, initDataRaw);
+        const createdGroup = groupResponse.data as { id: number } | null;
+        
+        // Generate lessons if schedule exists and has valid dates
+        if (createdGroup && grp.schedule.length > 0 && grp.valid_from && grp.valid_until) {
+          try {
+            await scheduleApi.generateLessons(
+              createdGroup.id,
+              {
+                start_date: grp.valid_from,
+                end_date: grp.valid_until,
+                overwrite_existing: false,
+                exclude_holidays: true,
+              },
+              initDataRaw
+            );
+            lessonsGenerated++;
+          } catch (lessonError) {
+            console.error('Error generating lessons for group:', createdGroup.id, lessonError);
+            // Continue with other groups even if lesson generation fails for one
+          }
+        }
       }
       
-      window.Telegram?.WebApp?.showAlert(
-        groups.length > 0 
+      // Show success message
+      const message = lessonsGenerated > 0
+        ? t('management.sections.groupsAndLessonsCreated') || 'Группы и занятия успешно созданы'
+        : groups.length > 0 
           ? t('management.sections.groupsCreated') || 'Группы успешно созданы'
-          : t('management.sections.created')
-      );
+          : t('management.sections.created');
+      
+      window.Telegram?.WebApp?.showAlert(message);
       onCreate();
       onClose();
     } catch (error) {
