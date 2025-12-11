@@ -60,8 +60,8 @@ export const DeactivateClubModal: React.FC<DeactivateClubModalProps> = ({
           <div className="flex items-start gap-2">
             <ShieldAlert size={18} className="text-red-600 mt-0.5 shrink-0" />
             <p className="text-sm text-red-700">
-              {t('profile.deactivate.warning')}
-            </p>
+            {t('profile.deactivate.warning')}
+          </p>
           </div>
         </div>
 

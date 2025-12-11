@@ -86,5 +86,12 @@ export const ENDPOINTS = {
       BY_GROUP: (groupId: string | number) => `/schedule/stats/group/${groupId}`,
       BY_COACH: (coachId: string | number) => `/schedule/stats/coach/${coachId}`,
     }
-  }  
+  },
+
+  TARIFFS: {
+    BASE: '/tariffs/',
+    MY: '/tariffs/my',
+    BY_ID: (tariffId: string | number) => `/tariffs/${tariffId}`,
+    TOGGLE_STATUS: (tariffId: string | number) => `/tariffs/${tariffId}/toggle-status`,
+  }
 } as const;

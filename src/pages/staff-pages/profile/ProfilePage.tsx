@@ -391,8 +391,8 @@ export default function ProfilePage() {
   const handleDeactivateConfirm = async () => {
     if (!selectedClub || !initDataRaw) return;
 
-    try {
-      await clubsApi.delete(selectedClub.id.toString(), initDataRaw);
+      try {
+        await clubsApi.delete(selectedClub.id.toString(), initDataRaw);
       
       // Show success message
       window.Telegram?.WebApp?.showAlert(t('profile.clubDeactivated'));
@@ -404,8 +404,8 @@ export default function ProfilePage() {
       
       // Reload all data to get fresh state from server
       await loadData();
-    } catch (error) {
-      console.error('Error deactivating club:', error);
+      } catch (error) {
+        console.error('Error deactivating club:', error);
       window.Telegram?.WebApp?.showAlert(t('profile.errors.deactivateFailed'));
     }
   };
@@ -518,33 +518,33 @@ export default function ProfilePage() {
             <h2 className="text-lg font-semibold text-gray-900">
               {t('profile.myClubs')}
             </h2>
-            <button
+              <button
               onClick={handleCreateClubClick}
               disabled={checkingLimits}
               className="flex items-center gap-1 px-3 py-1.5 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
-            >
+              >
               {checkingLimits ? (
                 <Loader2 size={16} className="animate-spin" />
               ) : (
                 <Plus size={16} />
               )}
-              {t('profile.createClub')}
-            </button>
+                {t('profile.createClub')}
+              </button>
           </div>
 
           {clubs.length === 0 ? (
             <div className="text-center py-8 bg-gray-50 rounded-lg">
               <p className="text-gray-600 mb-4">{t('profile.noClubs')}</p>
-              <button
+                <button
                 onClick={handleCreateClubClick}
                 disabled={checkingLimits}
                 className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
-              >
+                >
                 {checkingLimits ? (
                   <Loader2 size={16} className="animate-spin inline mr-2" />
                 ) : null}
-                {t('profile.createFirstClub')}
-              </button>
+                  {t('profile.createFirstClub')}
+                </button>
             </div>
           ) : (
             <div className="space-y-3">

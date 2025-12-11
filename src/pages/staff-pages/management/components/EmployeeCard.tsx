@@ -179,12 +179,12 @@ export const EmployeeCard: React.FC<EmployeeCardProps> = ({
               ) : (
                 // Fallback: show clubs without per-club role info
                 employeeClubs.map(club => (
-                  <span
-                    key={club.id}
-                    className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded"
-                  >
-                    {club.name}
-                  </span>
+                <span
+                  key={club.id}
+                  className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded"
+                >
+                  {club.name}
+                </span>
                 ))
               )}
             </div>
@@ -216,13 +216,13 @@ export const EmployeeCard: React.FC<EmployeeCardProps> = ({
           {t('management.employees.message')}
         </button>
         {canEditEmployee && (
-          <button
-            onClick={onEdit}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors ml-auto"
-          >
-            <Edit2 size={16} />
-            {t('management.employees.edit')}
-          </button>
+        <button
+          onClick={onEdit}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors ml-auto"
+        >
+          <Edit2 size={16} />
+          {t('management.employees.edit')}
+        </button>
         )}
       </div>
     </div>

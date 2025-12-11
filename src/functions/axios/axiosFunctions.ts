@@ -14,7 +14,9 @@ import type {
   UpdateGroupScheduleTemplateRequest, 
   UpdateLessonRequest, 
   UpdateStaffRequest,
-  UpdateStudentRequest
+  UpdateStudentRequest,
+  CreateTariffRequest,
+  UpdateTariffRequest
 } from './requests';
 import type { 
   CreateClubResponse, 
@@ -36,7 +38,9 @@ import type {
   GetStudentsListResponse,
   StudentResponse,
   SessionResponse,
-  ClubLocationResponse
+  ClubLocationResponse,
+  TariffResponse,
+  TariffListResponse
 } from './responses';
 
 // Staff API
@@ -252,6 +256,48 @@ export const scheduleApi = {
 
   getWeekSchedule: (date: string, token: string | null) =>
     axiosRequest<GetWeekScheduleResponse>(ENDPOINTS.SCHEDULE.CALENDAR.WEEK(date), 'GET', token),
+};
+
+// Tariffs API
+export const tariffsApi = {
+  getList: (token: string, params?: {
+    page?: number;
+    size?: number;
+    club_id?: number;
+    payment_type?: string;
+    name?: string;
+    active_only?: boolean;
+  }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.append('page', params.page.toString());
+    if (params?.size) searchParams.append('size', params.size.toString());
+    if (params?.club_id) searchParams.append('club_id', params.club_id.toString());
+    if (params?.payment_type) searchParams.append('payment_type', params.payment_type);
+    if (params?.name) searchParams.append('name', params.name);
+    if (params?.active_only !== undefined) searchParams.append('active_only', params.active_only.toString());
+    
+    const queryString = searchParams.toString();
+    const url = queryString ? `${ENDPOINTS.TARIFFS.BASE}?${queryString}` : ENDPOINTS.TARIFFS.BASE;
+    return axiosRequest<TariffListResponse>(url, 'GET', token);
+  },
+
+  getMy: (token: string) =>
+    axiosRequest<TariffResponse[]>(ENDPOINTS.TARIFFS.MY, 'GET', token),
+
+  getById: (tariffId: string | number, token: string) =>
+    axiosRequest<TariffResponse>(ENDPOINTS.TARIFFS.BY_ID(tariffId), 'GET', token),
+
+  create: (data: CreateTariffRequest, token: string) =>
+    axiosRequest<TariffResponse>(ENDPOINTS.TARIFFS.BASE, 'POST', token, data),
+
+  update: (tariffId: string | number, data: UpdateTariffRequest, token: string) =>
+    axiosRequest<TariffResponse>(ENDPOINTS.TARIFFS.BY_ID(tariffId), 'PUT', token, data),
+
+  delete: (tariffId: string | number, token: string) =>
+    axiosRequest<void>(ENDPOINTS.TARIFFS.BY_ID(tariffId), 'DELETE', token),
+
+  toggleStatus: (tariffId: string | number, token: string) =>
+    axiosRequest<TariffResponse>(ENDPOINTS.TARIFFS.TOGGLE_STATUS(tariffId), 'PATCH', token),
 };
 
 // Check-in API (placeholder for future implementation)

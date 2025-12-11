@@ -126,13 +126,13 @@ export const EmployeesTab: React.FC<EmployeesTabProps> = ({
           <Filter size={20} />
         </button>
         {canAddEmployee && (
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-1 px-3 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600"
-          >
-            <Plus size={18} />
-            {t('management.employees.addStaff')}
-          </button>
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="flex items-center gap-1 px-3 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600"
+        >
+          <Plus size={18} />
+          {t('management.employees.addStaff')}
+        </button>
         )}
       </div>
 

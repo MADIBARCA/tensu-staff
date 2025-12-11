@@ -475,3 +475,42 @@ export interface ClubLocationResponse {
   longitude: number;
   address: string;
 }
+
+// Tariff types
+export type PackageType = 'full_club' | 'full_section' | 'single_group' | 'multiple_groups';
+export type PaymentType = 'monthly' | 'semi_annual' | 'annual' | 'session_pack';
+
+export interface TariffCreatorInfo {
+  id: number;
+  first_name: string;
+  last_name: string;
+  username?: string;
+}
+
+export interface TariffResponse {
+  id: number;
+  name: string;
+  description?: string;
+  type: PackageType;
+  payment_type: PaymentType;
+  price: number;
+  club_ids: number[];
+  section_ids: number[];
+  group_ids: number[];
+  sessions_count?: number;
+  validity_days?: number;
+  active: boolean;
+  created_by_id?: number;
+  created_by?: TariffCreatorInfo;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TariffListResponse {
+  tariffs: TariffResponse[];
+  total: number;
+  page: number;
+  size: number;
+  pages: number;
+  filters?: Record<string, unknown>;
+}

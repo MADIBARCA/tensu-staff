@@ -109,3 +109,35 @@ export interface CompleteLessonRequest {
   notes: string;
   actual_duration: number;
 }
+
+// Tariff types
+export type PackageType = 'full_club' | 'full_section' | 'single_group' | 'multiple_groups';
+export type PaymentType = 'monthly' | 'semi_annual' | 'annual' | 'session_pack';
+
+export interface CreateTariffRequest {
+  name: string;
+  description?: string;
+  type: PackageType;
+  payment_type: PaymentType;
+  price: number;
+  club_ids: number[];
+  section_ids: number[];
+  group_ids: number[];
+  sessions_count?: number;
+  validity_days?: number;
+  active: boolean;
+}
+
+export interface UpdateTariffRequest {
+  name?: string;
+  description?: string;
+  type?: PackageType;
+  payment_type?: PaymentType;
+  price?: number;
+  club_ids?: number[];
+  section_ids?: number[];
+  group_ids?: number[];
+  sessions_count?: number;
+  validity_days?: number;
+  active?: boolean;
+}

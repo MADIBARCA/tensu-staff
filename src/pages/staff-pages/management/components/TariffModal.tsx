@@ -218,9 +218,10 @@ export const TariffModal: React.FC<TariffModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="bg-white w-full max-w-md rounded-xl max-h-screen overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 mt-20">
+    <div className="fixed inset-0 z-50 bg-white overflow-y-auto">
+      <div className="min-h-full w-full max-w-md mx-auto flex flex-col">
+        {/* Header with mt-20 to avoid Telegram UI buttons */}
+        <div className="sticky top-0 bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200 mt-20">
           <h2 className="text-lg font-semibold text-gray-900">
             {isEditing ? t('management.pricing.editTitle') : t('management.pricing.createTitle')}
           </h2>
@@ -229,7 +230,7 @@ export const TariffModal: React.FC<TariffModalProps> = ({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 p-4 space-y-4">
           {/* Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -493,7 +494,8 @@ export const TariffModal: React.FC<TariffModalProps> = ({
           </label>
         </div>
 
-        <div className="p-4 border-t border-gray-200 flex gap-3">
+        {/* Footer with safe bottom padding */}
+        <div className="sticky bottom-0 bg-white p-4 border-t border-gray-200 flex gap-3 pb-8">
           <button
             onClick={onClose}
             className="flex-1 px-4 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50"

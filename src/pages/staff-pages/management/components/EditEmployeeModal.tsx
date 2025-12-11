@@ -194,7 +194,7 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
                   </p>
                 </div>
               </div>
-            </div>
+          </div>
           )}
 
           {/* Name (Read-only) */}
@@ -207,8 +207,8 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
                 {t('management.employees.nameNotAvailable')}
               </div>
             ) : (
-              <input
-                type="text"
+            <input
+              type="text"
                 value={`${employee.first_name} ${employee.last_name}`}
                 readOnly
                 className="w-full border border-gray-200 rounded-lg p-2 bg-gray-50 text-gray-500"
@@ -255,7 +255,7 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
                   
                   return (
                     <div 
-                      key={club.id} 
+                  key={club.id}
                       className={`border rounded-xl overflow-hidden transition-all ${
                         isEnabled 
                           ? getRoleColor(currentRole) 
@@ -266,15 +266,15 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
                       <div 
                         className="flex items-center gap-3 p-3 cursor-pointer"
                         onClick={() => !isOwnerRole && handleClubToggle(club.id)}
-                      >
-                        <input
-                          type="checkbox"
+                >
+                  <input
+                    type="checkbox"
                           checked={isEnabled}
-                          onChange={() => handleClubToggle(club.id)}
+                    onChange={() => handleClubToggle(club.id)}
                           disabled={isOwnerRole}
                           className="w-4 h-4 text-blue-600 rounded disabled:cursor-not-allowed"
                           onClick={(e) => e.stopPropagation()}
-                        />
+                  />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <span className={`font-medium ${isEnabled ? 'text-gray-900' : 'text-gray-500'}`}>
@@ -307,7 +307,7 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
                         <div className="px-3 pb-3 pt-1 border-t border-white/50">
                           <label className="block text-xs text-gray-600 mb-2">
                             {t('management.employees.roleInThisClub')}
-                          </label>
+                </label>
                           <div className="flex gap-2">
                             <button
                               type="button"
@@ -349,7 +349,7 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
                     </div>
                   );
                 })}
-              </div>
+            </div>
             )}
             {errors.clubs && <p className="text-red-500 text-xs mt-1">{errors.clubs}</p>}
           </div>
@@ -422,12 +422,12 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
             {t('common.cancel')}
           </button>
           {!isPendingInvitation && (
-            <button
-              onClick={handleSubmit}
-              className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-            >
-              {t('management.employees.saveChanges')}
-            </button>
+          <button
+            onClick={handleSubmit}
+            className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          >
+            {t('management.employees.saveChanges')}
+          </button>
           )}
         </div>
       </div>

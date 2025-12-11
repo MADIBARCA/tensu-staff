@@ -9,9 +9,9 @@ interface PricingTabProps {
   tariffs: Tariff[];
   clubs: Club[];
   sections: Section[];
-  onCreateTariff: (data: CreateTariffData) => void;
-  onUpdateTariff: (id: number, data: CreateTariffData) => void;
-  onDeleteTariff: (id: number) => void;
+  onCreateTariff: (data: CreateTariffData) => void | Promise<void>;
+  onUpdateTariff: (id: number, data: CreateTariffData) => void | Promise<void>;
+  onDeleteTariff: (id: number) => void | Promise<void>;
 }
 
 export const PricingTab: React.FC<PricingTabProps> = ({
@@ -27,21 +27,21 @@ export const PricingTab: React.FC<PricingTabProps> = ({
   const [editingTariff, setEditingTariff] = useState<Tariff | null>(null);
   const [deletingTariff, setDeletingTariff] = useState<Tariff | null>(null);
 
-  const handleCreateTariff = (data: CreateTariffData) => {
-    onCreateTariff(data);
+  const handleCreateTariff = async (data: CreateTariffData) => {
+    await onCreateTariff(data);
     setShowCreateModal(false);
   };
 
-  const handleUpdateTariff = (data: CreateTariffData) => {
+  const handleUpdateTariff = async (data: CreateTariffData) => {
     if (editingTariff) {
-      onUpdateTariff(editingTariff.id, data);
+      await onUpdateTariff(editingTariff.id, data);
       setEditingTariff(null);
     }
   };
 
-  const handleDeleteTariff = () => {
+  const handleDeleteTariff = async () => {
     if (deletingTariff) {
-      onDeleteTariff(deletingTariff.id);
+      await onDeleteTariff(deletingTariff.id);
       setDeletingTariff(null);
     }
   };

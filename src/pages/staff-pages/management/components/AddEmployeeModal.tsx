@@ -202,7 +202,7 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                 {t('management.employees.noClubsAvailable')}
               </p>
             ) : (
-              <div className="space-y-2">
+            <div className="space-y-2">
                 {availableClubs.map(club => {
                   // Check if this person already has a role in this club
                   const existingRole = existingEmployeeByPhone?.club_roles?.find(
@@ -215,7 +215,7 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                   
                   return (
                     <div key={club.id}>
-                      <label
+                <label
                         className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-colors ${
                           hasRoleInClub && formData.club_ids.includes(club.id)
                             ? 'border-amber-300 bg-amber-50'
@@ -223,13 +223,13 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                             ? 'border-blue-300 bg-blue-50'
                             : 'border-gray-200 hover:bg-gray-50'
                         }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={formData.club_ids.includes(club.id)}
-                          onChange={() => handleClubToggle(club.id)}
-                          className="w-4 h-4 text-blue-600 rounded"
-                        />
+                >
+                  <input
+                    type="checkbox"
+                    checked={formData.club_ids.includes(club.id)}
+                    onChange={() => handleClubToggle(club.id)}
+                    className="w-4 h-4 text-blue-600 rounded"
+                  />
                         <span className="flex-1 text-gray-900">{club.name}</span>
                         {hasRoleInClub && RoleIcon && (
                           <div className="flex items-center gap-1">
@@ -239,7 +239,7 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                             </span>
                           </div>
                         )}
-                      </label>
+                </label>
                       
                       {/* Warning for clubs where person already has role */}
                       {hasRoleInClub && formData.club_ids.includes(club.id) && (
@@ -257,7 +257,7 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                     </div>
                   );
                 })}
-              </div>
+            </div>
             )}
             {errors.clubs && <p className="text-red-500 text-xs mt-1">{errors.clubs}</p>}
           </div>

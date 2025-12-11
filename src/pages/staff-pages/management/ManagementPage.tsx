@@ -6,8 +6,7 @@ import { EmployeesTab } from './components/EmployeesTab';
 import { SectionsTab } from './components/SectionsTab';
 import { PricingTab } from './components/PricingTab';
 import { useTelegram } from '@/hooks/useTelegram';
-import { clubsApi, teamApi, sectionsApi, invitationsApi, staffApi } from '@/functions/axios/axiosFunctions';
-import { mockTariffs } from './mockData';
+import { clubsApi, teamApi, sectionsApi, invitationsApi, staffApi, tariffsApi } from '@/functions/axios/axiosFunctions';
 import type {
   Employee,
   EmployeeRole,
@@ -33,8 +32,7 @@ export default function ManagementPage() {
   const [clubs, setClubs] = useState<Club[]>([]);
   const [clubRoles, setClubRoles] = useState<ClubWithRole[]>([]);
   const [currentUser, setCurrentUser] = useState<CreateStaffResponse | null>(null);
-  // Tariffs don't have API endpoint, using mock data
-  const [tariffs, setTariffs] = useState<Tariff[]>(mockTariffs);
+  const [tariffs, setTariffs] = useState<Tariff[]>([]);
 
   const tabs = [
     { id: 'employees' as TabId, label: t('management.tabs.employees'), icon: Users },
@@ -86,16 +84,16 @@ export default function ManagementPage() {
           const primaryRole = sortedRoles[0]?.role || 'coach';
           
           return {
-            id: member.id,
-            first_name: member.first_name,
-            last_name: member.last_name,
-            phone: member.phone_number,
-            telegram_username: member.username,
+          id: member.id,
+          first_name: member.first_name,
+          last_name: member.last_name,
+          phone: member.phone_number,
+          telegram_username: member.username,
             role: primaryRole as EmployeeRole,
             status: member.clubs_and_roles.some(cr => cr.is_active) ? 'active' : 'pending' as const,
-            club_ids: member.clubs_and_roles.map(cr => cr.club_id),
-            photo_url: member.photo_url,
-            created_at: member.created_at,
+          club_ids: member.clubs_and_roles.map(cr => cr.club_id),
+          photo_url: member.photo_url,
+          created_at: member.created_at,
             // Per-club roles for multi-role display
             club_roles: member.clubs_and_roles.map(cr => ({
               club_id: cr.club_id,
@@ -241,7 +239,30 @@ export default function ManagementPage() {
         setSections(transformedSections);
       }
 
-      // Note: Tariffs don't have an API endpoint, so we keep mock data
+      // Load tariffs from API
+      try {
+        const tariffsResponse = await tariffsApi.getMy(initDataRaw);
+        if (tariffsResponse.data) {
+          const transformedTariffs: Tariff[] = tariffsResponse.data.map(t => ({
+            id: t.id,
+            name: t.name,
+            type: t.type,
+            payment_type: t.payment_type,
+            price: t.price,
+            club_ids: t.club_ids || [],
+            section_ids: t.section_ids || [],
+            group_ids: t.group_ids || [],
+            sessions_count: t.sessions_count,
+            validity_days: t.validity_days,
+            active: t.active,
+            created_at: t.created_at,
+          }));
+          setTariffs(transformedTariffs);
+        }
+      } catch (error) {
+        console.error('Error loading tariffs:', error);
+        // Tariffs are optional, don't block on error
+      }
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -260,21 +281,21 @@ export default function ManagementPage() {
       return;
     }
 
-    try {
-      // Create invitation via API
-      const clubId = data.club_ids[0].toString();
-      await invitationsApi.create(clubId, {
-        phone_number: data.phone,
-        role: data.role,
-      }, initDataRaw);
+      try {
+        // Create invitation via API
+        const clubId = data.club_ids[0].toString();
+        await invitationsApi.create(clubId, {
+          phone_number: data.phone,
+          role: data.role,
+        }, initDataRaw);
       
       // Show success message
       window.Telegram?.WebApp?.showAlert(t('management.employees.added'));
       
       // Reload all data to get fresh state from server
       await loadData();
-    } catch (error) {
-      console.error('Error creating invitation:', error);
+      } catch (error) {
+        console.error('Error creating invitation:', error);
       window.Telegram?.WebApp?.showAlert(t('management.employees.errors.addFailed'));
     }
   };
@@ -294,40 +315,21 @@ export default function ManagementPage() {
       // Remove from local state
       setEmployees(employees.filter(e => e.invitation_id !== invitationId));
       window.Telegram?.WebApp?.showAlert(t('management.employees.invitationDeleted'));
-    } catch (error) {
+      } catch (error) {
       console.error('Error deleting invitation:', error);
       window.Telegram?.WebApp?.showAlert(t('management.employees.invitationDeleteError'));
       throw error;
-    }
+      }
   };
 
   // Section handlers are now in CreateSectionModal and EditSectionModal which call APIs directly
 
-  // Tariff handlers (no API, mock only)
-  const handleCreateTariff = (data: CreateTariffData) => {
-    const newTariff: Tariff = {
-      id: Date.now(),
-      name: data.name,
-      type: data.type,
-      payment_type: data.payment_type,
-      price: data.price,
-      club_ids: data.club_ids,
-      section_ids: data.section_ids,
-      group_ids: data.group_ids,
-      sessions_count: data.sessions_count,
-      validity_days: data.validity_days,
-      active: data.active,
-      created_at: new Date().toISOString(),
-    };
+  // Tariff handlers with API
+  const handleCreateTariff = async (data: CreateTariffData) => {
+    if (!initDataRaw) return;
 
-    setTariffs([...tariffs, newTariff]);
-    window.Telegram?.WebApp?.showAlert(t('management.pricing.created'));
-  };
-
-  const handleUpdateTariff = (id: number, data: CreateTariffData) => {
-    setTariffs(tariffs.map(t =>
-      t.id === id ? {
-        ...t,
+    try {
+      const response = await tariffsApi.create({
         name: data.name,
         type: data.type,
         payment_type: data.payment_type,
@@ -338,14 +340,84 @@ export default function ManagementPage() {
         sessions_count: data.sessions_count,
         validity_days: data.validity_days,
         active: data.active,
-      } : t
-    ));
-    window.Telegram?.WebApp?.showAlert(t('management.pricing.updated'));
+      }, initDataRaw);
+
+      if (response.data) {
+        const newTariff: Tariff = {
+          id: response.data.id,
+          name: response.data.name,
+          type: response.data.type,
+          payment_type: response.data.payment_type,
+          price: response.data.price,
+          club_ids: response.data.club_ids || [],
+          section_ids: response.data.section_ids || [],
+          group_ids: response.data.group_ids || [],
+          sessions_count: response.data.sessions_count,
+          validity_days: response.data.validity_days,
+          active: response.data.active,
+          created_at: response.data.created_at,
+        };
+        setTariffs([...tariffs, newTariff]);
+        window.Telegram?.WebApp?.showAlert(t('management.pricing.created'));
+      }
+    } catch (error) {
+      console.error('Error creating tariff:', error);
+      window.Telegram?.WebApp?.showAlert(t('management.pricing.errors.createFailed'));
+    }
   };
 
-  const handleDeleteTariff = (id: number) => {
-    setTariffs(tariffs.filter(t => t.id !== id));
-    window.Telegram?.WebApp?.showAlert(t('management.pricing.deleted'));
+  const handleUpdateTariff = async (id: number, data: CreateTariffData) => {
+    if (!initDataRaw) return;
+
+    try {
+      const response = await tariffsApi.update(id, {
+        name: data.name,
+        type: data.type,
+        payment_type: data.payment_type,
+        price: data.price,
+        club_ids: data.club_ids,
+        section_ids: data.section_ids,
+        group_ids: data.group_ids,
+        sessions_count: data.sessions_count,
+        validity_days: data.validity_days,
+        active: data.active,
+      }, initDataRaw);
+
+      if (response.data) {
+        setTariffs(tariffs.map(t =>
+          t.id === id ? {
+            ...t,
+            name: response.data!.name,
+            type: response.data!.type,
+            payment_type: response.data!.payment_type,
+            price: response.data!.price,
+            club_ids: response.data!.club_ids || [],
+            section_ids: response.data!.section_ids || [],
+            group_ids: response.data!.group_ids || [],
+            sessions_count: response.data!.sessions_count,
+            validity_days: response.data!.validity_days,
+            active: response.data!.active,
+          } : t
+        ));
+        window.Telegram?.WebApp?.showAlert(t('management.pricing.updated'));
+      }
+    } catch (error) {
+      console.error('Error updating tariff:', error);
+      window.Telegram?.WebApp?.showAlert(t('management.pricing.errors.updateFailed'));
+    }
+  };
+
+  const handleDeleteTariff = async (id: number) => {
+    if (!initDataRaw) return;
+
+    try {
+      await tariffsApi.delete(id, initDataRaw);
+      setTariffs(tariffs.filter(t => t.id !== id));
+      window.Telegram?.WebApp?.showAlert(t('management.pricing.deleted'));
+    } catch (error) {
+      console.error('Error deleting tariff:', error);
+      window.Telegram?.WebApp?.showAlert(t('management.pricing.errors.deleteFailed'));
+    }
   };
 
   if (loading) {

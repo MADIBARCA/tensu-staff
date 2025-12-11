@@ -71,7 +71,7 @@ export const CreateTrainingModal: React.FC<CreateTrainingModalProps> = ({
     
     return [];
   }, [sections, formData.club_id, isAdminOrOwner, currentUser]);
-
+  
   // Filter groups by selected section
   const availableGroups = groups.filter(g => g.section_id === formData.section_id);
   
@@ -274,10 +274,10 @@ export const CreateTrainingModal: React.FC<CreateTrainingModalProps> = ({
           </div>
 
           {/* Group */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
               {t('training.group')} *
-            </label>
+              </label>
             {formData.section_id && availableGroups.length === 0 ? (
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                 <div className="flex items-start gap-3">
@@ -317,7 +317,7 @@ export const CreateTrainingModal: React.FC<CreateTrainingModalProps> = ({
             {errors.group_id && (
               <p className="text-red-500 text-xs mt-1">{errors.group_id}</p>
             )}
-          </div>
+            </div>
 
           {/* Coaches (Checkboxes) */}
           <div>
@@ -334,7 +334,7 @@ export const CreateTrainingModal: React.FC<CreateTrainingModalProps> = ({
                   <label
                     key={coach.id}
                     className="flex items-center gap-2 p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50"
-                  >
+            >
                     <input
                       type="checkbox"
                       checked={coachIds.includes(coach.id)}
@@ -343,7 +343,7 @@ export const CreateTrainingModal: React.FC<CreateTrainingModalProps> = ({
                     />
                     <span className="text-gray-900">{coach.name}</span>
                   </label>
-                ))}
+              ))}
               </div>
             )}
             {errors.coach_id && (
