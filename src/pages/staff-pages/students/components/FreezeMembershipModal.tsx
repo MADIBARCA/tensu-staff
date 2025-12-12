@@ -38,14 +38,15 @@ export const FreezeMembershipModal: React.FC<FreezeMembershipModalProps> = ({
   };
 
   const handleSubmit = () => {
-    if (days > availableDays) {
+    if (days > availableDays || !student.membership) {
       setError(t('students.freeze.maxDaysError', { days: availableDays }));
       return;
     }
 
     onFreeze({
-      start_date: startDate,
+      enrollment_id: student.membership.id,
       days,
+      reason: undefined,
     });
   };
 

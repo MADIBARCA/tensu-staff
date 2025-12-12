@@ -27,10 +27,12 @@ export const ExtendMembershipModal: React.FC<ExtendMembershipModalProps> = ({
   const [selectedTariff, setSelectedTariff] = useState<typeof TARIFF_OPTIONS[0] | null>(null);
 
   const handleSubmit = () => {
-    if (!selectedTariff) return;
+    if (!selectedTariff || !student.membership) return;
 
     onExtend({
-      period: selectedTariff.days,
+      enrollment_id: student.membership.id,
+      tariff_id: 1, // Default tariff ID - in real app would come from tariff selection
+      days: selectedTariff.days,
       tariff_name: selectedTariff.name,
       price: selectedTariff.price,
     });

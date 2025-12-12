@@ -124,7 +124,8 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
     }
   };
 
-  const canFreeze = student.membership?.freeze_available && 
+  const canFreeze = student.membership && 
+    student.membership.freeze_days_total > 0 &&
     student.membership.freeze_days_used < student.membership.freeze_days_total &&
     student.membership.status === 'active';
 
@@ -219,7 +220,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                 <span className="font-medium">{t('students.details.period')}:</span>{' '}
                 {formatDate(student.membership.start_date)} — {formatDate(student.membership.end_date)}
               </p>
-              {student.membership.freeze_available && (
+              {student.membership.freeze_days_total > 0 && (
                 <p className="text-sm text-gray-600">
                   <span className="font-medium">{t('students.details.freezeDays')}:</span>{' '}
                   {student.membership.freeze_days_total - student.membership.freeze_days_used} / {student.membership.freeze_days_total}
