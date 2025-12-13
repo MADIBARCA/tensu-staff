@@ -46,6 +46,7 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [clubToRemove, setClubToRemove] = useState<number | null>(null);
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState<number | null>(null);
   const [savingRole, setSavingRole] = useState<number | null>(null);
 
   // Filter clubs to show only those where user is owner or admin
@@ -181,6 +182,8 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
     if (!initDataRaw || !employee.id) return;
     
     setClubToRemove(clubId);
+    setShowRemoveConfirm(null);
+    
     try {
       await teamApi.removeMember(clubId, employee.id, initDataRaw);
       
@@ -418,19 +421,61 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
                       {/* Remove from club button */}
                       {canDelete && !isPending && (
                         <div className="px-3 pb-3 border-t border-white/50">
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveFromClub(club.id)}
-                            disabled={isRemoving}
-                            className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50"
-                          >
-                            {isRemoving ? (
-                              <Loader2 size={14} className="animate-spin" />
-                            ) : (
-                              <UserMinus size={14} />
-                            )}
-                            {t('management.employees.removeFromClub')}
-                          </button>
+                          {showRemoveConfirm === club.id ? (
+                            <div className="bg-red-50 rounded-lg p-3">
+                              <div className="flex items-start gap-2 mb-3">
+                                <AlertTriangle size={16} className="text-red-600 shrink-0 mt-0.5" />
+                                <div>
+                                  <p className="text-sm font-medium text-red-800">
+                                    {t('management.employees.removeConfirmTitle')}
+                                  </p>
+                                  <p className="text-xs text-red-600 mt-1">
+                                    {t('management.employees.removeConfirmMessage', { 
+                                      name: `${employee.first_name || ''} ${employee.last_name || ''}`.trim() || t('management.employees.thisEmployee'),
+                                      club: club.name 
+                                    })}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setShowRemoveConfirm(null)}
+                                  disabled={isRemoving}
+                                  className="flex-1 px-3 py-2 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-white transition-colors disabled:opacity-50"
+                                >
+                                  {t('common.cancel')}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveFromClub(club.id)}
+                                  disabled={isRemoving}
+                                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                                >
+                                  {isRemoving ? (
+                                    <Loader2 size={14} className="animate-spin" />
+                                  ) : (
+                                    <UserMinus size={14} />
+                                  )}
+                                  {t('common.delete')}
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setShowRemoveConfirm(club.id)}
+                              disabled={isRemoving}
+                              className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50"
+                            >
+                              {isRemoving ? (
+                                <Loader2 size={14} className="animate-spin" />
+                              ) : (
+                                <UserMinus size={14} />
+                              )}
+                              {t('management.employees.removeFromClub')}
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
