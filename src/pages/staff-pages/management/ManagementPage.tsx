@@ -461,6 +461,11 @@ export default function ManagementPage() {
             onAddEmployee={handleAddEmployee}
             onEditEmployee={handleEditEmployee}
             onDeleteInvitation={handleDeleteInvitation}
+            onRemoveFromClub={async (clubId, userId) => {
+              // Handled in EditEmployeeModal, just refresh here
+              await loadData();
+            }}
+            onRefresh={loadData}
           />
         )}
 

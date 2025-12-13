@@ -210,6 +210,32 @@ export const teamApi = {
       'GET',
       token
     ),
+  
+  getMemberPermissions: (clubId: number, userId: number, token: string) =>
+    axiosRequest<{
+      current_user_role: string;
+      target_user_role: string;
+      can_delete: boolean;
+      can_change_role: boolean;
+    }>(ENDPOINTS.TEAM.MEMBER_PERMISSIONS(clubId, userId), 'GET', token),
+  
+  removeMember: (clubId: number, userId: number, token: string) =>
+    axiosRequest<{
+      success: boolean;
+      message: string;
+      removed_user_id: number;
+      club_id: number;
+    }>(ENDPOINTS.TEAM.REMOVE_MEMBER(clubId, userId), 'DELETE', token),
+  
+  changeRole: (clubId: number, userId: number, newRole: string, token: string) =>
+    axiosRequest<{
+      success: boolean;
+      message: string;
+      user_id: number;
+      club_id: number;
+      new_role: string;
+      old_role: string;
+    }>(ENDPOINTS.TEAM.CHANGE_ROLE(clubId, userId), 'PUT', token, { new_role: newRole }),
 };
 
 // Schedule API

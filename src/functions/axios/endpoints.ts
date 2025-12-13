@@ -57,6 +57,9 @@ export const ENDPOINTS = {
 
   TEAM: {
     BASE: '/team/',
+    MEMBER_PERMISSIONS: (clubId: number, userId: number) => `/team/${clubId}/member/${userId}/permissions`,
+    REMOVE_MEMBER: (clubId: number, userId: number) => `/team/${clubId}/member/${userId}`,
+    CHANGE_ROLE: (clubId: number, userId: number) => `/team/${clubId}/member/${userId}/role`,
   },
 
   SCHEDULE: {

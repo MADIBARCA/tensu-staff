@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { X, Trash2, AlertTriangle, Loader2, Crown, Shield, Dumbbell, Clock } from 'lucide-react';
+import { X, Trash2, AlertTriangle, Loader2, Crown, Shield, Dumbbell, Clock, UserMinus } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
+import { teamApi } from '@/functions/axios/axiosFunctions';
+import { useTelegram } from '@/hooks/useTelegram';
 import type { Employee, Club, EmployeeRole, UpdateEmployeeData } from '../types';
 import type { ClubWithRole, CreateStaffResponse } from '@/functions/axios/responses';
 
@@ -9,6 +11,8 @@ interface ClubRoleState {
   role: EmployeeRole;
   status: 'active' | 'pending';
   enabled: boolean;
+  canDelete: boolean;
+  canChangeRole: boolean;
 }
 
 interface EditEmployeeModalProps {
@@ -19,6 +23,8 @@ interface EditEmployeeModalProps {
   onClose: () => void;
   onSave: (data: UpdateEmployeeData) => void;
   onDeleteInvitation?: (invitationId: number) => Promise<void>;
+  onRemoveFromClub?: (clubId: number, userId: number) => Promise<void>;
+  onRoleChanged?: () => void;
 }
 
 export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
@@ -29,13 +35,18 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
   onClose,
   onSave,
   onDeleteInvitation,
+  onRemoveFromClub,
+  onRoleChanged,
 }) => {
   const { t } = useI18n();
+  const { initDataRaw } = useTelegram();
   
   // Check if this is a pending invitation
   const isPendingInvitation = employee.invitation_id && employee.status === 'pending' && !employee.first_name;
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [clubToRemove, setClubToRemove] = useState<number | null>(null);
+  const [savingRole, setSavingRole] = useState<number | null>(null);
 
   // Filter clubs to show only those where user is owner or admin
   const availableClubs = useMemo(() => {
@@ -59,18 +70,32 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
     return isInClub ? 'active' : 'pending';
   };
 
+  // Check permissions for each club
+  const getClubPermissions = (clubId: number): { canDelete: boolean; canChangeRole: boolean } => {
+    const clubRole = clubRoles.find(cr => cr.club.id === clubId);
+    const isOwner = clubRole?.role === 'owner' || clubRole?.is_owner;
+    const isAdmin = clubRole?.role === 'admin';
+    const employeeRoleInClub = employee.club_roles?.find(cr => cr.club_id === clubId)?.role || employee.role;
+    
+    return {
+      canDelete: (isOwner && employeeRoleInClub !== 'owner') || (isAdmin && employeeRoleInClub === 'coach'),
+      canChangeRole: Boolean(isOwner && employeeRoleInClub !== 'owner'),
+    };
+  };
+
   // Initialize per-club role state
   const [clubRoleStates, setClubRoleStates] = useState<ClubRoleState[]>(() => {
     return availableClubs.map(club => {
-      // Check if employee has a role in this club
       const existingClubRole = employee.club_roles?.find(cr => cr.club_id === club.id);
       const isInClub = employee.club_ids.includes(club.id);
+      const permissions = getClubPermissions(club.id);
       
       return {
         club_id: club.id,
         role: existingClubRole?.role || employee.role || 'coach',
         status: normalizeStatus(existingClubRole?.status, isInClub),
         enabled: isInClub,
+        ...permissions,
       };
     });
   });
@@ -83,15 +108,18 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
       availableClubs.map(club => {
         const existingClubRole = employee.club_roles?.find(cr => cr.club_id === club.id);
         const isInClub = employee.club_ids.includes(club.id);
+        const permissions = getClubPermissions(club.id);
         
         return {
           club_id: club.id,
           role: existingClubRole?.role || employee.role || 'coach',
           status: normalizeStatus(existingClubRole?.status, isInClub),
           enabled: isInClub,
+          ...permissions,
         };
       })
     );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [employee, availableClubs]);
 
   // Get role icon
@@ -123,21 +151,62 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleClubToggle = (clubId: number) => {
-    setClubRoleStates(prev => prev.map(state => 
-      state.club_id === clubId 
-        ? { ...state, enabled: !state.enabled }
-        : state
-    ));
-    setErrors({ ...errors, clubs: '' });
+  const handleRoleChange = async (clubId: number, role: EmployeeRole) => {
+    if (!initDataRaw || !employee.id) return;
+    
+    setSavingRole(clubId);
+    try {
+      await teamApi.changeRole(clubId, employee.id, role, initDataRaw);
+      
+      // Update local state
+      setClubRoleStates(prev => prev.map(state => 
+        state.club_id === clubId 
+          ? { ...state, role }
+          : state
+      ));
+      
+      // Notify parent to refresh
+      onRoleChanged?.();
+      
+      window.Telegram?.WebApp?.showAlert(t('management.employees.roleChanged'));
+    } catch (error) {
+      console.error('Error changing role:', error);
+      window.Telegram?.WebApp?.showAlert(t('management.employees.errors.roleChangeFailed'));
+    } finally {
+      setSavingRole(null);
+    }
   };
 
-  const handleRoleChange = (clubId: number, role: EmployeeRole) => {
-    setClubRoleStates(prev => prev.map(state => 
-      state.club_id === clubId 
-        ? { ...state, role }
-        : state
-    ));
+  const handleRemoveFromClub = async (clubId: number) => {
+    if (!initDataRaw || !employee.id) return;
+    
+    setClubToRemove(clubId);
+    try {
+      await teamApi.removeMember(clubId, employee.id, initDataRaw);
+      
+      // Update local state
+      setClubRoleStates(prev => prev.map(state => 
+        state.club_id === clubId 
+          ? { ...state, enabled: false }
+          : state
+      ));
+      
+      // Notify parent
+      onRemoveFromClub?.(clubId, employee.id);
+      
+      // Check if employee is removed from all clubs
+      const remainingClubs = clubRoleStates.filter(s => s.enabled && s.club_id !== clubId);
+      if (remainingClubs.length === 0) {
+        onClose();
+      }
+      
+      window.Telegram?.WebApp?.showAlert(t('management.employees.removedFromClub'));
+    } catch (error) {
+      console.error('Error removing from club:', error);
+      window.Telegram?.WebApp?.showAlert(t('management.employees.errors.removeFailed'));
+    } finally {
+      setClubToRemove(null);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -251,33 +320,24 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
                   const currentRole = clubState?.role || 'coach';
                   const isPending = clubState?.status === 'pending';
                   const isOwnerRole = currentRole === 'owner';
+                  const canDelete = clubState?.canDelete || false;
+                  const canChangeRole = clubState?.canChangeRole || false;
                   const RoleIcon = getRoleIcon(currentRole);
+                  const isRemoving = clubToRemove === club.id;
+                  const isSavingThisRole = savingRole === club.id;
+                  
+                  if (!isEnabled) return null;
                   
                   return (
                     <div 
-                  key={club.id}
-                      className={`border rounded-xl overflow-hidden transition-all ${
-                        isEnabled 
-                          ? getRoleColor(currentRole) 
-                          : 'bg-gray-50 border-gray-200'
-                      }`}
+                      key={club.id}
+                      className={`border rounded-xl overflow-hidden transition-all ${getRoleColor(currentRole)}`}
                     >
-                      {/* Club Header with Toggle */}
-                      <div 
-                        className="flex items-center gap-3 p-3 cursor-pointer"
-                        onClick={() => !isOwnerRole && handleClubToggle(club.id)}
-                >
-                  <input
-                    type="checkbox"
-                          checked={isEnabled}
-                    onChange={() => handleClubToggle(club.id)}
-                          disabled={isOwnerRole}
-                          className="w-4 h-4 text-blue-600 rounded disabled:cursor-not-allowed"
-                          onClick={(e) => e.stopPropagation()}
-                  />
+                      {/* Club Header */}
+                      <div className="flex items-center gap-3 p-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className={`font-medium ${isEnabled ? 'text-gray-900' : 'text-gray-500'}`}>
+                            <span className="font-medium text-gray-900">
                               {club.name}
                             </span>
                             {isPending && (
@@ -288,49 +348,57 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
                             )}
                           </div>
                         </div>
-                        {isEnabled && (
-                          <div className={`flex items-center gap-1 px-2 py-1 rounded-full ${
-                            currentRole === 'owner' ? 'bg-purple-200 text-purple-700' :
-                            currentRole === 'admin' ? 'bg-blue-200 text-blue-700' :
-                            'bg-green-200 text-green-700'
-                          }`}>
-                            <RoleIcon size={14} />
-                            <span className="text-xs font-medium">
-                              {t(`management.employees.role.${currentRole}`)}
-                            </span>
-                          </div>
-                        )}
+                        <div className={`flex items-center gap-1 px-2 py-1 rounded-full ${
+                          currentRole === 'owner' ? 'bg-purple-200 text-purple-700' :
+                          currentRole === 'admin' ? 'bg-blue-200 text-blue-700' :
+                          'bg-green-200 text-green-700'
+                        }`}>
+                          <RoleIcon size={14} />
+                          <span className="text-xs font-medium">
+                            {t(`management.employees.role.${currentRole}`)}
+                          </span>
+                        </div>
                       </div>
                       
-                      {/* Role Selector - shown when enabled */}
-                      {isEnabled && !isOwnerRole && (
+                      {/* Role Selector - shown when can change role */}
+                      {canChangeRole && !isOwnerRole && (
                         <div className="px-3 pb-3 pt-1 border-t border-white/50">
                           <label className="block text-xs text-gray-600 mb-2">
                             {t('management.employees.roleInThisClub')}
-                </label>
+                          </label>
                           <div className="flex gap-2">
                             <button
                               type="button"
                               onClick={() => handleRoleChange(club.id, 'coach')}
-                              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                              disabled={isSavingThisRole}
+                              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all disabled:opacity-50 ${
                                 currentRole === 'coach'
                                   ? 'bg-green-500 text-white shadow-sm'
                                   : 'bg-white/70 text-gray-600 hover:bg-white'
                               }`}
                             >
-                              <Dumbbell size={14} />
+                              {isSavingThisRole && currentRole !== 'coach' ? (
+                                <Loader2 size={14} className="animate-spin" />
+                              ) : (
+                                <Dumbbell size={14} />
+                              )}
                               {t('management.employees.role.coach')}
                             </button>
                             <button
                               type="button"
                               onClick={() => handleRoleChange(club.id, 'admin')}
-                              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                              disabled={isSavingThisRole}
+                              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all disabled:opacity-50 ${
                                 currentRole === 'admin'
                                   ? 'bg-blue-500 text-white shadow-sm'
                                   : 'bg-white/70 text-gray-600 hover:bg-white'
                               }`}
                             >
-                              <Shield size={14} />
+                              {isSavingThisRole && currentRole !== 'admin' ? (
+                                <Loader2 size={14} className="animate-spin" />
+                              ) : (
+                                <Shield size={14} />
+                              )}
                               {t('management.employees.role.admin')}
                             </button>
                           </div>
@@ -344,6 +412,25 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
                             <Crown size={12} />
                             {t('management.employees.ownerCannotChange')}
                           </p>
+                        </div>
+                      )}
+                      
+                      {/* Remove from club button */}
+                      {canDelete && !isPending && (
+                        <div className="px-3 pb-3 border-t border-white/50">
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveFromClub(club.id)}
+                            disabled={isRemoving}
+                            className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50"
+                          >
+                            {isRemoving ? (
+                              <Loader2 size={14} className="animate-spin" />
+                            ) : (
+                              <UserMinus size={14} />
+                            )}
+                            {t('management.employees.removeFromClub')}
+                          </button>
                         </div>
                       )}
                     </div>
@@ -419,16 +506,8 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
             onClick={onClose}
             className="flex-1 px-4 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50"
           >
-            {t('common.cancel')}
+            {t('common.close')}
           </button>
-          {!isPendingInvitation && (
-          <button
-            onClick={handleSubmit}
-            className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-          >
-            {t('management.employees.saveChanges')}
-          </button>
-          )}
         </div>
       </div>
     </div>

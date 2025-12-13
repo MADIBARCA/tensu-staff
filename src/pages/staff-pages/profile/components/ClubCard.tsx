@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { MapPin, Clock, Users, AlertTriangle, ChevronRight } from 'lucide-react';
+import { MapPin, Clock, Users, AlertTriangle, ChevronRight, Tag } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import type { Club } from '../types';
 import type { ClubWithRole, CreateStaffResponse } from '@/functions/axios/responses';
@@ -109,13 +109,33 @@ export const ClubCard: React.FC<ClubCardProps> = ({ club, clubRoles, currentUser
         <div className="flex items-center gap-4 text-sm text-gray-600">
           <div className="flex items-center gap-1">
             <Clock size={14} />
-            <span>{club.working_hours}</span>
+            <span>{club.working_hours || '09:00 - 21:00'}</span>
           </div>
           <div className="flex items-center gap-1">
             <Users size={14} />
             <span>{club.sections_count} {t('profile.club.sections')}</span>
           </div>
         </div>
+
+        {/* Tags */}
+        {club.tags && club.tags.length > 0 && (
+          <div className="mt-2 flex items-center gap-1 flex-wrap">
+            <Tag size={12} className="text-gray-400 shrink-0" />
+            {club.tags.slice(0, 4).map((tag, index) => (
+              <span
+                key={index}
+                className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded-full"
+              >
+                {tag}
+              </span>
+            ))}
+            {club.tags.length > 4 && (
+              <span className="text-xs text-gray-400">
+                +{club.tags.length - 4}
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Payment warning */}
         {isPaymentDue && !isExpired && (

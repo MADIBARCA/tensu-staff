@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { X, Clock, MapPin, Users, Calendar, FileText, AlertTriangle } from 'lucide-react';
+import { X, MapPin, Users, Calendar, FileText, AlertTriangle } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import type { Training, Trainer, UpdateTrainingData } from '../types';
 import type { ClubWithRole, CreateStaffResponse } from '@/functions/axios/responses';
@@ -385,33 +385,6 @@ export const EditTrainingModal: React.FC<EditTrainingModalProps> = ({
                   placeholder={t('training.location.placeholder')}
                   className="w-full border border-gray-200 rounded-lg p-3 bg-white text-gray-900 caret-black"
                 />
-              </div>
-
-              {/* Status */}
-              <div className="bg-gray-50 rounded-xl p-4">
-                <div className="flex items-center gap-2 text-gray-700 font-medium mb-3">
-                  <Clock size={18} />
-                  <span>{t('training.status.label')}</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {(['scheduled', 'in_progress', 'completed', 'cancelled'] as const).map((status) => (
-                    <button
-                      key={status}
-                      type="button"
-                      onClick={() => setFormData({ ...formData, status })}
-                      className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-                        formData.status === status
-                          ? getStatusColor(status)
-                          : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
-                      }`}
-                    >
-                      {t(`training.status.${status}`)}
-                    </button>
-                  ))}
-                </div>
-                {errors.status && (
-                  <p className="text-red-500 text-xs mt-2">{errors.status}</p>
-                )}
               </div>
 
               {/* Notes */}
