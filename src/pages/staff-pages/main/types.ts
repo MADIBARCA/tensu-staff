@@ -71,6 +71,10 @@ export interface CreateTrainingData {
 export interface UpdateTrainingData {
   date?: string;
   time?: string;
+  duration?: number;
   coach_id?: number;
+  coach_ids?: number[];
+  location?: string;
+  notes?: string;
   status?: TrainingStatus;
 }

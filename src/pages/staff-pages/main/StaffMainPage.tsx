@@ -635,6 +635,8 @@ export default function StaffMainPage() {
           <EditTrainingModal
             training={selectedTraining}
             coaches={coaches}
+            clubRoles={clubRoles}
+            currentUser={currentUser}
             onClose={() => {
               setShowEditModal(false);
               setSelectedTraining(null);
