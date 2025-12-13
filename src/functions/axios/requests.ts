@@ -30,7 +30,11 @@ export interface CreateClubRequest {
   cover_url: string;
   phone: string;
   telegram_url: string;
-  instagram_url: string; 
+  instagram_url: string;
+  whatsapp_url?: string;
+  working_hours_start?: string;
+  working_hours_end?: string;
+  tags?: string[];
 }
 
 export interface CreateStuffInvitationRequest {

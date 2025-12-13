@@ -90,7 +90,8 @@ export interface CreateClubData {
   instagram_link?: string;
   whatsapp_link?: string;
   tags: string[];
-  membership_tariff_id?: number;
+  working_hours_start?: string;
+  working_hours_end?: string;
 }
 
 export interface MembershipTariff {

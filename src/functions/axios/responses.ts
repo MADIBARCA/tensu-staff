@@ -37,9 +37,14 @@ export interface CreateClubResponse {
   phone: string;
   telegram_url: string;
   instagram_url: string;
-  timezone: string;
-  currency: string;
-  extra: Record<string, unknown>;
+  whatsapp_url?: string;
+  working_hours?: string;
+  working_hours_start?: string;
+  working_hours_end?: string;
+  tags?: string[];
+  timezone?: string;
+  currency?: string;
+  extra?: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 }

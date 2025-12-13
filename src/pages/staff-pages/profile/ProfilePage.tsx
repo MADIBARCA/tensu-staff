@@ -10,15 +10,14 @@ import { PayMembershipModal } from './components/PayMembershipModal';
 import { DeactivateClubModal } from './components/DeactivateClubModal';
 import { SettingsSection } from './components/SettingsSection';
 import { useTelegram } from '@/hooks/useTelegram';
-import { staffApi, clubsApi, invitationsApi } from '@/functions/axios/axiosFunctions';
-import type { ClubWithRole, CreateStaffResponse, Invitation, GetClubsLimitCheckResponse } from '@/functions/axios/responses';
-// Note: These mocks are kept because there's no API for payments, analytics, and membership tariffs
+import { staffApi, clubsApi, invitationsApi, sectionsApi } from '@/functions/axios/axiosFunctions';
+import type { ClubWithRole, CreateStaffResponse, Invitation, GetClubsLimitCheckResponse, CreateSectionResponse } from '@/functions/axios/responses';
+// Note: These mocks are kept because there's no API for payments and membership tariffs
 import {
-  mockClubAnalytics,
   mockPaymentHistory,
   mockMembershipTariffs,
 } from './mockData';
-import type { StaffUser, Club, CreateClubData, ClubAnalytics } from './types';
+import type { StaffUser, Club, CreateClubData, ClubAnalytics, Section } from './types';
 
 export default function ProfilePage() {
   const { t } = useI18n();
@@ -44,6 +43,12 @@ export default function ProfilePage() {
   const [showLimitsModal, setShowLimitsModal] = useState(false);
   const [limitsInfo, setLimitsInfo] = useState<GetClubsLimitCheckResponse | null>(null);
   const [checkingLimits, setCheckingLimits] = useState(false);
+  
+  // Sections state for club analytics
+  const [allSections, setAllSections] = useState<CreateSectionResponse[]>([]);
+  
+  // Club creation state
+  const [isCreatingClub, setIsCreatingClub] = useState(false);
 
   // Load data from API
   const loadData = useCallback(async () => {
@@ -110,11 +115,11 @@ export default function ProfilePage() {
             cover_url: c.club.cover_url,
             telegram_link: c.club.telegram_url,
             instagram_link: c.club.instagram_url,
-            whatsapp_link: '',
-            tags: [],
+            whatsapp_link: c.club.whatsapp_url || '',
+            tags: c.club.tags || [],
             status: 'active',
             activation_date: c.club.created_at.split('T')[0],
-            working_hours: '09:00 - 21:00',
+            working_hours: c.club.working_hours || '09:00 - 21:00',
             sections_count: 0,
             students_count: 0,
             owner_id: c.club.owner_id,
@@ -143,6 +148,16 @@ export default function ProfilePage() {
         } else {
           setUser(prev => prev ? { ...prev, role: 'coach' } : prev);
         }
+      }
+      
+      // Load sections for analytics
+      try {
+        const sectionsResponse = await sectionsApi.getMy(initDataRaw);
+        if (sectionsResponse.data) {
+          setAllSections(sectionsResponse.data);
+        }
+      } catch (error) {
+        console.error('Error loading sections:', error);
       }
     } catch (error) {
       console.error('Error loading data:', error);
@@ -268,72 +283,61 @@ export default function ProfilePage() {
     window.Telegram?.WebApp?.showAlert(t('profile.saved'));
   };
 
-  const handleCreateClub = async (data: CreateClubData) => {
-    let newClubId = clubs.length + 1;
-
-    if (initDataRaw) {
-      try {
-        const response = await clubsApi.create({
-          name: data.name,
-          description: data.description || '',
-          city: data.city,
-          address: data.address,
-          logo_url: data.logo_url || '',
-          cover_url: data.cover_url || '',
-          phone: data.phone,
-          telegram_url: data.telegram_link || '',
-          instagram_url: data.instagram_link || '',
-        }, initDataRaw);
-
-        if (response.data) {
-          newClubId = response.data.id;
-        }
-      } catch (error) {
-        console.error('Error creating club:', error);
-      }
+  const handleCreateClub = async (data: CreateClubData): Promise<void> => {
+    if (!initDataRaw) {
+      window.Telegram?.WebApp?.showAlert(t('profile.errors.authRequired'));
+      throw new Error('Auth required');
     }
+    
+    setIsCreatingClub(true);
+    
+    try {
+      const response = await clubsApi.create({
+        name: data.name,
+        description: data.description || '',
+        city: data.city,
+        address: data.address,
+        logo_url: data.logo_url || '',
+        cover_url: data.cover_url || '',
+        phone: data.phone,
+        telegram_url: data.telegram_link || '',
+        instagram_url: data.instagram_link || '',
+        whatsapp_url: data.whatsapp_link || '',
+        working_hours_start: data.working_hours_start || '09:00',
+        working_hours_end: data.working_hours_end || '21:00',
+        tags: data.tags || [],
+      }, initDataRaw);
 
-    const newClub: Club = {
-      id: newClubId,
-      name: data.name,
-      description: data.description,
-      city: data.city,
-      address: data.address,
-      phone: data.phone,
-      logo_url: data.logo_url,
-      cover_url: data.cover_url,
-      telegram_link: data.telegram_link,
-      instagram_link: data.instagram_link,
-      whatsapp_link: data.whatsapp_link,
-      tags: data.tags,
-      status: 'active',
-      activation_date: new Date().toISOString().split('T')[0],
-      working_hours: '09:00 - 21:00',
-      sections_count: 0,
-      students_count: 0,
-      owner_id: user?.id || 0,
-      membership: data.membership_tariff_id
-        ? {
-            id: Date.now(),
-            club_id: newClubId,
-            tariff_name: mockMembershipTariffs.find(t => t.id === data.membership_tariff_id)?.name || '',
-            price: mockMembershipTariffs.find(t => t.id === data.membership_tariff_id)?.price || 0,
-            start_date: new Date().toISOString().split('T')[0],
-            end_date: new Date(
-              Date.now() +
-                (mockMembershipTariffs.find(t => t.id === data.membership_tariff_id)?.duration_days || 30) *
-                  24 * 60 * 60 * 1000
-            ).toISOString().split('T')[0],
-            payment_method: 'Карта',
-            status: 'active',
-            days_until_expiry: mockMembershipTariffs.find(t => t.id === data.membership_tariff_id)?.duration_days || 30,
-          }
-        : undefined,
-    };
-
-    setClubs((prev) => [...prev, newClub]);
-    setShowCreateClubModal(false);
-    window.Telegram?.WebApp?.showAlert(t('profile.clubCreated'));
+      if (response.data) {
+        // Close modal and reload data from server
+        setShowCreateClubModal(false);
+        window.Telegram?.WebApp?.showAlert(t('profile.clubCreated'));
+        
+        // Reload all data to get fresh state
+        await loadData();
+      }
+    } catch (error: unknown) {
+      console.error('Error creating club:', error);
+      
+      // Extract error message from backend response
+      let errorMessage = t('profile.errors.createFailed');
+      
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { detail?: string | { msg?: string }[] } } };
+        const detail = axiosError.response?.data?.detail;
+        
+        if (typeof detail === 'string') {
+          errorMessage = detail;
+        } else if (Array.isArray(detail) && detail[0]?.msg) {
+          errorMessage = detail[0].msg;
+        }
+      }
+      
+      window.Telegram?.WebApp?.showAlert(errorMessage);
+      throw error; // Re-throw to let modal know it failed
+    } finally {
+      setIsCreatingClub(false);
+    }
   };
 
   const handleClubClick = (club: Club) => {
@@ -410,12 +414,28 @@ export default function ProfilePage() {
     }
   };
 
-  // Note: Analytics are mock-only since there's no analytics API
+  // Get club analytics using real sections data
   const getClubAnalytics = (clubId: number): ClubAnalytics => {
-    return mockClubAnalytics.find(a => a.club_id === clubId) || {
+    // Filter sections for this club
+    const clubSections = allSections.filter(s => s.club_id === clubId);
+    
+    // Transform to Section type for analytics
+    const sections: Section[] = clubSections.map(s => ({
+      id: s.id,
+      club_id: s.club_id,
+      name: s.name,
+      students_count: s.groups?.reduce((total, g) => total + (g.enrolled_students || 0), 0) || 0,
+      coach_id: s.coach_id,
+    }));
+    
+    // Calculate total students
+    const totalStudents = sections.reduce((sum, s) => sum + s.students_count, 0);
+    
+    return {
       club_id: clubId,
-      sections: [],
-      total_students: 0,
+      sections,
+      total_students: totalStudents,
+      // Note: Training stats would need a dedicated API
       trainings_this_month: 0,
       trainings_conducted: 0,
       trainings_scheduled: 0,
@@ -574,9 +594,9 @@ export default function ProfilePage() {
         {/* Modals */}
         {showCreateClubModal && (
           <CreateClubModal
-            tariffs={mockMembershipTariffs}
             onClose={() => setShowCreateClubModal(false)}
             onCreate={handleCreateClub}
+            isSubmitting={isCreatingClub}
           />
         )}
 
