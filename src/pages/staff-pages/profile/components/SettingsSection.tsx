@@ -7,6 +7,29 @@ import { useNavigate } from 'react-router-dom';
 
 type Lang = 'ru' | 'kk' | 'en';
 
+// Helper to get Telegram WebApp safely
+const getTelegramWebApp = () => window.Telegram?.WebApp;
+
+// Helper to show alert
+const showTelegramAlert = (message: string) => {
+  const tg = getTelegramWebApp();
+  if (tg?.showAlert) {
+    tg.showAlert(message);
+  } else {
+    alert(message);
+  }
+};
+
+// Helper to open link
+const openTelegramLink = (url: string) => {
+  const tg = getTelegramWebApp();
+  if (tg?.openLink) {
+    tg.openLink(url);
+  } else {
+    window.open(url, '_blank');
+  }
+};
+
 export const SettingsSection: React.FC = () => {
   const { t, lang, setLang } = useI18n();
   const navigate = useNavigate();
@@ -40,7 +63,7 @@ export const SettingsSection: React.FC = () => {
 
   const handleNotificationsToggle = async (enabled: boolean) => {
     if (!('Notification' in window)) {
-      window.Telegram?.WebApp?.showAlert(t('settings.notificationsNotSupported'));
+      showTelegramAlert(t('settings.notificationsNotSupported'));
       return;
     }
     
@@ -63,7 +86,7 @@ export const SettingsSection: React.FC = () => {
         } else if (permission === 'denied') {
           setNotificationsEnabled(false);
           localStorage.setItem('notifications_enabled', 'false');
-          window.Telegram?.WebApp?.showAlert(t('settings.notificationsDenied'));
+          showTelegramAlert(t('settings.notificationsDenied'));
         }
       } else {
         // User wants to disable - we can't revoke, but we can remember their preference
@@ -72,7 +95,7 @@ export const SettingsSection: React.FC = () => {
       }
     } catch (error) {
       console.error('Error handling notifications:', error);
-      window.Telegram?.WebApp?.showAlert(t('settings.notificationsError'));
+      showTelegramAlert(t('settings.notificationsError'));
     } finally {
       setNotificationLoading(false);
     }
@@ -80,7 +103,7 @@ export const SettingsSection: React.FC = () => {
 
   const handleLocationToggle = async (enabled: boolean) => {
     if (!('geolocation' in navigator)) {
-      window.Telegram?.WebApp?.showAlert(t('settings.locationNotSupported'));
+      showTelegramAlert(t('settings.locationNotSupported'));
       return;
     }
     
@@ -98,7 +121,7 @@ export const SettingsSection: React.FC = () => {
             setLocationLoading(false);
             
             // Optionally show success message
-            window.Telegram?.WebApp?.showAlert(
+            showTelegramAlert(
               `${t('settings.locationEnabled')}\n${t('settings.locationCoords')}: ${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}`
             );
           },
@@ -108,9 +131,9 @@ export const SettingsSection: React.FC = () => {
             setLocationLoading(false);
             
             if (error.code === error.PERMISSION_DENIED) {
-              window.Telegram?.WebApp?.showAlert(t('settings.locationDenied'));
+              showTelegramAlert(t('settings.locationDenied'));
             } else {
-              window.Telegram?.WebApp?.showAlert(t('settings.locationError'));
+              showTelegramAlert(t('settings.locationError'));
             }
           },
           {
@@ -130,7 +153,7 @@ export const SettingsSection: React.FC = () => {
     } catch (error) {
       console.error('Error handling location:', error);
       setLocationLoading(false);
-      window.Telegram?.WebApp?.showAlert(t('settings.locationError'));
+      showTelegramAlert(t('settings.locationError'));
     }
   };
 
@@ -228,14 +251,7 @@ export const SettingsSection: React.FC = () => {
 
           {/* Support */}
           <button
-            onClick={() => {
-              const tg = window.Telegram?.WebApp;
-              if (tg?.openTelegramLink) {
-                tg.openTelegramLink('https://t.me/admintensu');
-              } else if (tg?.openLink) {
-                tg.openLink('https://t.me/admintensu');
-              }
-            }}
+            onClick={() => openTelegramLink('https://t.me/admintensu')}
             className="w-full flex items-center justify-between py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors"
           >
             <div className="flex items-center gap-3">
@@ -259,12 +275,7 @@ export const SettingsSection: React.FC = () => {
 
           {/* Terms of Service */}
           <button
-            onClick={() => {
-              const tg = window.Telegram?.WebApp;
-              if (tg?.openLink) {
-                tg.openLink('https://tensu.kz/terms');
-              }
-            }}
+            onClick={() => openTelegramLink('https://tensu.kz/terms')}
             className="w-full flex items-center justify-between py-3 hover:bg-gray-50 transition-colors"
           >
             <div className="flex items-center gap-3">
