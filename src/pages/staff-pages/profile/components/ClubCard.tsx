@@ -109,7 +109,7 @@ export const ClubCard: React.FC<ClubCardProps> = ({ club, clubRoles, currentUser
         <div className="flex items-center gap-4 text-sm text-gray-600">
           <div className="flex items-center gap-1">
             <Clock size={14} />
-            <span>{club.working_hours || '09:00 - 21:00'}</span>
+            <span>{club.working_hours_start && club.working_hours_end ? `${club.working_hours_start} - ${club.working_hours_end}` : (club.working_hours || '09:00 - 21:00')}</span>
           </div>
           <div className="flex items-center gap-1">
             <Users size={14} />

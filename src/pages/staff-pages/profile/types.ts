@@ -32,7 +32,9 @@ export interface Club {
   tags: string[];
   status: ClubStatus;
   activation_date: string;
-  working_hours: string;
+  working_hours?: string;
+  working_hours_start?: string;
+  working_hours_end?: string;
   sections_count: number;
   students_count: number;
   owner_id: number;
