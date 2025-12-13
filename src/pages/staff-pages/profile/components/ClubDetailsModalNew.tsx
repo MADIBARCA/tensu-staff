@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { X, MapPin, Phone, Clock, Users, Calendar, ChevronDown, ChevronUp, AlertTriangle, Power } from 'lucide-react';
+import { X, MapPin, Phone, Clock, Users, Calendar, ChevronDown, ChevronUp, AlertTriangle, Power, Building2, Dumbbell, Info } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import type { Club, ClubAnalytics, PaymentHistory, UserRole } from '../types';
 import type { ClubWithRole } from '@/functions/axios/responses';
@@ -33,6 +33,12 @@ export const ClubDetailsModalNew: React.FC<ClubDetailsModalProps> = ({
   const isOwnerOfThisClub = useMemo(() => {
     const clubRole = clubRoles.find(cr => cr.club.id === club.id);
     return clubRole ? (clubRole.role === 'owner' || clubRole.is_owner) : false;
+  }, [club.id, clubRoles]);
+
+  // Check if user is only a coach (not owner/admin) in this club
+  const isOnlyCoach = useMemo(() => {
+    const clubRole = clubRoles.find(cr => cr.club.id === club.id);
+    return clubRole ? clubRole.role === 'coach' : false;
   }, [club.id, clubRoles]);
 
   const canViewMembership = userRole === 'owner' || userRole === 'admin';
@@ -122,12 +128,13 @@ export const ClubDetailsModalNew: React.FC<ClubDetailsModalProps> = ({
           <div className="flex mt-4 border-b border-gray-200">
             <button
               onClick={() => setActiveTab('analytics')}
-              className={`flex-1 py-2 text-sm font-medium border-b-2 transition-colors ${
+              className={`flex-1 py-2 text-sm font-medium border-b-2 transition-colors flex items-center justify-center gap-1.5 ${
                 activeTab === 'analytics'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
+              {isOnlyCoach ? <Dumbbell size={14} /> : <Building2 size={14} />}
               {t('profile.club.tabs.analytics')}
             </button>
             {canViewMembership && (
@@ -149,21 +156,74 @@ export const ClubDetailsModalNew: React.FC<ClubDetailsModalProps> = ({
         <div className="flex-1 overflow-y-auto p-4">
           {activeTab === 'analytics' ? (
             <div className="space-y-4">
+              {/* Analytics Scope Indicator */}
+              <div className={`flex items-center gap-2 p-3 rounded-lg ${
+                isOnlyCoach 
+                  ? 'bg-amber-50 border border-amber-200' 
+                  : 'bg-blue-50 border border-blue-200'
+              }`}>
+                <div className={`p-1.5 rounded-full ${
+                  isOnlyCoach ? 'bg-amber-100' : 'bg-blue-100'
+                }`}>
+                  {isOnlyCoach ? (
+                    <Dumbbell size={16} className="text-amber-600" />
+                  ) : (
+                    <Building2 size={16} className="text-blue-600" />
+                  )}
+                </div>
+                <div className="flex-1">
+                  <p className={`text-sm font-medium ${
+                    isOnlyCoach ? 'text-amber-800' : 'text-blue-800'
+                  }`}>
+                    {isOnlyCoach 
+                      ? t('profile.club.analyticsScope.section')
+                      : t('profile.club.analyticsScope.club')
+                    }
+                  </p>
+                  <p className={`text-xs ${
+                    isOnlyCoach ? 'text-amber-600' : 'text-blue-600'
+                  }`}>
+                    {isOnlyCoach 
+                      ? t('profile.club.analyticsScope.sectionHint')
+                      : t('profile.club.analyticsScope.clubHint')
+                    }
+                  </p>
+                </div>
+                <Info size={16} className={isOnlyCoach ? 'text-amber-400' : 'text-blue-400'} />
+              </div>
+
               {/* Stats Grid */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-blue-50 rounded-lg p-3">
-                  <p className="text-2xl font-bold text-blue-700">{analytics.total_students}</p>
-                  <p className="text-sm text-blue-600">{t('profile.club.totalStudents')}</p>
+                <div className={`rounded-lg p-3 ${isOnlyCoach ? 'bg-amber-50' : 'bg-blue-50'}`}>
+                  <p className={`text-2xl font-bold ${isOnlyCoach ? 'text-amber-700' : 'text-blue-700'}`}>
+                    {analytics.total_students}
+                  </p>
+                  <p className={`text-sm ${isOnlyCoach ? 'text-amber-600' : 'text-blue-600'}`}>
+                    {isOnlyCoach 
+                      ? t('profile.club.sectionStudents')
+                      : t('profile.club.totalStudents')
+                    }
+                  </p>
                 </div>
                 <div className="bg-green-50 rounded-lg p-3">
                   <p className="text-2xl font-bold text-green-700">{analytics.trainings_this_month}</p>
-                  <p className="text-sm text-green-600">{t('profile.club.trainingsMonth')}</p>
+                  <p className="text-sm text-green-600">
+                    {isOnlyCoach 
+                      ? t('profile.club.myTrainingsMonth')
+                      : t('profile.club.trainingsMonth')
+                    }
+                  </p>
                 </div>
               </div>
 
               {/* Trainings Breakdown */}
               <div className="bg-gray-50 rounded-lg p-3">
-                <h4 className="font-medium text-gray-900 mb-3">{t('profile.club.trainingsBreakdown')}</h4>
+                <h4 className="font-medium text-gray-900 mb-3">
+                  {isOnlyCoach 
+                    ? t('profile.club.myTrainingsBreakdown')
+                    : t('profile.club.trainingsBreakdown')
+                  }
+                </h4>
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div>
                     <p className="text-lg font-semibold text-green-600">{analytics.trainings_conducted}</p>
@@ -182,14 +242,28 @@ export const ClubDetailsModalNew: React.FC<ClubDetailsModalProps> = ({
 
               {/* Sections */}
               <div>
-                <h4 className="font-medium text-gray-900 mb-3">{t('profile.club.sections')}</h4>
+                <h4 className="font-medium text-gray-900 mb-3">
+                  {isOnlyCoach 
+                    ? t('profile.club.mySections')
+                    : t('profile.club.allSections')
+                  }
+                </h4>
                 <div className="space-y-2">
                   {analytics.sections.map((section) => (
                     <div
                       key={section.id}
-                      className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg"
+                      className={`flex items-center justify-between p-3 bg-white border rounded-lg ${
+                        isOnlyCoach ? 'border-amber-200' : 'border-gray-200'
+                      }`}
                     >
-                      <span className="text-gray-900">{section.name}</span>
+                      <div className="flex items-center gap-2">
+                        {isOnlyCoach && (
+                          <span className="text-xs px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded">
+                            {t('profile.club.yourSection')}
+                          </span>
+                        )}
+                        <span className="text-gray-900">{section.name}</span>
+                      </div>
                       <div className="flex items-center gap-1 text-sm text-gray-500">
                         <Users size={14} />
                         <span>{section.students_count}</span>
