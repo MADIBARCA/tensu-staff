@@ -219,23 +219,30 @@ export default function ManagementPage() {
       // Load sections
       const sectionsResponse = await sectionsApi.getMy(initDataRaw);
       if (sectionsResponse.data) {
-        const transformedSections: Section[] = sectionsResponse.data.map(s => ({
-          id: s.id,
-          name: s.name,
-          club_id: s.club_id,
-          club_name: s.club?.name || '',
-          coach_ids: s.coach ? [s.coach.id] : [],
-          coaches: s.coach ? [{ id: s.coach.id, name: `${s.coach.first_name} ${s.coach.last_name}` }] : [],
-          groups: s.groups?.map(g => ({
-            id: g.id,
-            section_id: s.id,
-            name: g.name,
-            level: g.level,
-            capacity: g.capacity,
-            schedules: [],
-          })) || [],
-          created_at: s.created_at,
-        }));
+        const transformedSections: Section[] = sectionsResponse.data.map(s => {
+          // Use coaches array if available, otherwise fall back to single coach
+          const coachList = s.coaches && s.coaches.length > 0 
+            ? s.coaches 
+            : (s.coach ? [s.coach] : []);
+          
+          return {
+            id: s.id,
+            name: s.name,
+            club_id: s.club_id,
+            club_name: s.club?.name || '',
+            coach_ids: coachList.map(c => c.id),
+            coaches: coachList.map(c => ({ id: c.id, name: `${c.first_name} ${c.last_name}` })),
+            groups: s.groups?.map(g => ({
+              id: g.id,
+              section_id: s.id,
+              name: g.name,
+              level: g.level,
+              capacity: g.capacity,
+              schedules: [],
+            })) || [],
+            created_at: s.created_at,
+          };
+        });
         setSections(transformedSections);
       }
 

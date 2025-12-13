@@ -336,7 +336,8 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
         club_id: section.club_id,
         name: name.trim(),
         description: '',
-        coach_id: coachIds[0],
+        coach_id: coachIds[0], // Primary coach
+        coach_ids: coachIds, // All coaches
         active: true,
       }, section.id, initDataRaw);
 
@@ -356,7 +357,8 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
           price: Number(grp.price) || 0,
           capacity: Number(grp.capacity) || 0,
           level: grp.level || 'all',
-          coach_id: coachIds[0],
+          coach_id: coachIds[0], // Primary coach
+          coach_ids: coachIds, // All coaches
           tags: [],
           active: true,
         };

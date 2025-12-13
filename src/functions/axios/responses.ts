@@ -141,9 +141,11 @@ export interface CreateSectionResponse {
   name: string;
   description: string;
   coach_id: number;
+  coach_ids?: number[];
   active: boolean;
   club: SectionClub;
   coach: SectionCoach;
+  coaches?: SectionCoach[]; // All coaches
   groups: SectionGroupSummary[];
   created_at: string;
   updated_at: string;
@@ -171,6 +173,8 @@ export interface CreateGroupResponse {
   capacity: number;
   level: string;
   coach_id: number;
+  coach_ids?: number[];
+  coaches?: SectionCoach[]; // All coaches
   tags: string[];
   active: boolean;
 }
@@ -185,6 +189,7 @@ export interface GetMyGroupResponse {
   capacity: number;
   level: string;
   coach_id: number;
+  coach_ids?: number[];
   tags: string[];
   active: boolean;
   id: number;
@@ -199,6 +204,12 @@ export interface GetMyGroupResponse {
     last_name: string;
     username: string;
   };
+  coaches?: {
+    id: number;
+    first_name: string;
+    last_name: string;
+    username: string;
+  }[];
   created_at: string;
   updated_at: string;
 }

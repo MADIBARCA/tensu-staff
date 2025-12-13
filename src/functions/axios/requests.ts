@@ -63,6 +63,7 @@ export interface CreateSectionRequest {
   name: string;
   description: string;
   coach_id?: number | null;
+  coach_ids?: number[]; // List of all coach IDs
   active: boolean;
 }
 
@@ -75,6 +76,7 @@ export interface CreateGroupRequest {
   capacity: number | "";
   level: string;
   coach_id: number;
+  coach_ids?: number[]; // List of all coach IDs
   tags: string[];
   active: boolean;
 }

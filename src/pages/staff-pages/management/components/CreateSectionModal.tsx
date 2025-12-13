@@ -235,7 +235,8 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
         club_id: sectionData.club_id,
         name: sectionData.name,
         description: sectionData.description || '',
-        coach_id: sectionData.coach_ids[0], // API accepts single coach_id
+        coach_id: sectionData.coach_ids[0], // Primary coach (required)
+        coach_ids: sectionData.coach_ids, // All coaches including primary
         active: true,
       }, initDataRaw);
       
@@ -279,7 +280,8 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
           price: Number(grp.price) || 0,
           capacity: Number(grp.capacity) || 0,
           level: grp.level || 'all',
-          coach_id: sectionData.coach_ids[0],
+          coach_id: sectionData.coach_ids[0], // Primary coach
+          coach_ids: sectionData.coach_ids, // All coaches
           tags: [],
           active: true,
         };
