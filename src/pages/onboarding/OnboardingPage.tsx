@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTelegram, ContactRequestResult } from '@/hooks/useTelegram';
+import { useTelegram } from '@/hooks/useTelegram';
+import type { ContactRequestResult } from '@/hooks/useTelegram';
 import { staffApi } from '@/functions/axios/axiosFunctions';
 import { useI18n } from '@/i18n/i18n';
 import { 
@@ -25,9 +26,7 @@ export default function OnboardingPage() {
   
   const [step, setStep] = useState<OnboardingStep>('welcome');
   const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
   const [avatar, setAvatar] = useState<string | undefined>();
-  const [contactResponse, setContactResponse] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showCard, setShowCard] = useState(false);
   const [hasCheckedExisting, setHasCheckedExisting] = useState(false);
@@ -45,10 +44,6 @@ export default function OnboardingPage() {
     const name = [user.first_name, user.last_name].filter(Boolean).join(' ');
     setFullName(name);
     setAvatar(user.photo_url);
-    
-    if (user.phone_number) {
-      setPhone(user.phone_number);
-    }
   }, [user]);
 
   // Check if staff profile already exists
@@ -80,13 +75,7 @@ export default function OnboardingPage() {
     
     requestContact((granted: boolean, result: ContactRequestResult) => {
       if (granted && result.response) {
-        setContactResponse(result.response);
-        
-        if (result.responseUnsafe?.contact?.phone_number) {
-          setPhone(result.responseUnsafe.contact.phone_number);
-        }
-        
-        // Now create the staff profile
+        // Create the staff profile with contact data
         createStaffProfile(result.response);
       } else {
         setStep('phone');
