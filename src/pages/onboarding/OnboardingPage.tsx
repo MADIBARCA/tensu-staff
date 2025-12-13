@@ -135,7 +135,6 @@ export default function OnboardingPage() {
   const handleRetry = useCallback(() => {
     setStep('welcome');
     setError(null);
-    setContactResponse(null);
   }, []);
 
   // Loading state while checking user
