@@ -152,9 +152,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           <ChevronLeft size={20} />
         </button>
         <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-gray-900">
-            {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
-          </h3>
+        <h3 className="font-semibold text-gray-900">
+          {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+        </h3>
           {loadingLessons && (
             <Loader2 size={16} className="animate-spin text-blue-500" />
           )}

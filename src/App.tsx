@@ -15,7 +15,7 @@ import ProfilePage from "./pages/staff-pages/profile/ProfilePage";
 import StudentsPage from "./pages/staff-pages/students/StudentsPage";
 import ManagementPage from "./pages/staff-pages/management/ManagementPage";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
-import OnboardingPage from "./pages/onboarding/OnboardingPage";
+import OnboardingPage from "./pages/onboarding/Onboarding";
 
 function AppRoutes() {
   const location = useLocation();
@@ -31,7 +31,7 @@ function AppRoutes() {
         <Route path="/staff/management" element={<ManagementPage />} />
         <Route path="/staff/profile" element={<ProfilePage />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
-        <Route path="*" element={<Navigate to="/staff/main" replace />} />
+        <Route path="*" element={<Navigate to="/onboarding" replace />} />
       </Routes>
       <ToastContainer position="top-right" autoClose={3000} />
     </div>
