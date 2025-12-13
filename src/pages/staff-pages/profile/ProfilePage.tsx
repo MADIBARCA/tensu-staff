@@ -618,6 +618,14 @@ export default function ProfilePage() {
               setShowPaymentModal(true);
             }}
             onDeactivate={handleDeactivateClick}
+            onRefresh={async () => {
+              await loadData();
+              // Re-select the club with updated data after reload
+              const updatedClub = clubs.find(c => c.id === selectedClub.id);
+              if (updatedClub) {
+                setSelectedClub(updatedClub);
+              }
+            }}
           />
         )}
 

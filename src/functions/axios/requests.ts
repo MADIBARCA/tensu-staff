@@ -37,6 +37,22 @@ export interface CreateClubRequest {
   tags?: string[];
 }
 
+export interface UpdateClubRequest {
+  name?: string;
+  description?: string;
+  city?: string;
+  address?: string;
+  logo_url?: string;
+  cover_url?: string;
+  phone?: string;
+  telegram_url?: string;
+  instagram_url?: string;
+  whatsapp_url?: string;
+  working_hours_start?: string;
+  working_hours_end?: string;
+  tags?: string[];
+}
+
 export interface CreateStuffInvitationRequest {
   phone_number: string;
   role: string;

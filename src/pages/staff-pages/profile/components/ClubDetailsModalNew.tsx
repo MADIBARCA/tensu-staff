@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { X, MapPin, Phone, Clock, Users, Calendar, ChevronDown, ChevronUp, AlertTriangle, Power, Building2, User } from 'lucide-react';
+import { X, MapPin, Phone, Clock, Users, Calendar, ChevronDown, ChevronUp, AlertTriangle, Power, Building2, User, Edit2 } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
+import { EditClubModal } from './EditClubModal';
 import type { Club, ClubAnalytics, PaymentHistory, Section } from '../types';
 import type { ClubWithRole, CreateStaffResponse } from '@/functions/axios/responses';
 
@@ -13,6 +14,7 @@ interface ClubDetailsModalProps {
   onClose: () => void;
   onPayment: () => void;
   onDeactivate: () => void;
+  onRefresh?: () => void;
 }
 
 export const ClubDetailsModalNew: React.FC<ClubDetailsModalProps> = ({
@@ -24,10 +26,12 @@ export const ClubDetailsModalNew: React.FC<ClubDetailsModalProps> = ({
   onClose,
   onPayment,
   onDeactivate,
+  onRefresh,
 }) => {
   const { t } = useI18n();
   const [activeTab, setActiveTab] = useState<'analytics' | 'membership'>('analytics');
   const [showPaymentHistory, setShowPaymentHistory] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   // Get user's role for THIS specific club
   const userRoleInThisClub = useMemo(() => {
@@ -142,12 +146,23 @@ export const ClubDetailsModalNew: React.FC<ClubDetailsModalProps> = ({
                 <span>{club.city}, {club.address}</span>
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X size={20} />
-            </button>
+            <div className="flex items-center gap-1">
+              {isOwnerOrAdminOfThisClub && (
+                <button
+                  onClick={() => setShowEditModal(true)}
+                  className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                  title={t('common.edit')}
+                >
+                  <Edit2 size={18} />
+                </button>
+              )}
+              <button
+                onClick={onClose}
+                className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
           </div>
 
           {/* Club Info */}
@@ -417,6 +432,18 @@ export const ClubDetailsModalNew: React.FC<ClubDetailsModalProps> = ({
           </div>
         )}
       </div>
+
+      {/* Edit Club Modal */}
+      {showEditModal && (
+        <EditClubModal
+          club={club}
+          onClose={() => setShowEditModal(false)}
+          onSave={() => {
+            setShowEditModal(false);
+            onRefresh?.();
+          }}
+        />
+      )}
     </div>
   );
 };

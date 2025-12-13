@@ -15,6 +15,7 @@ import type {
   UpdateLessonRequest, 
   UpdateStaffRequest,
   UpdateStudentRequest,
+  UpdateClubRequest,
   CreateTariffRequest,
   UpdateTariffRequest
 } from './requests';
@@ -107,8 +108,8 @@ export const clubsApi = {
   create: (data: CreateClubRequest, token: string) =>
     axiosRequest<CreateClubResponse>(ENDPOINTS.CLUBS.BASE, 'POST', token, data),
   
-  update: (id: string, data: unknown, token: string) =>
-    axiosRequest(ENDPOINTS.CLUBS.UPDATE(id), 'PUT', token, data),
+  update: (id: string, data: UpdateClubRequest, token: string) =>
+    axiosRequest<CreateClubResponse>(ENDPOINTS.CLUBS.UPDATE(id), 'PUT', token, data),
   
   delete: (id: string, token: string) =>
     axiosRequest<void>(ENDPOINTS.CLUBS.BY_ID(id), 'DELETE', token),
