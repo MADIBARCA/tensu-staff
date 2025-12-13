@@ -1,15 +1,15 @@
 import React, { useState, useMemo } from 'react';
-import { X, MapPin, Phone, Clock, Users, Calendar, ChevronDown, ChevronUp, AlertTriangle, Power, Building2, Dumbbell, Info } from 'lucide-react';
+import { X, MapPin, Phone, Clock, Users, Calendar, ChevronDown, ChevronUp, AlertTriangle, Power, Building2, User } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
-import type { Club, ClubAnalytics, PaymentHistory, UserRole } from '../types';
-import type { ClubWithRole } from '@/functions/axios/responses';
+import type { Club, ClubAnalytics, PaymentHistory, Section } from '../types';
+import type { ClubWithRole, CreateStaffResponse } from '@/functions/axios/responses';
 
 interface ClubDetailsModalProps {
   club: Club;
   analytics: ClubAnalytics;
   paymentHistory: PaymentHistory[];
-  userRole: UserRole;
   clubRoles: ClubWithRole[];
+  currentUser?: CreateStaffResponse | null;
   onClose: () => void;
   onPayment: () => void;
   onDeactivate: () => void;
@@ -19,8 +19,8 @@ export const ClubDetailsModalNew: React.FC<ClubDetailsModalProps> = ({
   club,
   analytics,
   paymentHistory,
-  userRole,
   clubRoles,
+  currentUser,
   onClose,
   onPayment,
   onDeactivate,
@@ -29,20 +29,61 @@ export const ClubDetailsModalNew: React.FC<ClubDetailsModalProps> = ({
   const [activeTab, setActiveTab] = useState<'analytics' | 'membership'>('analytics');
   const [showPaymentHistory, setShowPaymentHistory] = useState(false);
 
+  // Get user's role for THIS specific club
+  const userRoleInThisClub = useMemo(() => {
+    const clubRole = clubRoles.find(cr => cr.club.id === club.id);
+    return clubRole?.role || null;
+  }, [club.id, clubRoles]);
+
   // Check if user is owner of THIS specific club
   const isOwnerOfThisClub = useMemo(() => {
     const clubRole = clubRoles.find(cr => cr.club.id === club.id);
     return clubRole ? (clubRole.role === 'owner' || clubRole.is_owner) : false;
   }, [club.id, clubRoles]);
 
-  // Check if user is only a coach (not owner/admin) in this club
-  const isOnlyCoach = useMemo(() => {
-    const clubRole = clubRoles.find(cr => cr.club.id === club.id);
-    return clubRole ? clubRole.role === 'coach' : false;
-  }, [club.id, clubRoles]);
+  // Check if user is owner or admin of THIS specific club
+  const isOwnerOrAdminOfThisClub = useMemo(() => {
+    return userRoleInThisClub === 'owner' || userRoleInThisClub === 'admin';
+  }, [userRoleInThisClub]);
 
-  const canViewMembership = userRole === 'owner' || userRole === 'admin';
-  const canDeactivate = isOwnerOfThisClub; // Only owner of THIS specific club can deactivate
+  // Filter sections for coaches - show only their sections
+  const filteredSections = useMemo((): Section[] => {
+    if (isOwnerOrAdminOfThisClub) {
+      return analytics.sections;
+    }
+    // For coaches, filter to only show their sections
+    if (currentUser && userRoleInThisClub === 'coach') {
+      return analytics.sections.filter(section => section.coach_id === currentUser.id);
+    }
+    return [];
+  }, [analytics.sections, isOwnerOrAdminOfThisClub, currentUser, userRoleInThisClub]);
+
+  // Calculate analytics for filtered sections (for coaches)
+  const filteredAnalytics = useMemo(() => {
+    if (isOwnerOrAdminOfThisClub) {
+      return {
+        total_students: analytics.total_students,
+        trainings_this_month: analytics.trainings_this_month,
+        trainings_conducted: analytics.trainings_conducted,
+        trainings_scheduled: analytics.trainings_scheduled,
+        trainings_cancelled: analytics.trainings_cancelled,
+      };
+    }
+    // For coaches, sum up only their sections' students
+    const coachStudents = filteredSections.reduce((sum, s) => sum + s.students_count, 0);
+    // Note: For trainings, we'd need section-level breakdown which may not be available
+    // For now, show the coach's sections' student count
+    return {
+      total_students: coachStudents,
+      trainings_this_month: analytics.trainings_this_month, // TODO: filter by section when data available
+      trainings_conducted: analytics.trainings_conducted,
+      trainings_scheduled: analytics.trainings_scheduled,
+      trainings_cancelled: analytics.trainings_cancelled,
+    };
+  }, [analytics, isOwnerOrAdminOfThisClub, filteredSections]);
+
+  const canViewMembership = isOwnerOrAdminOfThisClub;
+  const canDeactivate = isOwnerOfThisClub;
   const showPayButton = club.membership && club.membership.days_until_expiry <= 7;
 
   const getStatusLabel = (status: string): string => {
@@ -128,13 +169,12 @@ export const ClubDetailsModalNew: React.FC<ClubDetailsModalProps> = ({
           <div className="flex mt-4 border-b border-gray-200">
             <button
               onClick={() => setActiveTab('analytics')}
-              className={`flex-1 py-2 text-sm font-medium border-b-2 transition-colors flex items-center justify-center gap-1.5 ${
+              className={`flex-1 py-2 text-sm font-medium border-b-2 transition-colors ${
                 activeTab === 'analytics'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
-              {isOnlyCoach ? <Dumbbell size={14} /> : <Building2 size={14} />}
               {t('profile.club.tabs.analytics')}
             </button>
             {canViewMembership && (
@@ -158,120 +198,105 @@ export const ClubDetailsModalNew: React.FC<ClubDetailsModalProps> = ({
             <div className="space-y-4">
               {/* Analytics Scope Indicator */}
               <div className={`flex items-center gap-2 p-3 rounded-lg ${
-                isOnlyCoach 
-                  ? 'bg-amber-50 border border-amber-200' 
-                  : 'bg-blue-50 border border-blue-200'
+                isOwnerOrAdminOfThisClub 
+                  ? 'bg-blue-50 border border-blue-200' 
+                  : 'bg-amber-50 border border-amber-200'
               }`}>
-                <div className={`p-1.5 rounded-full ${
-                  isOnlyCoach ? 'bg-amber-100' : 'bg-blue-100'
-                }`}>
-                  {isOnlyCoach ? (
-                    <Dumbbell size={16} className="text-amber-600" />
-                  ) : (
-                    <Building2 size={16} className="text-blue-600" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <p className={`text-sm font-medium ${
-                    isOnlyCoach ? 'text-amber-800' : 'text-blue-800'
-                  }`}>
-                    {isOnlyCoach 
-                      ? t('profile.club.analyticsScope.section')
-                      : t('profile.club.analyticsScope.club')
-                    }
-                  </p>
-                  <p className={`text-xs ${
-                    isOnlyCoach ? 'text-amber-600' : 'text-blue-600'
-                  }`}>
-                    {isOnlyCoach 
-                      ? t('profile.club.analyticsScope.sectionHint')
-                      : t('profile.club.analyticsScope.clubHint')
-                    }
-                  </p>
-                </div>
-                <Info size={16} className={isOnlyCoach ? 'text-amber-400' : 'text-blue-400'} />
+                {isOwnerOrAdminOfThisClub ? (
+                  <>
+                    <Building2 size={18} className="text-blue-600" />
+                    <div>
+                      <p className="text-sm font-medium text-blue-800">
+                        {t('profile.club.analyticsScope.club')}
+                      </p>
+                      <p className="text-xs text-blue-600">
+                        {t('profile.club.analyticsScope.clubDescription')}
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <User size={18} className="text-amber-600" />
+                    <div>
+                      <p className="text-sm font-medium text-amber-800">
+                        {t('profile.club.analyticsScope.coach')}
+                      </p>
+                      <p className="text-xs text-amber-600">
+                        {filteredSections.length > 0 
+                          ? t('profile.club.analyticsScope.coachDescription', { count: filteredSections.length })
+                          : t('profile.club.analyticsScope.noSections')
+                        }
+                      </p>
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Stats Grid */}
               <div className="grid grid-cols-2 gap-3">
-                <div className={`rounded-lg p-3 ${isOnlyCoach ? 'bg-amber-50' : 'bg-blue-50'}`}>
-                  <p className={`text-2xl font-bold ${isOnlyCoach ? 'text-amber-700' : 'text-blue-700'}`}>
-                    {analytics.total_students}
-                  </p>
-                  <p className={`text-sm ${isOnlyCoach ? 'text-amber-600' : 'text-blue-600'}`}>
-                    {isOnlyCoach 
-                      ? t('profile.club.sectionStudents')
-                      : t('profile.club.totalStudents')
-                    }
-                  </p>
+                <div className="bg-blue-50 rounded-lg p-3">
+                  <p className="text-2xl font-bold text-blue-700">{filteredAnalytics.total_students}</p>
+                  <p className="text-sm text-blue-600">{t('profile.club.totalStudents')}</p>
                 </div>
                 <div className="bg-green-50 rounded-lg p-3">
-                  <p className="text-2xl font-bold text-green-700">{analytics.trainings_this_month}</p>
-                  <p className="text-sm text-green-600">
-                    {isOnlyCoach 
-                      ? t('profile.club.myTrainingsMonth')
-                      : t('profile.club.trainingsMonth')
-                    }
-                  </p>
+                  <p className="text-2xl font-bold text-green-700">{filteredAnalytics.trainings_this_month}</p>
+                  <p className="text-sm text-green-600">{t('profile.club.trainingsMonth')}</p>
                 </div>
               </div>
 
               {/* Trainings Breakdown */}
               <div className="bg-gray-50 rounded-lg p-3">
-                <h4 className="font-medium text-gray-900 mb-3">
-                  {isOnlyCoach 
-                    ? t('profile.club.myTrainingsBreakdown')
-                    : t('profile.club.trainingsBreakdown')
-                  }
-                </h4>
+                <h4 className="font-medium text-gray-900 mb-3">{t('profile.club.trainingsBreakdown')}</h4>
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div>
-                    <p className="text-lg font-semibold text-green-600">{analytics.trainings_conducted}</p>
+                    <p className="text-lg font-semibold text-green-600">{filteredAnalytics.trainings_conducted}</p>
                     <p className="text-xs text-gray-500">{t('profile.club.conducted')}</p>
                   </div>
                   <div>
-                    <p className="text-lg font-semibold text-blue-600">{analytics.trainings_scheduled}</p>
+                    <p className="text-lg font-semibold text-blue-600">{filteredAnalytics.trainings_scheduled}</p>
                     <p className="text-xs text-gray-500">{t('profile.club.scheduled')}</p>
                   </div>
                   <div>
-                    <p className="text-lg font-semibold text-red-600">{analytics.trainings_cancelled}</p>
+                    <p className="text-lg font-semibold text-red-600">{filteredAnalytics.trainings_cancelled}</p>
                     <p className="text-xs text-gray-500">{t('profile.club.cancelled')}</p>
                   </div>
                 </div>
               </div>
 
               {/* Sections */}
-              <div>
-                <h4 className="font-medium text-gray-900 mb-3">
-                  {isOnlyCoach 
-                    ? t('profile.club.mySections')
-                    : t('profile.club.allSections')
-                  }
-                </h4>
-                <div className="space-y-2">
-                  {analytics.sections.map((section) => (
-                    <div
-                      key={section.id}
-                      className={`flex items-center justify-between p-3 bg-white border rounded-lg ${
-                        isOnlyCoach ? 'border-amber-200' : 'border-gray-200'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        {isOnlyCoach && (
-                          <span className="text-xs px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded">
-                            {t('profile.club.yourSection')}
-                          </span>
-                        )}
+              {filteredSections.length > 0 ? (
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-3">
+                    {isOwnerOrAdminOfThisClub 
+                      ? t('profile.club.sections') 
+                      : t('profile.club.mySections')
+                    }
+                  </h4>
+                  <div className="space-y-2">
+                    {filteredSections.map((section) => (
+                      <div
+                        key={section.id}
+                        className={`flex items-center justify-between p-3 bg-white border rounded-lg ${
+                          !isOwnerOrAdminOfThisClub 
+                            ? 'border-amber-200 bg-amber-50/30' 
+                            : 'border-gray-200'
+                        }`}
+                      >
                         <span className="text-gray-900">{section.name}</span>
+                        <div className="flex items-center gap-1 text-sm text-gray-500">
+                          <Users size={14} />
+                          <span>{section.students_count}</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1 text-sm text-gray-500">
-                        <Users size={14} />
-                        <span>{section.students_count}</span>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <User size={40} className="mx-auto mb-2 text-gray-400" />
+                  <p className="text-sm">{t('profile.club.noSectionsAssigned')}</p>
+                </div>
+              )}
             </div>
           ) : (
             <div className="space-y-4">

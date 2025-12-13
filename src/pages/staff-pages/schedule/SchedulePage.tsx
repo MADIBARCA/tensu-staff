@@ -230,7 +230,7 @@ export default function SchedulePage() {
       const startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
       const endDate = new Date(today.getFullYear(), today.getMonth() + 3, 0);
 
-      const clubNameMap = new Map(loadedClubs.map(c => [c.id, c.name]));
+        const clubNameMap = new Map(loadedClubs.map(c => [c.id, c.name]));
 
       const lessonsResponse = await scheduleApi.getLessons({
         page: 1,
@@ -265,24 +265,24 @@ export default function SchedulePage() {
             return canSeeLessonLocal(clubId, lesson.coach_id);
           })
           .map(lesson => ({
-            id: lesson.id,
+              id: lesson.id,
             section_name: lesson.group?.section?.name || lesson.group?.name || '',
-            group_name: lesson.group?.name,
-            coach_name: `${lesson.coach?.first_name || ''} ${lesson.coach?.last_name || ''}`.trim(),
-            coach_id: lesson.coach_id,
+              group_name: lesson.group?.name,
+              coach_name: `${lesson.coach?.first_name || ''} ${lesson.coach?.last_name || ''}`.trim(),
+              coach_id: lesson.coach_id,
             club_id: lesson.group?.section?.club_id || 0,
             club_name: clubNameMap.get(lesson.group?.section?.club_id || 0) || 'Клуб',
             date: lesson.effective_date || lesson.planned_date,
             time: formatTime(lesson.effective_start_time || lesson.planned_start_time),
-            location: lesson.location || '',
+              location: lesson.location || '',
             max_participants: lesson.group?.capacity || 15,
-            current_participants: 0,
-            participants: [],
-            notes: lesson.notes,
-            is_booked: false,
-            is_in_waitlist: false,
+              current_participants: 0,
+              participants: [],
+              notes: lesson.notes,
+              is_booked: false,
+              is_in_waitlist: false,
           }));
-
+        
         setTrainings(allTrainings);
       }
       

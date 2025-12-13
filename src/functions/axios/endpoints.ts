@@ -102,5 +102,5 @@ export const ENDPOINTS = {
     EXTEND: '/staff/students/extend',
     FREEZE: '/staff/students/freeze',
     UNFREEZE: (enrollmentId: string | number) => `/staff/students/unfreeze/${enrollmentId}`,
-  }
+  }  
 } as const;

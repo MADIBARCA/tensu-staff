@@ -2,15 +2,16 @@
 import type { ClubAnalytics, PaymentHistory, MembershipTariff, Section } from './types';
 
 // Analytics mock - нет API для аналитики
+// Note: coach_id will be matched with currentUser.id to filter sections for coaches
 const mockSectionsData: Section[] = [
-  { id: 1, club_id: 1, name: 'Йога', students_count: 35 },
-  { id: 2, club_id: 1, name: 'Пилатес', students_count: 28 },
-  { id: 3, club_id: 1, name: 'Кроссфит', students_count: 42 },
-  { id: 4, club_id: 1, name: 'Тренажерный зал', students_count: 30 },
-  { id: 5, club_id: 1, name: 'Бокс', students_count: 15 },
-  { id: 6, club_id: 2, name: 'Кроссфит', students_count: 35 },
-  { id: 7, club_id: 2, name: 'Бокс', students_count: 25 },
-  { id: 8, club_id: 2, name: 'ММА', students_count: 20 },
+  { id: 1, club_id: 1, name: 'Йога', students_count: 35, coach_id: 1 },
+  { id: 2, club_id: 1, name: 'Пилатес', students_count: 28, coach_id: 2 },
+  { id: 3, club_id: 1, name: 'Кроссфит', students_count: 42, coach_id: 1 },
+  { id: 4, club_id: 1, name: 'Тренажерный зал', students_count: 30, coach_id: 3 },
+  { id: 5, club_id: 1, name: 'Бокс', students_count: 15, coach_id: 2 },
+  { id: 6, club_id: 2, name: 'Кроссфит', students_count: 35, coach_id: 1 },
+  { id: 7, club_id: 2, name: 'Бокс', students_count: 25, coach_id: 4 },
+  { id: 8, club_id: 2, name: 'ММА', students_count: 20, coach_id: 1 },
 ];
 
 export const mockClubAnalytics: ClubAnalytics[] = [

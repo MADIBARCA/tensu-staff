@@ -330,16 +330,16 @@ export default function ManagementPage() {
 
     try {
       const response = await tariffsApi.create({
-        name: data.name,
-        type: data.type,
-        payment_type: data.payment_type,
-        price: data.price,
-        club_ids: data.club_ids,
-        section_ids: data.section_ids,
-        group_ids: data.group_ids,
-        sessions_count: data.sessions_count,
-        validity_days: data.validity_days,
-        active: data.active,
+      name: data.name,
+      type: data.type,
+      payment_type: data.payment_type,
+      price: data.price,
+      club_ids: data.club_ids,
+      section_ids: data.section_ids,
+      group_ids: data.group_ids,
+      sessions_count: data.sessions_count,
+      validity_days: data.validity_days,
+      active: data.active,
       }, initDataRaw);
 
       if (response.data) {
@@ -356,9 +356,9 @@ export default function ManagementPage() {
           validity_days: response.data.validity_days,
           active: response.data.active,
           created_at: response.data.created_at,
-        };
-        setTariffs([...tariffs, newTariff]);
-        window.Telegram?.WebApp?.showAlert(t('management.pricing.created'));
+    };
+    setTariffs([...tariffs, newTariff]);
+    window.Telegram?.WebApp?.showAlert(t('management.pricing.created'));
       }
     } catch (error) {
       console.error('Error creating tariff:', error);
@@ -397,9 +397,9 @@ export default function ManagementPage() {
             sessions_count: response.data!.sessions_count,
             validity_days: response.data!.validity_days,
             active: response.data!.active,
-          } : t
-        ));
-        window.Telegram?.WebApp?.showAlert(t('management.pricing.updated'));
+      } : t
+    ));
+    window.Telegram?.WebApp?.showAlert(t('management.pricing.updated'));
       }
     } catch (error) {
       console.error('Error updating tariff:', error);
@@ -412,8 +412,8 @@ export default function ManagementPage() {
 
     try {
       await tariffsApi.delete(id, initDataRaw);
-      setTariffs(tariffs.filter(t => t.id !== id));
-      window.Telegram?.WebApp?.showAlert(t('management.pricing.deleted'));
+    setTariffs(tariffs.filter(t => t.id !== id));
+    window.Telegram?.WebApp?.showAlert(t('management.pricing.deleted'));
     } catch (error) {
       console.error('Error deleting tariff:', error);
       window.Telegram?.WebApp?.showAlert(t('management.pricing.errors.deleteFailed'));

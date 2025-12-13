@@ -56,6 +56,7 @@ export interface Section {
   club_id: number;
   name: string;
   students_count: number;
+  coach_id?: number;
 }
 
 export interface ClubAnalytics {

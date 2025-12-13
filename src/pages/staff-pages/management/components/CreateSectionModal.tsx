@@ -225,7 +225,7 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
     if (sectionData.coach_ids.length === 0) newErrors.coaches = t('management.sections.errors.coachRequired');
     
     if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
+    setErrors(newErrors);
       return;
     }
     

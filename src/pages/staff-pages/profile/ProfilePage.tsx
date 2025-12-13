@@ -585,8 +585,8 @@ export default function ProfilePage() {
             club={selectedClub}
             analytics={getClubAnalytics(selectedClub.id)}
             paymentHistory={getPaymentHistory(selectedClub.id)}
-            userRole={user.role}
             clubRoles={clubRoles}
+            currentUser={currentUser}
             onClose={() => {
               setShowClubDetailsModal(false);
               setSelectedClub(null);
