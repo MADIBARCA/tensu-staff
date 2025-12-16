@@ -661,6 +661,45 @@ const RU: Dict = {
   'management.pricing.clubsCount': 'клуб(а)',
   'management.pricing.sectionsCount': 'секция(и)',
   'management.pricing.groupsCount': 'группа(ы)',
+
+  // Privacy Policy page
+  'privacy.title': 'Политика конфиденциальности Tensu Staff',
+  'privacy.meta.effective': 'Дата вступления: 16.12.2025',
+  'privacy.intro':
+    'Эта Политика объясняет, какие персональные данные обрабатываются в Telegram Mini App “Tensu Staff”, зачем они нужны, кому могут передаваться и какие у вас есть права. Политика подготовлена с учётом законодательства Республики Казахстан о персональных данных и особенностей работы Telegram Mini Apps.',
+  'privacy.contact.text': 'Вопросы и обращения по персональным данным: Telegram @admintensu',
+  'privacy.section.1.title': '1. Область применения и термины',
+  'privacy.section.1.body':
+    'Политика применяется к использованию Telegram Mini App “Tensu Staff” (далее — «Приложение») и связанным с ним сервисам (серверная часть, API).\n\nПод «персональными данными» понимается информация, относящаяся к определённому или определяемому лицу. Под «обработкой» — любые действия с данными (сбор, запись, систематизация, хранение, изменение, использование, передача, удаление и т. п.).\n\n- «Tensu» — платформа, предоставляющая Приложение и инфраструктуру.\n- «Клуб» — организация/ИП, которая использует Tensu для управления тренировками, группами, сотрудниками и учениками.\n- «Пользователь» — сотрудник клуба (владелец/администратор/тренер), использующий Приложение.',
+  'privacy.section.2.title': '2. Кто является оператором и как распределяются роли',
+  'privacy.section.2.body':
+    'В части данных, необходимых для работы Приложения (авторизация, безопасность, поддержка, технические журналы), Tensu выступает оператором (в терминах закона РК — лицо, организующее и (или) осуществляющее обработку).\n\nВ части данных, которые клуб ведёт о своих клиентах/учениках (например, ФИО, телефон, посещаемость, абонементы), клуб, как правило, является оператором, а Tensu — лицо, обрабатывающее данные по поручению клуба (поставщик ИТ-сервиса).\n\nЕсли вы представляете клуб, вы подтверждаете, что имеете законные основания для внесения данных учеников/сотрудников и их обработки в Приложении (включая получение согласий, если это требуется).',
+  'privacy.section.3.title': '3. Какие данные мы можем обрабатывать',
+  'privacy.section.3.body':
+    'Мы обрабатываем только те данные, которые необходимы для работы Приложения и функций управления клубом.\n\n- Данные Telegram: идентификатор пользователя Telegram, имя/фамилия (если доступны), username, язык интерфейса, аватар (если доступен), а также технические параметры, передаваемые Telegram Mini Apps.\n- Контактные данные: номер телефона (если вы предоставили его через Telegram или ввели/подтвердили в Приложении).\n- Данные клуба и роли: сведения о клубах, к которым у вас есть доступ, и вашей роли (владелец/администратор/тренер).\n- Данные управления: расписание, тренировки, группы/секции, сотрудники, списки учеников, отметки посещаемости, сведения об абонементах и оплатах (в пределах функций Приложения).\n- Геолокация: приблизительное местоположение/координаты — только при вашем разрешении (например, для отображения дистанции до клуба или чек-ина).\n- Технические данные: сведения о устройстве/браузере, IP-адрес, cookie/LocalStorage, диагностические логи, данные о сбоях и действиях в интерфейсе (для безопасности и улучшения качества).',
+  'privacy.section.4.title': '4. Цели обработки',
+  'privacy.section.4.body':
+    'Мы используем данные для следующих целей:\n\n- предоставление функций Приложения и авторизация через Telegram;\n- управление клубами, тренировками, расписанием, группами, сотрудниками и учениками;\n- обработка обращений в поддержку и коммуникация с пользователями;\n- обеспечение безопасности, предотвращение мошенничества и злоупотреблений;\n- исполнение требований законодательства Республики Казахстан (если применимо);\n- улучшение качества сервиса и исправление ошибок.',
+  'privacy.section.5.title': '5. Правовые основания и согласие',
+  'privacy.section.5.body':
+    'Обработка осуществляется на основаниях, предусмотренных законодательством Республики Казахстан, включая Закон РК «О персональных данных и их защите».\n\nВ зависимости от ситуации правовым основанием может быть:\n\n- ваше согласие (например, предоставление номера телефона/геолокации);\n- исполнение договора/оферты на предоставление сервиса (между Tensu и клубом, а также правила пользования для сотрудника);\n- законные интересы Tensu и клуба (безопасность, защита прав, предотвращение злоупотреблений);\n- выполнение обязанностей, установленных законом.\n\nВы можете отозвать согласие, отключив соответствующее разрешение в настройках устройства/браузера или обратившись в поддержку. Отзыв согласия не влияет на законность обработки до момента отзыва.',
+  'privacy.section.6.title': '6. Telegram Mini Apps и сторонние сервисы',
+  'privacy.section.6.body':
+    'Приложение работает внутри Telegram. Telegram является самостоятельным владельцем платформы и обрабатывает данные пользователей по своей политике.\n\nДля авторизации и защиты запросов мы используем данные Telegram Mini Apps (например, initData), чтобы подтвердить, что запрос действительно инициирован вашим аккаунтом Telegram.\n\nТакже могут использоваться сторонние сервисы и подрядчики (хостинг, мониторинг/логи, провайдеры уведомлений, платёжные провайдеры). Мы передаём им только минимально необходимый объём данных и требуем соблюдения конфиденциальности.',
+  'privacy.section.7.title': '7. Платежи',
+  'privacy.section.7.body':
+    'При оплате (если соответствующая функция включена) вы можете вводить платёжные реквизиты. Мы не стремимся хранить полные данные банковской карты (например, CVV).\n\nПлатёжные операции, как правило, выполняются через платёжного провайдера/эквайера. В таком случае обработка платёжных данных осуществляется по правилам и политикам соответствующего провайдера, а в Приложении могут сохраняться только статус и метаданные платежа (сумма, дата, идентификатор операции, тариф).',
+  'privacy.section.8.title': '8. Передача, трансграничная передача и хранение',
+  'privacy.section.8.body':
+    'Доступ к данным предоставляется:\n\n- уполномоченным сотрудникам Tensu и клуба — в пределах их ролей и необходимости;\n- подрядчикам Tensu (например, хостинг/мониторинг/платежи) — только для оказания услуг;\n- государственным органам — в случаях и порядке, предусмотренных законом.\n\nСервера и подрядчики могут находиться в Казахстане и/или в других странах. В случае трансграничной передачи мы принимаем меры для обеспечения надлежащей защиты данных (договорные и организационные меры, минимизация данных).\n\nМы храним данные не дольше, чем это необходимо для целей обработки, требований законодательства и защиты прав, после чего удаляем или обезличиваем их.',
+  'privacy.section.9.title': '9. Ваши права',
+  'privacy.section.9.body':
+    'В пределах применимого права вы можете:\n\n- запросить информацию об обработке ваших персональных данных;\n- потребовать уточнения (исправления) неточных данных;\n- потребовать удаления/блокирования данных при отсутствии законных оснований для обработки;\n- отозвать согласие на отдельные виды обработки (например, геолокация);\n- обжаловать действия по обработке в уполномоченные органы или в суд.\n\nЧтобы реализовать права, напишите в поддержку: @admintensu. Для защиты от мошенничества мы можем попросить подтвердить, что запрос исходит от владельца аккаунта.',
+  'privacy.section.10.title': '10. Безопасность и изменения политики',
+  'privacy.section.10.body':
+    'Мы применяем организационные и технические меры защиты: разграничение доступа по ролям, шифрование при передаче (HTTPS), мониторинг и журналы безопасности.\n\nНи один способ передачи или хранения данных не может гарантировать абсолютную безопасность. Если вы считаете, что ваши данные могли быть скомпрометированы, свяжитесь с поддержкой как можно быстрее.\n\nМы можем обновлять Политику. Актуальная версия публикуется в Приложении. Если изменения существенные, мы постараемся уведомить вас дополнительно.',
+  'privacy.footer':
+    'Если отдельные положения этой Политики противоречат обязательным нормам права, применяются соответствующие нормы. Настоящий текст является информационным документом и не заменяет юридическую консультацию.',
 };
 
 const KK: Dict = {
@@ -1319,6 +1358,45 @@ const KK: Dict = {
   'management.pricing.clubsCount': 'клуб',
   'management.pricing.sectionsCount': 'бөлім',
   'management.pricing.groupsCount': 'топ',
+
+  // Privacy Policy page
+  'privacy.title': 'Tensu Staff құпиялылық саясаты',
+  'privacy.meta.effective': 'Күшіне ену күні: 16.12.2025',
+  'privacy.intro':
+    'Бұл саясат “Tensu Staff” Telegram Mini App ішінде қандай дербес деректер өңделетінін, олардың не үшін қажет екенін, кімге берілетінін және сіздің қандай құқықтарыңыз бар екенін түсіндіреді. Құжат Қазақстан Республикасының дербес деректер туралы заңнамасын және Telegram Mini Apps ерекшеліктерін ескере отырып дайындалды.',
+  'privacy.contact.text': 'Дербес деректер бойынша сұрақтар мен өтініштер: Telegram @admintensu',
+  'privacy.section.1.title': '1. Қолданылу аясы және терминдер',
+  'privacy.section.1.body':
+    'Бұл саясат “Tensu Staff” Telegram Mini App (бұдан әрі — «Қосымша») және онымен байланысты сервистерге (сервер бөлігі, API) қолданылады.\n\n«Дербес деректер» — белгілі бір немесе анықталатын тұлғаға қатысты ақпарат. «Өңдеу» — деректермен кез келген әрекет (жинау, жазу, сақтау, пайдалану, беру, жою және т.б.).\n\n- «Tensu» — Қосымшаны және инфрақұрылымды ұсынатын платформа.\n- «Клуб» — Tensu арқылы жаттығуларды, топтарды, қызметкерлерді және оқушыларды басқаратын ұйым/ЖК.\n- «Пайдаланушы» — клуб қызметкері (иесі/әкімші/жаттықтырушы).',
+  'privacy.section.2.title': '2. Оператор кім және рөлдер қалай бөлінеді',
+  'privacy.section.2.body':
+    'Қосымшаның жұмысын қамтамасыз ету үшін қажет деректер (авторизация, қауіпсіздік, қолдау, техникалық журналдар) бойынша Tensu өңдеуді ұйымдастыратын және/немесе жүзеге асыратын тұлға ретінде әрекет етеді.\n\nКлубтың өз клиенттері/оқушылары туралы жүргізетін деректері (мысалы, аты-жөні, телефон, қатысу, абонементтер) бойынша, әдетте, клуб — оператор, ал Tensu — клубтың тапсырмасы бойынша өңдеуші (ИТ-сервисті жеткізуші).\n\nЕгер сіз клуб атынан әрекет етсеңіз, оқушылар/қызметкерлер деректерін енгізуге және оларды өңдеуге заңды негізіңіз бар екенін растайсыз (қажет болған жағдайда келісімдерді алу).',
+  'privacy.section.3.title': '3. Қандай деректер өңделуі мүмкін',
+  'privacy.section.3.body':
+    'Біз Қосымшаның және клубты басқару функцияларының жұмысы үшін қажет деректерді ғана өңдейміз.\n\n- Telegram деректері: Telegram пайдаланушы идентификаторы, аты/тегі (қолжетімді болса), username, интерфейс тілі, аватар (қолжетімді болса), сондай-ақ Telegram Mini Apps арқылы берілетін техникалық параметрлер.\n- Байланыс деректері: телефон нөмірі (Telegram арқылы берген болсаңыз немесе Қосымшада енгізіп/растаған болсаңыз).\n- Клуб және рөл деректері: қолжетімді клубтар және сіздің рөліңіз (иесі/әкімші/жаттықтырушы).\n- Басқару деректері: кесте, жаттығулар, топтар/секциялар, қызметкерлер, оқушылар тізімдері, қатысу белгілері, абонементтер мен төлемдер туралы мәліметтер (Қосымша функциялары шегінде).\n- Геолокация: тек сіздің рұқсатыңызбен (мысалы, клубқа дейінгі қашықтық немесе чек-ин үшін).\n- Техникалық деректер: құрылғы/браузер туралы ақпарат, IP-адрес, cookie/LocalStorage, диагностика журналдары, қателер және интерфейстегі әрекеттер (қауіпсіздік және сапаны жақсарту үшін).',
+  'privacy.section.4.title': '4. Өңдеу мақсаттары',
+  'privacy.section.4.body':
+    'Деректер келесі мақсаттар үшін пайдаланылады:\n\n- Қосымшаны ұсыну және Telegram арқылы авторизация;\n- клубтарды, жаттығуларды, кестені, топтарды, қызметкерлер мен оқушыларды басқару;\n- қолдау қызметі өтініштерін өңдеу және байланыс;\n- қауіпсіздікті қамтамасыз ету, алаяқтықтың және теріс пайдаланудың алдын алу;\n- ҚР заңнамасының талаптарын орындау (қажет болса);\n- сервисті жақсарту және қателерді түзету.',
+  'privacy.section.5.title': '5. Құқықтық негіздер және келісім',
+  'privacy.section.5.body':
+    'Өңдеу Қазақстан Республикасының қолданыстағы заңнамасына, соның ішінде ҚР «Дербес деректер және оларды қорғау туралы» Заңына сәйкес жүзеге асырылады.\n\nЖағдайға қарай құқықтық негіздер:\n\n- сіздің келісіміңіз (мысалы, телефон нөмірі/геолокация);\n- сервисті көрсету туралы шарт/офертаны орындау (Tensu мен клуб арасындағы, сондай-ақ қызметкер үшін пайдалану ережелері);\n- Tensu және клубтың заңды мүдделері (қауіпсіздік, құқықтарды қорғау);\n- заңмен белгіленген міндеттер.\n\nКелісімді құрылғы/браузер баптауларындағы рұқсаттарды өшіру арқылы немесе қолдауға жүгіну арқылы кері қайтарып ала аласыз. Кері қайтару алдыңғы өңдеудің заңдылығына әсер етпейді.',
+  'privacy.section.6.title': '6. Telegram Mini Apps және үшінші тарап сервистері',
+  'privacy.section.6.body':
+    'Қосымша Telegram ішінде жұмыс істейді. Telegram — платформаның дербес иесі және өз саясаты бойынша деректерді өңдейді.\n\nСұраулардың түпнұсқалығын растау және қауіпсіздік үшін Telegram Mini Apps деректерін (мысалы, initData) қолданамыз.\n\nСондай-ақ үшінші тарап сервистері мен мердігерлер пайдаланылуы мүмкін (хостинг, мониторинг/логтар, хабарландырулар, төлем провайдерлері). Оларға тек қажетті минималды деректер беріледі және құпиялылық талаптары қойылады.',
+  'privacy.section.7.title': '7. Төлемдер',
+  'privacy.section.7.body':
+    'Төлем жасау кезінде (егер функция қосылған болса) сіз төлем реквизиттерін енгізуіңіз мүмкін. Біз толық карта деректерін (мысалы, CVV) сақтауға ұмтылмаймыз.\n\nТөлем операциялары әдетте төлем провайдері/эквайер арқылы орындалады. Бұл жағдайда төлем деректері тиісті провайдердің ережелері мен саясаты бойынша өңделеді, ал Қосымшада тек төлем статусы және метадеректер (сома, күн, операция идентификаторы, тариф) сақталуы мүмкін.',
+  'privacy.section.8.title': '8. Беру, трансшекаралық беру және сақтау',
+  'privacy.section.8.body':
+    'Деректерге қолжетімділік:\n\n- Tensu және клубтың уәкілетті қызметкерлеріне — рөлдеріне сәйкес;\n- Tensu мердігерлеріне (хостинг/мониторинг/төлемдер) — қызмет көрсету үшін;\n- мемлекеттік органдарға — заңда көзделген жағдайларда.\n\nСерверлер мен мердігерлер Қазақстанда және/немесе басқа елдерде орналасуы мүмкін. Трансшекаралық беру кезінде деректерді қорғау үшін шаралар қолданамыз (шарттық және ұйымдастырушылық шаралар, деректерді минимизациялау).\n\nДеректер өңдеу мақсаттары, заң талаптары және құқықтарды қорғау үшін қажет мерзімнен артық сақталмайды, кейін жойылады немесе иесіздендіріледі.',
+  'privacy.section.9.title': '9. Сіздің құқықтарыңыз',
+  'privacy.section.9.body':
+    'Қолданылатын құқық шегінде сіз:\n\n- деректеріңіздің өңделуі туралы ақпарат сұрата аласыз;\n- дәл емес деректерді түзетуді талап ете аласыз;\n- заңды негіздер болмаса, жоюды/блоктауды талап ете аласыз;\n- жекелеген өңдеулер бойынша келісімді кері қайтара аласыз (мысалы, геолокация);\n- уәкілетті органға немесе сотқа шағымдана аласыз.\n\nҚұқықтарды жүзеге асыру үшін қолдауға жазыңыз: @admintensu. Қауіпсіздік үшін сұраудың аккаунт иесінен екенін растауды сұрауымыз мүмкін.',
+  'privacy.section.10.title': '10. Қауіпсіздік және саясаттың өзгеруі',
+  'privacy.section.10.body':
+    'Біз ұйымдастырушылық және техникалық қауіпсіздік шараларын қолданамыз: рөл бойынша қолжетімділікті бөлу, тасымалдау кезінде шифрлау (HTTPS), мониторинг және қауіпсіздік журналдары.\n\nДеректерді беру/сақтау тәсілдерінің ешқайсысы абсолютті қауіпсіздікке кепілдік бермейді. Егер деректеріңізге қауіп төнді деп ойласаңыз, мүмкіндігінше тезірек қолдауға хабарласыңыз.\n\nБіз саясатты жаңарта аламыз. Актуалды нұсқа Қосымшада жарияланады. Елеулі өзгерістер болса, қосымша хабарлауға тырысамыз.',
+  'privacy.footer':
+    'Егер саясаттың жекелеген ережелері міндетті құқық нормаларына қайшы келсе, тиісті нормалар қолданылады. Бұл мәтін ақпараттық құжат болып табылады және заңгерлік кеңесті алмастырмайды.',
 };
 
 // English translations
@@ -1865,6 +1943,45 @@ const EN: Dict = {
   'settings.support': 'Support',
   'settings.privacy': 'Privacy Policy',
   'settings.terms': 'Terms of Service',
+
+  // Privacy Policy page
+  'privacy.title': 'Tensu Staff Privacy Policy',
+  'privacy.meta.effective': 'Effective date: 16/12/2025',
+  'privacy.intro':
+    'This Policy explains what personal data is processed in the “Tensu Staff” Telegram Mini App, why it is needed, who it may be shared with, and what rights you have. It is written with Kazakhstan personal data requirements in mind and considers Telegram Mini Apps specifics.',
+  'privacy.contact.text': 'Questions and requests about personal data: Telegram @admintensu',
+  'privacy.section.1.title': '1. Scope and definitions',
+  'privacy.section.1.body':
+    'This Policy applies to the “Tensu Staff” Telegram Mini App (the “App”) and related services (backend, API).\n\n“Personal data” means information relating to an identified or identifiable person. “Processing” means any operation with data (collection, recording, storage, use, disclosure, deletion, etc.).\n\n- “Tensu” is the platform providing the App and infrastructure.\n- “Club” is an organization/sole proprietor using Tensu to manage trainings, groups, staff, and students.\n- “User” is a club staff member (owner/admin/coach) using the App.',
+  'privacy.section.2.title': '2. Who processes data and role allocation',
+  'privacy.section.2.body':
+    'For data necessary to operate the App (authentication, security, support, technical logs), Tensu acts as the entity organizing and carrying out processing.\n\nFor data that a club maintains about its customers/students (e.g., name, phone, attendance, memberships), the club typically acts as the controller/operator, while Tensu processes such data on the club’s behalf as an IT service provider.\n\nIf you represent a club, you confirm you have a lawful basis to add and process staff/student data in the App (including obtaining consents where required).',
+  'privacy.section.3.title': '3. What data we may process',
+  'privacy.section.3.body':
+    'We process only data needed to provide the App and club management features.\n\n- Telegram data: Telegram user ID, name (if available), username, UI language, avatar (if available), and technical parameters provided by Telegram Mini Apps.\n- Contact data: phone number (if you share it via Telegram or enter/confirm it in the App).\n- Clubs and roles: clubs you have access to and your role (owner/admin/coach).\n- Management data: schedule, trainings, groups/sections, staff, student lists, attendance marks, membership and payment information (within the App features).\n- Location: approximate location/coordinates only with your permission (e.g., distance to club or check-in).\n- Technical data: device/browser info, IP address, cookies/local storage, diagnostics logs, crash data and product usage for security and improvements.',
+  'privacy.section.4.title': '4. Purposes of processing',
+  'privacy.section.4.body':
+    'We use data for:\n\n- providing the App and Telegram-based authentication;\n- managing clubs, trainings, schedules, groups, staff and students;\n- handling support requests and communicating with users;\n- ensuring security and preventing fraud/abuse;\n- complying with applicable legal requirements in Kazakhstan;\n- improving service quality and fixing errors.',
+  'privacy.section.5.title': '5. Legal grounds and consent',
+  'privacy.section.5.body':
+    'Processing is carried out under applicable Kazakhstan law, including the Law of the Republic of Kazakhstan “On Personal Data and Their Protection”.\n\nDepending on the context, the legal basis may include:\n\n- your consent (e.g., phone number, geolocation);\n- performance of a contract/terms for providing the service (between Tensu and the club, and user access rules);\n- legitimate interests (security, protection of rights, fraud prevention);\n- legal obligations.\n\nYou may withdraw consent by disabling the relevant permission in device/browser settings or contacting support. Withdrawal does not affect processing that occurred before withdrawal.',
+  'privacy.section.6.title': '6. Telegram Mini Apps and third parties',
+  'privacy.section.6.body':
+    'The App operates inside Telegram. Telegram is an independent platform provider and processes data under its own privacy policy.\n\nFor authentication and request integrity we use Telegram Mini Apps data (e.g., initData) to verify that requests originate from your Telegram account.\n\nWe may use third-party providers (hosting, monitoring/logging, notifications, payment providers). We share only what is necessary and require confidentiality and security from such providers.',
+  'privacy.section.7.title': '7. Payments',
+  'privacy.section.7.body':
+    'If payment functionality is enabled, you may enter payment details. We do not intend to store full bank card data (e.g., CVV).\n\nPayment processing is typically performed by a payment provider/acquirer. In that case, payment data is processed under the provider’s rules, and the App may store only payment status and metadata (amount, date, transaction ID, tariff).',
+  'privacy.section.8.title': '8. Disclosure, cross-border transfers, retention',
+  'privacy.section.8.body':
+    'Access and disclosure may be provided to:\n\n- authorized Tensu and club staff within their roles;\n- Tensu contractors (hosting/monitoring/payments) strictly to provide services;\n- government authorities where required by law.\n\nServers and contractors may be located in Kazakhstan and/or other countries. For cross-border transfers we take measures to ensure appropriate protection (contractual and organizational safeguards, data minimization).\n\nWe retain data only as long as necessary for the stated purposes, legal requirements, and protection of rights, then delete or anonymize it.',
+  'privacy.section.9.title': '9. Your rights',
+  'privacy.section.9.body':
+    'Subject to applicable law, you may:\n\n- request information about processing of your personal data;\n- request correction of inaccurate data;\n- request deletion/blocking where there is no lawful basis to process;\n- withdraw consent for specific processing (e.g., geolocation);\n- file a complaint with competent authorities or a court.\n\nTo exercise your rights, contact support: @admintensu. To prevent fraud we may ask you to confirm your identity/account ownership.',
+  'privacy.section.10.title': '10. Security and policy updates',
+  'privacy.section.10.body':
+    'We use organizational and technical measures such as role-based access control, encryption in transit (HTTPS), monitoring and security logging.\n\nNo method of transmission or storage can guarantee absolute security. If you believe your data may be compromised, contact support as soon as possible.\n\nWe may update this Policy. The current version is published in the App. If changes are material, we will try to notify you.',
+  'privacy.footer':
+    'If any part of this Policy conflicts with mandatory legal requirements, the applicable legal rules prevail. This text is informational and does not constitute legal advice.',
 };
 
 const dictionaries: Record<Lang, Dict> = { ru: RU, kk: KK, en: EN };
