@@ -43,7 +43,13 @@ import type {
   TariffResponse,
   TariffListResponse,
   StaffStudentResponse,
-  StaffStudentsListResponse
+  StaffStudentsListResponse,
+  StudentAttendanceListResponse,
+  StudentAttendanceStatsResponse,
+  StudentPaymentListResponse,
+  StudentPaymentStatsResponse,
+  ClubAnalyticsResponse,
+  DashboardSummaryResponse
 } from './responses';
 
 // Staff API
@@ -425,4 +431,59 @@ export const staffStudentsApi = {
 
   unfreeze: (enrollmentId: string | number, token: string) =>
     axiosRequest<{ message: string; status: string; end_date: string }>(ENDPOINTS.STAFF_STUDENTS.UNFREEZE(enrollmentId), 'POST', token),
+
+  // Student attendance history
+  getAttendance: (studentId: string | number, params: {
+    page?: number;
+    size?: number;
+    date_from?: string;
+    date_to?: string;
+  }, token: string) => {
+    const searchParams = new URLSearchParams();
+    if (params.page) searchParams.append('page', params.page.toString());
+    if (params.size) searchParams.append('size', params.size.toString());
+    if (params.date_from) searchParams.append('date_from', params.date_from);
+    if (params.date_to) searchParams.append('date_to', params.date_to);
+    
+    const queryString = searchParams.toString();
+    const url = queryString 
+      ? `${ENDPOINTS.STAFF_STUDENTS.ATTENDANCE(studentId)}?${queryString}` 
+      : ENDPOINTS.STAFF_STUDENTS.ATTENDANCE(studentId);
+    return axiosRequest<StudentAttendanceListResponse>(url, 'GET', token);
+  },
+
+  getAttendanceStats: (studentId: string | number, token: string) =>
+    axiosRequest<StudentAttendanceStatsResponse>(ENDPOINTS.STAFF_STUDENTS.ATTENDANCE_STATS(studentId), 'GET', token),
+
+  // Student payment history
+  getPayments: (studentId: string | number, params: {
+    page?: number;
+    size?: number;
+    status?: string;
+  }, token: string) => {
+    const searchParams = new URLSearchParams();
+    if (params.page) searchParams.append('page', params.page.toString());
+    if (params.size) searchParams.append('size', params.size.toString());
+    if (params.status) searchParams.append('status', params.status);
+    
+    const queryString = searchParams.toString();
+    const url = queryString 
+      ? `${ENDPOINTS.STAFF_STUDENTS.PAYMENTS(studentId)}?${queryString}` 
+      : ENDPOINTS.STAFF_STUDENTS.PAYMENTS(studentId);
+    return axiosRequest<StudentPaymentListResponse>(url, 'GET', token);
+  },
+
+  getPaymentStats: (studentId: string | number, token: string) =>
+    axiosRequest<StudentPaymentStatsResponse>(ENDPOINTS.STAFF_STUDENTS.PAYMENTS_STATS(studentId), 'GET', token),
+};
+
+// Staff Analytics API
+export const analyticsApi = {
+  getClubAnalytics: (clubId: string | number, periodDays: number = 30, token: string) => {
+    const url = `${ENDPOINTS.STAFF_ANALYTICS.CLUB(clubId)}?period_days=${periodDays}`;
+    return axiosRequest<ClubAnalyticsResponse>(url, 'GET', token);
+  },
+
+  getDashboard: (token: string) =>
+    axiosRequest<DashboardSummaryResponse>(ENDPOINTS.STAFF_ANALYTICS.DASHBOARD, 'GET', token),
 };

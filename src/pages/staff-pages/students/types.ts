@@ -38,24 +38,26 @@ export interface StudentMembership {
 
 export interface AttendanceRecord {
   id: number;
-  student_id: number;
+  student_id?: number;
   date: string;
-  time: string;
-  training_type: string;
-  section_name: string;
+  time?: string;
+  training_type?: string;
+  club_name?: string;
+  section_name?: string;
   group_name?: string;
-  coach_name: string;
-  status: 'present' | 'absent' | 'late';
+  coach_name?: string;
+  status: 'attended' | 'missed' | 'late' | 'excused' | 'present' | 'absent';
 }
 
 export interface PaymentRecord {
   id: number;
-  student_id: number;
+  student_id?: number;
   date: string;
   amount: number;
-  operation_type: 'purchase' | 'renewal' | 'freeze' | 'refund';
-  tariff_name: string;
-  status: 'paid' | 'pending' | 'failed';
+  currency?: string;
+  operation_type: 'purchase' | 'renewal' | 'extension' | 'freeze' | 'refund';
+  tariff_name?: string;
+  status: 'paid' | 'pending' | 'failed' | 'refunded' | 'cancelled';
 }
 
 export interface Trainer {

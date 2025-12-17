@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Phone, MessageCircle, ChevronDown, ChevronUp, Calendar, CreditCard, CheckCircle } from 'lucide-react';
+import { X, Phone, MessageCircle, ChevronDown, ChevronUp, Calendar, CreditCard, CheckCircle, Loader2 } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import type { Student, AttendanceRecord, PaymentRecord } from '../types';
-import { generateAttendanceRecords, generatePaymentRecords } from '../mockData';
+import { staffStudentsApi } from '@/functions/axios/axiosFunctions';
 
 interface StudentDetailsModalProps {
   student: Student;
@@ -24,22 +24,74 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
   const [showPayments, setShowPayments] = useState(false);
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [paymentRecords, setPaymentRecords] = useState<PaymentRecord[]>([]);
+  const [loadingAttendance, setLoadingAttendance] = useState(false);
+  const [loadingPayments, setLoadingPayments] = useState(false);
 
+  // Load attendance when expanded
   useEffect(() => {
-    // Load attendance and payment records (mock data - нет API)
-    setAttendanceRecords(generateAttendanceRecords(
-      student.id, 
-      student.section_name, 
-      student.group_name, 
-      student.coach_name
-    ));
-    setPaymentRecords(generatePaymentRecords(
-      student.id, 
-      student.membership?.tariff_name, 
-      student.membership?.price,
-      student.membership?.start_date
-    ));
-  }, [student]);
+    if (showAttendance && attendanceRecords.length === 0) {
+      loadAttendance();
+    }
+  }, [showAttendance]);
+
+  // Load payments when expanded
+  useEffect(() => {
+    if (showPayments && paymentRecords.length === 0) {
+      loadPayments();
+    }
+  }, [showPayments]);
+
+  const loadAttendance = async () => {
+    setLoadingAttendance(true);
+    try {
+      const tg = window.Telegram?.WebApp;
+      const token = tg?.initData || null;
+      if (!token) return;
+
+      const response = await staffStudentsApi.getAttendance(student.id, { size: 20 }, token);
+      const records: AttendanceRecord[] = response.data.records.map(r => ({
+        id: r.id,
+        date: r.date,
+        time: r.time || '',
+        training_type: r.section_name || 'Тренировка',
+        club_name: r.club_name,
+        section_name: r.section_name,
+        group_name: r.group_name,
+        coach_name: r.coach_name || '',
+        status: r.status === 'attended' ? 'present' : r.status === 'missed' ? 'absent' : r.status,
+      }));
+      setAttendanceRecords(records);
+    } catch (error) {
+      console.error('Failed to load attendance:', error);
+    } finally {
+      setLoadingAttendance(false);
+    }
+  };
+
+  const loadPayments = async () => {
+    setLoadingPayments(true);
+    try {
+      const tg = window.Telegram?.WebApp;
+      const token = tg?.initData || null;
+      if (!token) return;
+
+      const response = await staffStudentsApi.getPayments(student.id, { size: 20 }, token);
+      const records: PaymentRecord[] = response.data.payments.map(p => ({
+        id: p.id,
+        date: p.date,
+        amount: p.amount,
+        currency: p.currency,
+        operation_type: p.operation_type === 'extension' ? 'renewal' : p.operation_type,
+        tariff_name: p.tariff_name || 'Абонемент',
+        status: p.status,
+      }));
+      setPaymentRecords(records);
+    } catch (error) {
+      console.error('Failed to load payments:', error);
+    } finally {
+      setLoadingPayments(false);
+    }
+  };
 
   const getStatusLabel = (status: string): string => {
     switch (status) {
@@ -74,11 +126,15 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
   const getAttendanceStatusColor = (status: string): string => {
     switch (status) {
       case 'present':
+      case 'attended':
         return 'bg-green-100 text-green-700';
       case 'late':
         return 'bg-yellow-100 text-yellow-700';
       case 'absent':
+      case 'missed':
         return 'bg-red-100 text-red-700';
+      case 'excused':
+        return 'bg-blue-100 text-blue-700';
       default:
         return 'bg-gray-100 text-gray-700';
     }
@@ -89,6 +145,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
       case 'purchase':
         return t('students.payment.purchase');
       case 'renewal':
+      case 'extension':
         return t('students.payment.renewal');
       case 'freeze':
         return t('students.payment.freeze');
@@ -249,7 +306,11 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
             </button>
             {showAttendance && (
               <div className="max-h-48 overflow-y-auto">
-                {attendanceRecords.length === 0 ? (
+                {loadingAttendance ? (
+                  <div className="p-3 flex justify-center">
+                    <Loader2 size={20} className="animate-spin text-blue-500" />
+                  </div>
+                ) : attendanceRecords.length === 0 ? (
                   <p className="p-3 text-sm text-gray-500 text-center">
                     {t('students.details.noAttendance')}
                   </p>
@@ -266,12 +327,12 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                               record.status
                             )}`}
                           >
-                            {record.status === 'present' && t('students.attendance.present')}
+                            {(record.status === 'present' || record.status === 'attended') && t('students.attendance.present')}
                             {record.status === 'late' && t('students.attendance.late')}
-                            {record.status === 'absent' && t('students.attendance.absent')}
+                            {(record.status === 'absent' || record.status === 'missed') && t('students.attendance.absent')}
                           </span>
                         </div>
-                        <p className="text-gray-600">{record.training_type}</p>
+                        <p className="text-gray-600">{record.training_type || record.section_name || 'Тренировка'}</p>
                         <p className="text-gray-500 text-xs">{record.coach_name}</p>
                       </div>
                     ))}
@@ -301,7 +362,11 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
             </button>
             {showPayments && (
               <div className="max-h-48 overflow-y-auto">
-                {paymentRecords.length === 0 ? (
+                {loadingPayments ? (
+                  <div className="p-3 flex justify-center">
+                    <Loader2 size={20} className="animate-spin text-blue-500" />
+                  </div>
+                ) : paymentRecords.length === 0 ? (
                   <p className="p-3 text-sm text-gray-500 text-center">
                     {t('students.details.noPayments')}
                   </p>

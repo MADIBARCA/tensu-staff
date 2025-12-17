@@ -105,5 +105,15 @@ export const ENDPOINTS = {
     EXTEND: '/staff/students/extend',
     FREEZE: '/staff/students/freeze',
     UNFREEZE: (enrollmentId: string | number) => `/staff/students/unfreeze/${enrollmentId}`,
+    // Student attendance and payment history (for staff view)
+    ATTENDANCE: (studentId: string | number) => `/staff/students/${studentId}/attendance`,
+    ATTENDANCE_STATS: (studentId: string | number) => `/staff/students/${studentId}/attendance/stats`,
+    PAYMENTS: (studentId: string | number) => `/staff/students/${studentId}/payments`,
+    PAYMENTS_STATS: (studentId: string | number) => `/staff/students/${studentId}/payments/stats`,
+  },
+
+  STAFF_ANALYTICS: {
+    CLUB: (clubId: string | number) => `/staff/analytics/clubs/${clubId}`,
+    DASHBOARD: '/staff/analytics/dashboard',
   }  
 } as const;

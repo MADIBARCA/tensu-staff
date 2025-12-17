@@ -591,3 +591,99 @@ export interface StaffStudentsListResponse {
     coach_ids?: number[];
   };
 }
+
+// Staff - Student Attendance History
+export interface StudentAttendanceRecord {
+  id: number;
+  date: string;
+  time?: string;
+  club_id?: number;
+  club_name?: string;
+  section_id?: number;
+  section_name?: string;
+  group_id?: number;
+  group_name?: string;
+  lesson_id?: number;
+  coach_name?: string;
+  status: 'attended' | 'missed' | 'late' | 'excused';
+}
+
+export interface StudentAttendanceListResponse {
+  records: StudentAttendanceRecord[];
+  total: number;
+  page: number;
+  size: number;
+  pages: number;
+}
+
+export interface StudentAttendanceStatsResponse {
+  total_visits: number;
+  visits_this_month: number;
+  missed_this_month: number;
+  late_this_month: number;
+  attendance_rate: number;
+}
+
+// Staff - Student Payment History
+export interface StudentPaymentRecord {
+  id: number;
+  date: string;
+  amount: number;
+  currency: string;
+  club_id?: number;
+  club_name?: string;
+  tariff_id?: number;
+  tariff_name?: string;
+  operation_type: 'purchase' | 'renewal' | 'extension' | 'refund';
+  status: 'pending' | 'paid' | 'failed' | 'refunded' | 'cancelled';
+  payment_method?: string;
+}
+
+export interface StudentPaymentListResponse {
+  payments: StudentPaymentRecord[];
+  total: number;
+  page: number;
+  size: number;
+  pages: number;
+}
+
+export interface StudentPaymentStatsResponse {
+  total_paid: number;
+  payments_count: number;
+  last_payment_date?: string;
+  pending_amount: number;
+}
+
+// Staff Analytics
+export interface SectionStats {
+  id: number;
+  name: string;
+  students_count: number;
+  groups_count: number;
+}
+
+export interface ClubAnalyticsResponse {
+  club_id: number;
+  club_name: string;
+  total_students: number;
+  active_students: number;
+  new_students_this_month: number;
+  trainings_this_month: number;
+  trainings_conducted: number;
+  trainings_scheduled: number;
+  trainings_cancelled: number;
+  sections: SectionStats[];
+  period_start: string;
+  period_end: string;
+}
+
+export interface DashboardSummaryResponse {
+  total_clubs: number;
+  total_sections: number;
+  total_groups: number;
+  total_students: number;
+  trainings_this_month: number;
+  new_students_this_month: number;
+  period_start: string;
+  period_end: string;
+}
