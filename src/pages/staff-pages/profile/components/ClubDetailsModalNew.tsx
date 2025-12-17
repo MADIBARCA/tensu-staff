@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
-import { X, MapPin, Phone, Clock, Users, Calendar, ChevronDown, ChevronUp, AlertTriangle, Power, Building2, User, Edit2 } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { X, MapPin, Phone, Clock, Users, Calendar, ChevronDown, ChevronUp, AlertTriangle, Power, Building2, User, Edit2, Loader2 } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import { EditClubModal } from './EditClubModal';
+import { analyticsApi } from '@/functions/axios/axiosFunctions';
 import type { Club, ClubAnalytics, PaymentHistory, Section } from '../types';
 import type { ClubWithRole, CreateStaffResponse } from '@/functions/axios/responses';
 
@@ -19,7 +20,7 @@ interface ClubDetailsModalProps {
 
 export const ClubDetailsModalNew: React.FC<ClubDetailsModalProps> = ({
   club,
-  analytics,
+  analytics: initialAnalytics,
   paymentHistory,
   clubRoles,
   currentUser,
@@ -32,6 +33,51 @@ export const ClubDetailsModalNew: React.FC<ClubDetailsModalProps> = ({
   const [activeTab, setActiveTab] = useState<'analytics' | 'membership'>('analytics');
   const [showPaymentHistory, setShowPaymentHistory] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [analytics, setAnalytics] = useState<ClubAnalytics>(initialAnalytics);
+  const [loadingAnalytics, setLoadingAnalytics] = useState(true);
+
+  // Fetch real analytics on mount
+  useEffect(() => {
+    const loadAnalytics = async () => {
+      try {
+        const tg = window.Telegram?.WebApp;
+        const token = tg?.initData || null;
+        if (!token) {
+          setLoadingAnalytics(false);
+          return;
+        }
+
+        const response = await analyticsApi.getClubAnalytics(club.id, 30, token);
+        const data = response.data;
+        
+        // Transform to local analytics format
+        const sections: Section[] = data.sections.map(s => ({
+          id: s.id,
+          club_id: club.id,
+          name: s.name,
+          students_count: s.students_count,
+          coach_id: undefined, // API doesn't return coach_id for sections
+        }));
+
+        setAnalytics({
+          club_id: data.club_id,
+          sections,
+          total_students: data.total_students,
+          trainings_this_month: data.trainings_this_month,
+          trainings_conducted: data.trainings_conducted,
+          trainings_scheduled: data.trainings_scheduled,
+          trainings_cancelled: data.trainings_cancelled,
+        });
+      } catch (error) {
+        console.error('Failed to load analytics:', error);
+        // Keep initial analytics on error
+      } finally {
+        setLoadingAnalytics(false);
+      }
+    };
+
+    loadAnalytics();
+  }, [club.id]);
 
   // Get user's role for THIS specific club
   const userRoleInThisClub = useMemo(() => {
@@ -210,6 +256,11 @@ export const ClubDetailsModalNew: React.FC<ClubDetailsModalProps> = ({
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4">
           {activeTab === 'analytics' ? (
+            loadingAnalytics ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+              </div>
+            ) : (
             <div className="space-y-4">
               {/* Analytics Scope Indicator */}
               <div className={`flex items-center gap-2 p-3 rounded-lg ${
@@ -313,6 +364,7 @@ export const ClubDetailsModalNew: React.FC<ClubDetailsModalProps> = ({
                 </div>
               )}
             </div>
+            )
           ) : (
             <div className="space-y-4">
               {/* Membership Info */}
