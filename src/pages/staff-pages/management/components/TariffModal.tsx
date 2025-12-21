@@ -30,6 +30,7 @@ export const TariffModal: React.FC<TariffModalProps> = ({
   const [price, setPrice] = useState(tariff?.price || 0);
   const [sessionsCount, setSessionsCount] = useState(tariff?.sessions_count || 8);
   const [validityDays, setValidityDays] = useState(tariff?.validity_days || 30);
+  const [freezeDaysTotal, setFreezeDaysTotal] = useState(tariff?.freeze_days_total || 0);
   const [features, setFeatures] = useState<string[]>(tariff?.features || []);
   const [newFeature, setNewFeature] = useState('');
   const [active, setActive] = useState(tariff?.active ?? true);
@@ -248,6 +249,7 @@ export const TariffModal: React.FC<TariffModalProps> = ({
         group_ids: selectedGroups,
         sessions_count: paymentType === 'session_pack' ? sessionsCount : undefined,
         validity_days: paymentType === 'session_pack' ? validityDays : undefined,
+        freeze_days_total: freezeDaysTotal,
         features,
         active,
       };
@@ -525,6 +527,28 @@ export const TariffModal: React.FC<TariffModalProps> = ({
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">₸</span>
             </div>
             {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price}</p>}
+          </div>
+
+          {/* Freeze Days */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('management.pricing.freezeDays')}
+            </label>
+            <p className="text-xs text-gray-500 mb-2">{t('management.pricing.freezeDaysHint')}</p>
+            <div className="relative">
+              <input
+                type="number"
+                value={freezeDaysTotal}
+                onChange={(e) => setFreezeDaysTotal(Math.max(0, Math.min(90, Number(e.target.value))))}
+                className="w-full border border-gray-200 rounded-lg p-2 pr-14"
+                min={0}
+                max={90}
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+                {t('management.pricing.days')}
+              </span>
+            </div>
+            <p className="text-xs text-gray-400 mt-1">{t('management.pricing.freezeDaysMax')}</p>
           </div>
 
           {/* Features */}

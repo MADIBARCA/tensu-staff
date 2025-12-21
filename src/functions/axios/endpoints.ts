@@ -79,7 +79,6 @@ export const ENDPOINTS = {
       RESCHEDULE: (lessonId: string | number) => `/schedule/lessons/${lessonId}/reschedule`,
       CANCEL: (lessonId: string | number) => `/schedule/lessons/${lessonId}/cancel`,
       COMPLETE: (lessonId: string | number) => `/schedule/lessons/${lessonId}/complete`,
-      PARTICIPANTS: (lessonId: string | number) => `/schedule/lessons/${lessonId}/participants`,
       BULK_UPDATE: (lessonIds: Array<number>) => `schedule/lessons/bulk-update/?lesson_ids=${lessonIds}`
     },
     CALENDAR: {

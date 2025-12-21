@@ -81,6 +81,7 @@ export interface Tariff {
   group_ids: number[];
   sessions_count?: number; // For session_pack type
   validity_days?: number; // For session_pack type
+  freeze_days_total: number; // Available freeze days for this tariff
   features: string[]; // List of included features
   active: boolean;
   created_at: string;
@@ -140,6 +141,7 @@ export interface CreateTariffData {
   group_ids: number[];
   sessions_count?: number;
   validity_days?: number;
+  freeze_days_total: number;
   features: string[];
   active: boolean;
 }
