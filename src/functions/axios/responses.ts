@@ -492,6 +492,25 @@ export interface SessionResponse {
   group_id?: number;
 }
 
+export interface LessonParticipant {
+  id: number;
+  first_name: string;
+  last_name?: string | null;
+  photo_url?: string | null;
+  is_current_user: boolean;
+  status: 'booked' | 'excused';
+  excuse_note?: string | null;
+}
+
+export interface LessonParticipantsResponse {
+  lesson_id: number;
+  participants: LessonParticipant[];
+  excused_participants: LessonParticipant[];
+  total: number;
+  excused_count: number;
+  max_participants?: number | null;
+}
+
 export interface ClubLocationResponse {
   id: number;
   name: string;

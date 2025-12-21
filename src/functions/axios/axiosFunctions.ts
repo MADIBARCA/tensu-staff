@@ -48,6 +48,7 @@ import type {
   StudentAttendanceStatsResponse,
   StudentPaymentListResponse,
   StudentPaymentStatsResponse,
+  LessonParticipantsResponse,
   ClubAnalyticsResponse,
   DashboardSummaryResponse
 } from './responses';
@@ -315,6 +316,9 @@ export const scheduleApi = {
 
   getWeekSchedule: (date: string, token: string | null) =>
     axiosRequest<GetWeekScheduleResponse>(ENDPOINTS.SCHEDULE.CALENDAR.WEEK(date), 'GET', token),
+
+  getLessonParticipants: (lessonId: number | string, token: string | null) =>
+    axiosRequest<LessonParticipantsResponse>(ENDPOINTS.SCHEDULE.LESSONS.PARTICIPANTS(lessonId), 'GET', token),
 };
 
 // Tariffs API
