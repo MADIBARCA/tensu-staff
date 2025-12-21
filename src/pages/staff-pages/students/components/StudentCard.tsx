@@ -69,7 +69,24 @@ export const StudentCard: React.FC<StudentCardProps> = ({ student, onClick }) =>
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3 flex-1">
           {/* Avatar */}
-          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-lg font-semibold flex-shrink-0">
+          {student.photo_url ? (
+            <img
+              src={student.photo_url}
+              alt={`${student.first_name} ${student.last_name || ''}`}
+              className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+              onError={(e) => {
+                // Fall back to initials on image load error
+                const target = e.currentTarget;
+                target.style.display = 'none';
+                target.nextElementSibling?.classList.remove('hidden');
+              }}
+            />
+          ) : null}
+          <div
+            className={`w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-lg font-semibold flex-shrink-0 ${
+              student.photo_url ? 'hidden' : ''
+            }`}
+          >
             {student.first_name.charAt(0).toUpperCase()}
           </div>
 

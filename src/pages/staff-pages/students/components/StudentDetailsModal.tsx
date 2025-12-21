@@ -206,7 +206,23 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {/* Student Info */}
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-2xl font-semibold flex-shrink-0">
+            {student.photo_url ? (
+              <img
+                src={student.photo_url}
+                alt={`${student.first_name} ${student.last_name || ''}`}
+                className="w-16 h-16 rounded-full object-cover flex-shrink-0"
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  target.style.display = 'none';
+                  target.nextElementSibling?.classList.remove('hidden');
+                }}
+              />
+            ) : null}
+            <div
+              className={`w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-2xl font-semibold flex-shrink-0 ${
+                student.photo_url ? 'hidden' : ''
+              }`}
+            >
               {student.first_name.charAt(0).toUpperCase()}
             </div>
             <div className="flex-1">
