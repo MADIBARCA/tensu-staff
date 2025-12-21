@@ -81,7 +81,7 @@ export interface Tariff {
   group_ids: number[];
   sessions_count?: number; // For session_pack type
   validity_days?: number; // For session_pack type
-  features: string[]; // List of included features
+  features?: string[]; // List of included features (optional until DB migration)
   active: boolean;
   created_at: string;
 }
