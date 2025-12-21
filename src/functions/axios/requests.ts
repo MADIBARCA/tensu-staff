@@ -163,6 +163,7 @@ export interface UpdateTariffRequest {
   group_ids?: number[];
   sessions_count?: number;
   validity_days?: number;
+  freeze_days_total?: number;
   features?: string[];
   active?: boolean;
 }

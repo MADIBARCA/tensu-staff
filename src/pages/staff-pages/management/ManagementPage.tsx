@@ -261,6 +261,7 @@ export default function ManagementPage() {
             group_ids: t.group_ids || [],
             sessions_count: t.sessions_count,
             validity_days: t.validity_days,
+            freeze_days_total: t.freeze_days_total || 0,
             features: t.features || [],
             active: t.active,
             created_at: t.created_at,
@@ -347,6 +348,7 @@ export default function ManagementPage() {
       group_ids: data.group_ids,
       sessions_count: data.sessions_count,
       validity_days: data.validity_days,
+      freeze_days_total: data.freeze_days_total,
       features: data.features,
       active: data.active,
       }, initDataRaw);
@@ -363,6 +365,7 @@ export default function ManagementPage() {
           group_ids: response.data.group_ids || [],
           sessions_count: response.data.sessions_count,
           validity_days: response.data.validity_days,
+          freeze_days_total: response.data.freeze_days_total || 0,
           features: response.data.features || [],
           active: response.data.active,
           created_at: response.data.created_at,
@@ -390,6 +393,7 @@ export default function ManagementPage() {
         group_ids: data.group_ids,
         sessions_count: data.sessions_count,
         validity_days: data.validity_days,
+        freeze_days_total: data.freeze_days_total,
         features: data.features,
         active: data.active,
       }, initDataRaw);
@@ -407,6 +411,7 @@ export default function ManagementPage() {
             group_ids: response.data!.group_ids || [],
             sessions_count: response.data!.sessions_count,
             validity_days: response.data!.validity_days,
+            freeze_days_total: response.data!.freeze_days_total || 0,
             features: response.data!.features || [],
             active: response.data!.active,
       } : t
