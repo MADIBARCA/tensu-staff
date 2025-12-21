@@ -168,7 +168,7 @@ export const TariffCard: React.FC<TariffCardProps> = ({ tariff, clubs, sections,
         </div>
 
         {/* Features */}
-        {tariff.features && Array.isArray(tariff.features) && tariff.features.length > 0 && (
+        {tariff.features && tariff.features.length > 0 && (
           <div className="mb-3 pt-2 border-t border-gray-100">
             <div className="flex flex-wrap gap-1.5">
               {tariff.features.slice(0, 3).map((feature, idx) => (
