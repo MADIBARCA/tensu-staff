@@ -147,6 +147,7 @@ export interface CreateTariffRequest {
   group_ids: number[];
   sessions_count?: number;
   validity_days?: number;
+  features: string[];
   active: boolean;
 }
 
@@ -161,5 +162,6 @@ export interface UpdateTariffRequest {
   group_ids?: number[];
   sessions_count?: number;
   validity_days?: number;
+  features?: string[];
   active?: boolean;
 }

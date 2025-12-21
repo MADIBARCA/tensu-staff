@@ -523,6 +523,7 @@ export interface TariffResponse {
   group_ids: number[];
   sessions_count?: number;
   validity_days?: number;
+  features: string[];
   active: boolean;
   created_by_id?: number;
   created_by?: TariffCreatorInfo;

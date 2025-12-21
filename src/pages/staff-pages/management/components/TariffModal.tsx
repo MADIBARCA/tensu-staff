@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { X, ChevronDown, ChevronRight, Check } from 'lucide-react';
+import { X, ChevronDown, ChevronRight, Check, Plus, Trash2, Sparkles } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import type { Tariff, Club, Section, CreateTariffData, PaymentType, PackageType } from '../types';
 import type { ClubWithRole } from '@/functions/axios/responses';
@@ -30,7 +30,21 @@ export const TariffModal: React.FC<TariffModalProps> = ({
   const [price, setPrice] = useState(tariff?.price || 0);
   const [sessionsCount, setSessionsCount] = useState(tariff?.sessions_count || 8);
   const [validityDays, setValidityDays] = useState(tariff?.validity_days || 30);
+  const [features, setFeatures] = useState<string[]>(tariff?.features || []);
+  const [newFeature, setNewFeature] = useState('');
   const [active, setActive] = useState(tariff?.active ?? true);
+
+  // Suggested features for quick adding
+  const suggestedFeatures = useMemo(() => [
+    t('management.pricing.feature.unlimited'),
+    t('management.pricing.feature.groupClasses'),
+    t('management.pricing.feature.equipment'),
+    t('management.pricing.feature.locker'),
+    t('management.pricing.feature.personalTrainer'),
+    t('management.pricing.feature.nutrition'),
+    t('management.pricing.feature.parking'),
+    t('management.pricing.feature.towel'),
+  ], [t]);
 
   // Selection state
   const [selectedClubs, setSelectedClubs] = useState<number[]>(tariff?.club_ids || []);
@@ -168,6 +182,32 @@ export const TariffModal: React.FC<TariffModalProps> = ({
     return 'multiple_groups';
   };
 
+  // Feature management handlers
+  const handleAddFeature = () => {
+    const trimmed = newFeature.trim();
+    if (trimmed && !features.includes(trimmed)) {
+      setFeatures([...features, trimmed]);
+      setNewFeature('');
+    }
+  };
+
+  const handleRemoveFeature = (index: number) => {
+    setFeatures(features.filter((_, i) => i !== index));
+  };
+
+  const handleAddSuggestedFeature = (feature: string) => {
+    if (!features.includes(feature)) {
+      setFeatures([...features, feature]);
+    }
+  };
+
+  const handleFeatureKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddFeature();
+    }
+  };
+
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
     
@@ -208,6 +248,7 @@ export const TariffModal: React.FC<TariffModalProps> = ({
         group_ids: selectedGroups,
         sessions_count: paymentType === 'session_pack' ? sessionsCount : undefined,
         validity_days: paymentType === 'session_pack' ? validityDays : undefined,
+        features,
         active,
       };
       onSave(data);
@@ -484,6 +525,84 @@ export const TariffModal: React.FC<TariffModalProps> = ({
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">₸</span>
             </div>
             {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price}</p>}
+          </div>
+
+          {/* Features */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('management.pricing.features')}
+            </label>
+            <p className="text-xs text-gray-500 mb-2">{t('management.pricing.featuresHint')}</p>
+            
+            {/* Feature input */}
+            <div className="flex gap-2 mb-3">
+              <input
+                type="text"
+                value={newFeature}
+                onChange={(e) => setNewFeature(e.target.value)}
+                onKeyPress={handleFeatureKeyPress}
+                className="flex-1 border border-gray-200 rounded-lg p-2 text-sm"
+                placeholder={t('management.pricing.featuresPlaceholder')}
+              />
+              <button
+                type="button"
+                onClick={handleAddFeature}
+                disabled={!newFeature.trim()}
+                className="px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-200 disabled:text-gray-400 transition-colors flex items-center gap-1"
+              >
+                <Plus size={16} />
+                <span className="text-sm">{t('management.pricing.addFeature')}</span>
+              </button>
+            </div>
+            
+            {/* Suggested features */}
+            <div className="mb-3">
+              <p className="text-xs text-gray-400 mb-2 flex items-center gap-1">
+                <Sparkles size={12} />
+                {t('management.pricing.suggestedFeatures')}
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {suggestedFeatures
+                  .filter(f => !features.includes(f))
+                  .slice(0, 6)
+                  .map((feature, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleAddSuggestedFeature(feature)}
+                      className="px-2.5 py-1 text-xs bg-gray-100 text-gray-600 rounded-full hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                    >
+                      + {feature}
+                    </button>
+                  ))}
+              </div>
+            </div>
+            
+            {/* Added features list */}
+            {features.length > 0 && (
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                {features.map((feature, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between p-2.5 border-b border-gray-100 last:border-b-0 hover:bg-gray-50"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 bg-emerald-100 rounded-full flex items-center justify-center">
+                        <Check size={12} className="text-emerald-600" />
+                      </div>
+                      <span className="text-sm text-gray-700">{feature}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveFeature(idx)}
+                      className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Active Toggle */}

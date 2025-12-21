@@ -1,5 +1,5 @@
 import React from 'react';
-import { Edit2, Trash2, Building2, LayoutGrid, Users } from 'lucide-react';
+import { Edit2, Trash2, Building2, LayoutGrid, Users, CheckCircle2 } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import type { Tariff, Club, Section } from '../types';
 
@@ -166,6 +166,28 @@ export const TariffCard: React.FC<TariffCardProps> = ({ tariff, clubs, sections,
             )}
           </div>
         </div>
+
+        {/* Features */}
+        {tariff.features && tariff.features.length > 0 && (
+          <div className="mb-3 pt-2 border-t border-gray-100">
+            <div className="flex flex-wrap gap-1.5">
+              {tariff.features.slice(0, 3).map((feature, idx) => (
+                <span
+                  key={idx}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-emerald-50 text-emerald-700 rounded"
+                >
+                  <CheckCircle2 size={10} />
+                  {feature}
+                </span>
+              ))}
+              {tariff.features.length > 3 && (
+                <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-500 rounded">
+                  +{tariff.features.length - 3}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Price and Details */}
         <div className="flex items-end justify-between">
