@@ -1,5 +1,5 @@
 // src/components/Layout.tsx
-import React from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useI18n } from "@/i18n/i18n";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   Bell,
 } from "lucide-react";
+import { notificationsApi } from "@/functions/axios/axiosFunctions";
 
 interface NavItem {
   icon: LucideIcon;
@@ -34,6 +35,37 @@ export const Layout: React.FC<LayoutProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useI18n();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const fetchUnreadCount = useCallback(async () => {
+    try {
+      const tg = window.Telegram?.WebApp;
+      if (tg?.initData) {
+        const response = await notificationsApi.getUnreadCount(tg.initData);
+        const count = typeof response === 'number' ? response : (response?.data ?? 0);
+        setUnreadCount(count);
+      }
+    } catch (error) {
+      console.error('Failed to fetch unread count', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    // Fetch on mount
+    fetchUnreadCount();
+    
+    // Refetch every 30 seconds
+    const interval = setInterval(fetchUnreadCount, 30000);
+    
+    return () => clearInterval(interval);
+  }, [fetchUnreadCount]);
+
+  // Refetch when navigating away from notifications page
+  useEffect(() => {
+    if (location.pathname !== '/staff/notifications') {
+      fetchUnreadCount();
+    }
+  }, [location.pathname, fetchUnreadCount]);
 
   const navItems: NavItem[] = [
     { icon: Home, label: t('nav.home'), path: "/staff/main" },
@@ -68,7 +100,11 @@ export const Layout: React.FC<LayoutProps> = ({
                     className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors relative"
                   >
                     <Bell size={20} />
-                    {/* Optional: Add red dot here if unread notifications exist. Requires fetching count globally. */}
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </span>
+                    )}
                   </button>
                 )}
                 {actions && (
