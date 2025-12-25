@@ -33,7 +33,6 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingSection, setEditingSection] = useState<Section | null>(null);
   const [sectionsStats, setSectionsStats] = useState<GetSectionsStatsResponse | null>(null);
-  const [loadingStats, setLoadingStats] = useState(false);
 
   const coaches = employees.filter(e => e.role === 'coach');
 
@@ -42,15 +41,12 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
     const loadStats = async () => {
       if (!initDataRaw) return;
       try {
-        setLoadingStats(true);
         const response = await sectionsApi.getMyStats(initDataRaw);
         if (response.data) {
           setSectionsStats(response.data);
         }
       } catch (error) {
         console.error('Error loading sections stats:', error);
-      } finally {
-        setLoadingStats(false);
       }
     };
     loadStats();
