@@ -1,11 +1,14 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2, X } from 'lucide-react';
+import ConfirmDialog from './ConfirmDialog';
 
 interface SwipeableNotificationProps {
   children: React.ReactNode;
   onDelete: () => Promise<void>;
   onSwipeStart?: () => void;
   disabled?: boolean;
+  notificationTitle?: string;
+  onContentClick?: () => void;
 }
 
 const SwipeableNotification: React.FC<SwipeableNotificationProps> = ({
@@ -13,18 +16,22 @@ const SwipeableNotification: React.FC<SwipeableNotificationProps> = ({
   onDelete,
   onSwipeStart,
   disabled = false,
+  notificationTitle = 'Уведомление',
+  onContentClick,
 }) => {
   const [translateX, setTranslateX] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [isRevealed, setIsRevealed] = useState(false);
   const startX = useRef(0);
   const startY = useRef(0);
   const currentX = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const isHorizontalSwipe = useRef(false);
 
-  const DELETE_THRESHOLD = 80; // Minimum swipe distance to trigger delete
-  const MAX_SWIPE_DISTANCE = 120; // Maximum swipe distance
+  const REVEAL_THRESHOLD = 60; // Swipe distance to reveal delete button
+  const MAX_SWIPE_DISTANCE = 90; // Maximum swipe distance (delete button width)
 
   const handleStart = (clientX: number, clientY?: number) => {
     if (disabled || isDeleting) return;
@@ -53,12 +60,13 @@ const SwipeableNotification: React.FC<SwipeableNotificationProps> = ({
       if (deltaX < 0) {
         // Apply smooth resistance - easier to start, harder as you go further
         const absDelta = Math.abs(deltaX);
-        const resistance = Math.min(absDelta * 0.3, 30); // Max resistance of 30px
+        const resistance = Math.min(absDelta * 0.25, 25); // Max resistance of 25px
         const newTranslateX = Math.max(deltaX - resistance, -MAX_SWIPE_DISTANCE);
         setTranslateX(newTranslateX);
-      } else {
-        // Allow slight right swipe for natural feel, but snap back quickly
-        setTranslateX(Math.min(deltaX * 0.3, 0));
+      } else if (deltaX > 0 && translateX < 0) {
+        // Allow swiping back right to close
+        const newTranslateX = Math.min(translateX + deltaX * 0.5, 0);
+        setTranslateX(newTranslateX);
       }
     }
     
@@ -70,19 +78,34 @@ const SwipeableNotification: React.FC<SwipeableNotificationProps> = ({
     
     setIsDragging(false);
     
-    // If swiped past threshold, delete
+    // Snap to reveal position or close
     setTranslateX(currentTranslateX => {
-      if (currentTranslateX <= -DELETE_THRESHOLD) {
-        handleDelete();
-        return currentTranslateX;
+      if (currentTranslateX <= -REVEAL_THRESHOLD) {
+        // Reveal delete button
+        setIsRevealed(true);
+        return -MAX_SWIPE_DISTANCE;
+      } else {
+        // Snap back closed
+        setIsRevealed(false);
+        return 0;
       }
-      return 0;
     });
   };
 
-  const handleDelete = useCallback(async () => {
+  const handleDeleteClick = () => {
+    setShowConfirmDialog(true);
+  };
+
+  const handleConfirmDelete = useCallback(async () => {
+    setShowConfirmDialog(false);
     setIsDeleting(true);
-    setTranslateX(-window.innerWidth); // Slide out completely
+    setIsRevealed(false);
+    
+    // Slide out completely with smooth animation
+    setTranslateX(-window.innerWidth);
+    
+    // Wait for animation
+    await new Promise(resolve => setTimeout(resolve, 300));
     
     try {
       await onDelete();
@@ -93,6 +116,15 @@ const SwipeableNotification: React.FC<SwipeableNotificationProps> = ({
       throw error;
     }
   }, [onDelete]);
+
+  const handleCancelDelete = () => {
+    setShowConfirmDialog(false);
+  };
+
+  const handleCloseReveal = () => {
+    setIsRevealed(false);
+    setTranslateX(0);
+  };
 
   // Touch events
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -128,12 +160,15 @@ const SwipeableNotification: React.FC<SwipeableNotificationProps> = ({
     const handleGlobalMouseUp = () => {
       setIsDragging(false);
       
-      // If swiped past threshold, delete
+      // Snap to reveal position or close
       setTranslateX(currentTranslateX => {
-        if (currentTranslateX <= -DELETE_THRESHOLD) {
-          handleDelete();
+        if (currentTranslateX <= -REVEAL_THRESHOLD) {
+          setIsRevealed(true);
+          return -MAX_SWIPE_DISTANCE;
+        } else {
+          setIsRevealed(false);
+          return 0;
         }
-        return currentTranslateX <= -DELETE_THRESHOLD ? currentTranslateX : 0;
       });
     };
 
@@ -144,41 +179,117 @@ const SwipeableNotification: React.FC<SwipeableNotificationProps> = ({
       document.removeEventListener('mousemove', handleGlobalMouseMove);
       document.removeEventListener('mouseup', handleGlobalMouseUp);
     };
-  }, [isDragging, disabled, isDeleting, handleDelete]);
+  }, [isDragging, disabled, isDeleting]);
 
-  const deleteButtonWidth = 80;
-  const showDeleteButton = translateX < -20;
+  // Close reveal when clicking outside
+  useEffect(() => {
+    if (!isRevealed) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (containerRef.current && !containerRef.current.contains(target)) {
+        handleCloseReveal();
+      }
+    };
+
+    // Small delay to avoid immediate close on reveal
+    const timeoutId = setTimeout(() => {
+      document.addEventListener('click', handleClickOutside);
+    }, 100);
+
+    return () => {
+      clearTimeout(timeoutId);
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [isRevealed]);
+
+  const deleteButtonWidth = MAX_SWIPE_DISTANCE;
+  const showDeleteButton = translateX < -20 || isRevealed;
 
   return (
-    <div className="relative overflow-hidden">
-      {/* Delete button background */}
-      <div
-        className="absolute right-0 top-0 bottom-0 flex items-center justify-center bg-red-500 z-10 transition-opacity duration-200"
-        style={{
-          width: `${deleteButtonWidth}px`,
-          opacity: showDeleteButton ? 1 : 0,
-        }}
-      >
-        <Trash2 size={20} className="text-white" />
+    <>
+      <div className="relative overflow-hidden rounded-xl">
+        {/* Delete button background */}
+        <div
+          className="absolute right-0 top-0 bottom-0 z-10"
+          style={{
+            width: `${deleteButtonWidth}px`,
+            opacity: showDeleteButton ? 1 : 0,
+            transform: `scaleX(${showDeleteButton ? 1 : 0.9})`,
+            transition: 'opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            pointerEvents: showDeleteButton ? 'auto' : 'none',
+          }}
+        >
+          <button
+            onClick={handleDeleteClick}
+            disabled={isDeleting}
+            className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 active:from-red-700 active:to-red-800 transition-all duration-200 shadow-lg rounded-r-xl"
+          >
+            <Trash2 size={22} className="text-white mb-1 drop-shadow-sm" />
+            <span className="text-xs font-medium text-white drop-shadow-sm">Удалить</span>
+          </button>
+        </div>
+
+        {/* Close reveal button (appears when revealed) */}
+        {isRevealed && !isDragging && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCloseReveal();
+            }}
+            className="absolute left-2 top-1/2 -translate-y-1/2 z-20 p-1.5 bg-white/95 hover:bg-white rounded-full shadow-lg border border-gray-200 transition-all duration-200 active:scale-95"
+            style={{
+              animation: 'fadeIn 0.2s ease-out, scaleIn 0.2s ease-out',
+            }}
+            aria-label="Закрыть"
+          >
+            <X size={14} className="text-gray-600" />
+          </button>
+        )}
+
+        {/* Swipeable content */}
+        <div
+          ref={containerRef}
+          className="relative"
+          style={{
+            transform: `translateX(${translateX}px)`,
+            transition: isDragging 
+              ? 'none' 
+              : isDeleting 
+                ? 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-out'
+                : 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            opacity: isDeleting ? 0 : 1,
+            touchAction: 'pan-y',
+          }}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onMouseDown={handleMouseDown}
+          onClick={(e) => {
+            // Don't trigger content click if delete button is revealed or if swiping
+            if (isRevealed || isDragging) {
+              e.stopPropagation();
+              return;
+            }
+            onContentClick?.();
+          }}
+        >
+          {children}
+        </div>
       </div>
 
-      {/* Swipeable content */}
-      <div
-        ref={containerRef}
-        className="relative transition-transform duration-200 ease-out"
-        style={{
-          transform: `translateX(${translateX}px)`,
-          transition: isDragging ? 'none' : 'transform 0.2s ease-out',
-          touchAction: 'pan-y', // Allow vertical scrolling, prevent horizontal when needed
-        }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        onMouseDown={handleMouseDown}
-      >
-        {children}
-      </div>
-    </div>
+      {/* Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showConfirmDialog}
+        title="Удалить уведомление?"
+        message={`Вы уверены, что хотите удалить "${notificationTitle}"? Это действие нельзя отменить.`}
+        confirmText="Удалить"
+        cancelText="Отмена"
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+        variant="danger"
+      />
+    </>
   );
 };
 

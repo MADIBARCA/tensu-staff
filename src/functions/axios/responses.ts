@@ -244,6 +244,45 @@ export interface GetClubsLimitCheckResponse {
   reason: string
 }
 
+export interface GetSectionsLimitCheckResponse {
+  can_create: boolean;
+  current_sections: number;
+  max_sections: number;
+  remaining: number;
+  reason: string | null;
+  club_id: number | null;
+}
+
+export interface GetSectionsStatsResponse {
+  user_id: number;
+  total_sections: number;
+  max_sections: number;
+  remaining_sections: number;
+  clubs_sections: Array<{
+    club_id: number;
+    club_name: string;
+    sections_count: number;
+  }>;
+  limits: {
+    clubs: number;
+    sections: number;
+  };
+}
+
+export interface CanCreateSectionResponse {
+  can_create: boolean;
+  reason: string | null;
+  permission_check: {
+    can_create: boolean;
+    is_owner: boolean;
+    user_role: string | null;
+    club_id: number;
+    club_name: string;
+    reason: string | null;
+  };
+  limits_check: GetSectionsLimitCheckResponse | null;
+}
+
 export interface ClubAndRole {
   club_id: number
   club_name: string

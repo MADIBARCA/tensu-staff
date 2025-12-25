@@ -34,6 +34,9 @@ export const ENDPOINTS = {
     BY_ID: (sId: number) => `/sections/${sId}`,
     TOGGLE: (sId: string) => `/sections/${sId}/toggle-status`,
     STATS: (sId: string) => `/sections/${sId}/stats`,
+    MY_STATS: '/sections/stats/my',
+    LIMITS_CHECK: '/sections/limits/check',
+    CAN_CREATE: (clubId: number) => `/sections/can-create/club/${clubId}`,
   },
 
   GROUPS: {

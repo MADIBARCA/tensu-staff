@@ -49,7 +49,10 @@ import type {
   StudentPaymentListResponse,
   StudentPaymentStatsResponse,
   ClubAnalyticsResponse,
-  DashboardSummaryResponse
+  DashboardSummaryResponse,
+  GetSectionsLimitCheckResponse,
+  GetSectionsStatsResponse,
+  CanCreateSectionResponse
 } from './responses';
 
 // Staff API
@@ -146,7 +149,20 @@ export const sectionsApi = {
     axiosRequest(ENDPOINTS.SECTIONS.BY_ID(id), 'DELETE', token),
   
   updateById: (data: CreateSectionRequest, id: number, token: string) =>
-    axiosRequest<CreateSectionResponse>(ENDPOINTS.SECTIONS.BY_ID(id), 'PUT', token, data)
+    axiosRequest<CreateSectionResponse>(ENDPOINTS.SECTIONS.BY_ID(id), 'PUT', token, data),
+  
+  getMyStats: (token: string) =>
+    axiosRequest<GetSectionsStatsResponse>(ENDPOINTS.SECTIONS.MY_STATS, 'GET', token),
+  
+  checkLimits: (clubId: number | null, token: string) => {
+    const url = clubId 
+      ? `${ENDPOINTS.SECTIONS.LIMITS_CHECK}?club_id=${clubId}`
+      : ENDPOINTS.SECTIONS.LIMITS_CHECK;
+    return axiosRequest<GetSectionsLimitCheckResponse>(url, 'GET', token);
+  },
+  
+  canCreate: (clubId: number, token: string) =>
+    axiosRequest<CanCreateSectionResponse>(ENDPOINTS.SECTIONS.CAN_CREATE(clubId), 'GET', token)
 };
 
 // Groups API

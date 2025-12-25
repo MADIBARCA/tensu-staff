@@ -1,11 +1,13 @@
-import React, { useState, useMemo } from 'react';
-import { Search, Filter, Plus } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Search, Filter, Plus, Info, AlertCircle } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
+import { useTelegram } from '@/hooks/useTelegram';
 import { SectionCard } from './SectionCard';
 import { CreateSectionModal } from './CreateSectionModal';
 import { EditSectionModal } from './EditSectionModal';
+import { sectionsApi } from '@/functions/axios/axiosFunctions';
 import type { Section, Club, Employee, SectionFilters } from '../types';
-import type { ClubWithRole, CreateStaffResponse } from '@/functions/axios/responses';
+import type { ClubWithRole, CreateStaffResponse, GetSectionsStatsResponse } from '@/functions/axios/responses';
 
 interface SectionsTabProps {
   sections: Section[];
@@ -25,12 +27,34 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
   onRefresh,
 }) => {
   const { t } = useI18n();
+  const { initDataRaw } = useTelegram();
   const [filters, setFilters] = useState<SectionFilters>({ search: '' });
   const [showFilters, setShowFilters] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingSection, setEditingSection] = useState<Section | null>(null);
+  const [sectionsStats, setSectionsStats] = useState<GetSectionsStatsResponse | null>(null);
+  const [loadingStats, setLoadingStats] = useState(false);
 
   const coaches = employees.filter(e => e.role === 'coach');
+
+  // Load sections stats
+  useEffect(() => {
+    const loadStats = async () => {
+      if (!initDataRaw) return;
+      try {
+        setLoadingStats(true);
+        const response = await sectionsApi.getMyStats(initDataRaw);
+        if (response.data) {
+          setSectionsStats(response.data);
+        }
+      } catch (error) {
+        console.error('Error loading sections stats:', error);
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+    loadStats();
+  }, [initDataRaw, sections.length]); // Reload when sections change
 
   const filteredSections = useMemo(() => {
     return sections.filter(section => {
@@ -59,6 +83,14 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
   const handleSectionCreated = () => {
     setShowCreateModal(false);
     onRefresh();
+    // Reload stats after creating a section
+    if (initDataRaw) {
+      sectionsApi.getMyStats(initDataRaw).then(response => {
+        if (response.data) {
+          setSectionsStats(response.data);
+        }
+      }).catch(console.error);
+    }
   };
 
   const handleEditClosed = () => {
@@ -79,8 +111,60 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
 
   const hasActiveFilters = filters.club_id || filters.coach_id;
 
+  const canCreateMore = sectionsStats ? sectionsStats.remaining_sections > 0 : true;
+  const isAtLimit = sectionsStats ? sectionsStats.total_sections >= sectionsStats.max_sections : false;
+
   return (
     <div className="space-y-4">
+      {/* Section Limits Info */}
+      {sectionsStats && (
+        <div className={`rounded-lg p-4 border-2 ${
+          isAtLimit 
+            ? 'bg-red-50 border-red-200' 
+            : sectionsStats.remaining_sections <= 2
+            ? 'bg-orange-50 border-orange-200'
+            : 'bg-blue-50 border-blue-200'
+        }`}>
+          <div className="flex items-start gap-3">
+            <div className={`p-2 rounded-full ${
+              isAtLimit 
+                ? 'bg-red-100 text-red-600' 
+                : sectionsStats.remaining_sections <= 2
+                ? 'bg-orange-100 text-orange-600'
+                : 'bg-blue-100 text-blue-600'
+            }`}>
+              {isAtLimit ? <AlertCircle size={20} /> : <Info size={20} />}
+            </div>
+            <div className="flex-1">
+              <h4 className={`font-semibold mb-1 ${
+                isAtLimit 
+                  ? 'text-red-900' 
+                  : sectionsStats.remaining_sections <= 2
+                  ? 'text-orange-900'
+                  : 'text-blue-900'
+              }`}>
+                {isAtLimit 
+                  ? 'Лимит секций достигнут'
+                  : `Доступно секций: ${sectionsStats.remaining_sections} из ${sectionsStats.max_sections}`
+                }
+              </h4>
+              <p className={`text-sm ${
+                isAtLimit 
+                  ? 'text-red-700' 
+                  : sectionsStats.remaining_sections <= 2
+                  ? 'text-orange-700'
+                  : 'text-blue-700'
+              }`}>
+                {isAtLimit 
+                  ? `Вы использовали все доступные секции (${sectionsStats.total_sections}/${sectionsStats.max_sections}). Для создания новых секций обратитесь к администратору.`
+                  : `Создано секций: ${sectionsStats.total_sections}. Осталось доступно: ${sectionsStats.remaining_sections}.`
+                }
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Search and Filter Bar */}
       <div className="flex gap-2">
         <div className="flex-1 relative">
@@ -103,7 +187,13 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
         </button>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-1 px-3 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600"
+          disabled={!canCreateMore}
+          className={`flex items-center gap-1 px-3 py-2 text-sm rounded-lg transition-colors ${
+            canCreateMore
+              ? 'bg-blue-500 text-white hover:bg-blue-600'
+              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+          }`}
+          title={!canCreateMore ? 'Лимит секций достигнут' : ''}
         >
           <Plus size={18} />
           {t('management.sections.create')}

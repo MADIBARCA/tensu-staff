@@ -159,11 +159,16 @@ const NotificationsPage: React.FC = () => {
               <SwipeableNotification
                 key={notification.id}
                 onDelete={() => handleDelete(notification.id)}
+                notificationTitle={notification.title}
+                onContentClick={() => {
+                  if (!notification.is_read) {
+                    handleMarkAsRead(notification.id);
+                  }
+                }}
               >
                 <div 
-                  onClick={() => !notification.is_read && handleMarkAsRead(notification.id)}
                   className={`
-                    relative bg-white rounded-xl p-4 border transition-all cursor-pointer
+                    relative bg-white rounded-xl p-4 border transition-all
                     ${notification.is_read ? 'border-gray-100' : 'border-blue-100 shadow-sm bg-blue-50/10'}
                   `}
                 >
