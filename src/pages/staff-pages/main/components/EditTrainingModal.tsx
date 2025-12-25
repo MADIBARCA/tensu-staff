@@ -175,11 +175,7 @@ export const EditTrainingModal: React.FC<EditTrainingModalProps> = ({
   };
 
   const handleCancelTraining = () => {
-    if (isRecurring) {
-      setShowCancelDialog(true);
-      return;
-    }
-    onCancel('single');
+    setShowCancelDialog(true);
   };
 
   const handleCancelWithType = (changeType: 'single' | 'series') => {
@@ -490,20 +486,32 @@ export const EditTrainingModal: React.FC<EditTrainingModalProps> = ({
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               {t('training.cancel.dialog.title')}
             </h3>
-            <p className="text-gray-600 mb-6">{t('training.cancel.dialog.message')}</p>
+            <p className="text-gray-600 mb-4">{t('training.cancel.dialog.message')}</p>
+            
+            <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 mb-6 flex items-start gap-2">
+              <div className="mt-0.5 text-blue-500">
+                <Users size={16} />
+              </div>
+              <p className="text-sm text-blue-700">
+                Ученики получат уведомление об отмене занятия в Telegram.
+              </p>
+            </div>
+
             <div className="flex flex-col gap-3">
               <button
                 onClick={() => handleCancelWithType('single')}
                 className="w-full px-4 py-3 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600 transition-colors"
               >
-                {t('training.cancel.dialog.single')}
+                {isRecurring ? t('training.cancel.dialog.single') : t('training.cancel')}
               </button>
-              <button
-                onClick={() => handleCancelWithType('series')}
-                className="w-full px-4 py-3 bg-red-100 text-red-700 rounded-xl font-medium hover:bg-red-200 transition-colors"
-              >
-                {t('training.cancel.dialog.series')}
-              </button>
+              {isRecurring && (
+                <button
+                  onClick={() => handleCancelWithType('series')}
+                  className="w-full px-4 py-3 bg-red-100 text-red-700 rounded-xl font-medium hover:bg-red-200 transition-colors"
+                >
+                  {t('training.cancel.dialog.series')}
+                </button>
+              )}
               <button
                 onClick={() => setShowCancelDialog(false)}
                 className="w-full px-4 py-3 border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors"

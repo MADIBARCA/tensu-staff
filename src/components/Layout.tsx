@@ -9,6 +9,7 @@ import {
   Settings,
   type LucideIcon,
   ChevronLeft,
+  Bell,
 } from "lucide-react";
 
 interface NavItem {
@@ -59,9 +60,21 @@ export const Layout: React.FC<LayoutProps> = ({
                 )}
                 <h1 className="text-xl font-semibold text-gray-900">{title}</h1>
               </div>
-              {actions && (
-                <div className="flex items-center gap-2">{actions}</div>
-              )}
+              
+              <div className="flex items-center gap-2">
+                {!actions && !showBackButton && (
+                  <button
+                    onClick={() => navigate('/staff/notifications')}
+                    className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors relative"
+                  >
+                    <Bell size={20} />
+                    {/* Optional: Add red dot here if unread notifications exist. Requires fetching count globally. */}
+                  </button>
+                )}
+                {actions && (
+                  <div className="flex items-center gap-2">{actions}</div>
+                )}
+              </div>
             </div>
           </div>
         </header>

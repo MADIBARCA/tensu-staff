@@ -14,6 +14,7 @@ import SchedulePage from "./pages/staff-pages/schedule/SchedulePage";
 import ProfilePage from "./pages/staff-pages/profile/ProfilePage";
 import StudentsPage from "./pages/staff-pages/students/StudentsPage";
 import ManagementPage from "./pages/staff-pages/management/ManagementPage";
+import NotificationsPage from "./pages/staff-pages/notifications/NotificationsPage";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import OnboardingPage from "./pages/onboarding/Onboarding";
 
@@ -28,6 +29,7 @@ function AppRoutes() {
         <Route path="/staff/main" element={<StaffMainPage />} />
         <Route path="/staff/schedule" element={<SchedulePage />} />
         <Route path="/staff/students" element={<StudentsPage />} />
+        <Route path="/staff/notifications" element={<NotificationsPage />} />
         <Route path="/staff/management" element={<ManagementPage />} />
         <Route path="/staff/profile" element={<ProfilePage />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />

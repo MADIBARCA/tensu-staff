@@ -487,3 +487,25 @@ export const analyticsApi = {
   getDashboard: (token: string) =>
     axiosRequest<DashboardSummaryResponse>(ENDPOINTS.STAFF_ANALYTICS.DASHBOARD, 'GET', token),
 };
+
+// Notifications API
+export const notificationsApi = {
+  getList: (params: { skip?: number; limit?: number }, token: string) => {
+    const searchParams = new URLSearchParams();
+    if (params.skip !== undefined) searchParams.append('skip', params.skip.toString());
+    if (params.limit !== undefined) searchParams.append('limit', params.limit.toString());
+    
+    const queryString = searchParams.toString();
+    const url = queryString ? `/staff/notifications?${queryString}` : '/staff/notifications';
+    return axiosRequest<any[]>(url, 'GET', token);
+  },
+
+  getUnreadCount: (token: string) =>
+    axiosRequest<number>('/staff/notifications/unread-count', 'GET', token),
+
+  markAsRead: (notificationId: number, token: string) =>
+    axiosRequest<any>(`/staff/notifications/${notificationId}/read`, 'POST', token, {}),
+
+  markAllAsRead: (token: string) =>
+    axiosRequest<any>('/staff/notifications/read-all', 'POST', token, {}),
+};
