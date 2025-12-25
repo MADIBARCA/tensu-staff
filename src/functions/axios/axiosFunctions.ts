@@ -508,4 +508,7 @@ export const notificationsApi = {
 
   markAllAsRead: (token: string) =>
     axiosRequest<any>('/staff/notifications/read-all', 'POST', token, {}),
+
+  delete: (notificationId: number, token: string) =>
+    axiosRequest<{ status: string; message: string }>(`/staff/notifications/${notificationId}`, 'DELETE', token),
 };

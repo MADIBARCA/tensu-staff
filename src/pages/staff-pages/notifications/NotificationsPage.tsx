@@ -4,6 +4,7 @@ import { Layout, PageContainer } from '@/components/Layout';
 import { notificationsApi } from '@/functions/axios/axiosFunctions';
 import { Bell, Check, Clock, Info, AlertTriangle, Snowflake } from 'lucide-react';
 import { toast } from 'react-toastify';
+import SwipeableNotification from '@/components/SwipeableNotification';
 
 interface Notification {
   id: number;
@@ -76,6 +77,22 @@ const NotificationsPage: React.FC = () => {
     }
   };
 
+  const handleDelete = async (id: number) => {
+    try {
+      const tg = window.Telegram?.WebApp;
+      if (tg?.initData) {
+        await notificationsApi.delete(id, tg.initData);
+        // Optimistically remove from UI
+        setNotifications(prev => prev.filter(n => n.id !== id));
+        toast.success('Уведомление удалено');
+      }
+    } catch (error) {
+      console.error('Failed to delete notification', error);
+      toast.error('Не удалось удалить уведомление');
+      throw error; // Re-throw to let SwipeableNotification handle it
+    }
+  };
+
   const getIcon = (type?: string) => {
     switch (type) {
       case 'membership_freeze':
@@ -139,44 +156,48 @@ const NotificationsPage: React.FC = () => {
         ) : (
           <div className="space-y-3">
             {notifications.map((notification) => (
-              <div 
+              <SwipeableNotification
                 key={notification.id}
-                onClick={() => !notification.is_read && handleMarkAsRead(notification.id)}
-                className={`
-                  relative bg-white rounded-xl p-4 border transition-all
-                  ${notification.is_read ? 'border-gray-100' : 'border-blue-100 shadow-sm bg-blue-50/10'}
-                `}
+                onDelete={() => handleDelete(notification.id)}
               >
-                {!notification.is_read && (
-                  <div className="absolute top-4 right-4 w-2 h-2 bg-blue-500 rounded-full" />
-                )}
-                
-                <div className="flex gap-4">
-                  <div className={`
-                    w-10 h-10 rounded-full flex items-center justify-center shrink-0
-                    ${notification.is_read ? 'bg-gray-100' : 'bg-white shadow-sm'}
-                  `}>
-                    {getIcon(notification.metadata_json?.type)}
-                  </div>
+                <div 
+                  onClick={() => !notification.is_read && handleMarkAsRead(notification.id)}
+                  className={`
+                    relative bg-white rounded-xl p-4 border transition-all cursor-pointer
+                    ${notification.is_read ? 'border-gray-100' : 'border-blue-100 shadow-sm bg-blue-50/10'}
+                  `}
+                >
+                  {!notification.is_read && (
+                    <div className="absolute top-4 right-4 w-2 h-2 bg-blue-500 rounded-full" />
+                  )}
                   
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-start mb-1 pr-4">
-                      <h3 className={`font-medium text-sm ${notification.is_read ? 'text-gray-900' : 'text-blue-900'}`}>
-                        {notification.title}
-                      </h3>
+                  <div className="flex gap-4">
+                    <div className={`
+                      w-10 h-10 rounded-full flex items-center justify-center shrink-0
+                      ${notification.is_read ? 'bg-gray-100' : 'bg-white shadow-sm'}
+                    `}>
+                      {getIcon(notification.metadata_json?.type)}
                     </div>
                     
-                    <p className="text-sm text-gray-600 mb-2 leading-relaxed">
-                      {notification.message}
-                    </p>
-                    
-                    <div className="flex items-center gap-1 text-xs text-gray-400">
-                      <Clock size={12} />
-                      {formatTime(notification.created_at)}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start mb-1 pr-4">
+                        <h3 className={`font-medium text-sm ${notification.is_read ? 'text-gray-900' : 'text-blue-900'}`}>
+                          {notification.title}
+                        </h3>
+                      </div>
+                      
+                      <p className="text-sm text-gray-600 mb-2 leading-relaxed">
+                        {notification.message}
+                      </p>
+                      
+                      <div className="flex items-center gap-1 text-xs text-gray-400">
+                        <Clock size={12} />
+                        {formatTime(notification.created_at)}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              </SwipeableNotification>
             ))}
           </div>
         )}
