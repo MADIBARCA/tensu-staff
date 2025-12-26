@@ -31,6 +31,7 @@ export const TariffModal: React.FC<TariffModalProps> = ({
   const [sessionsCount, setSessionsCount] = useState(tariff?.sessions_count || 8);
   const [validityDays, setValidityDays] = useState(tariff?.validity_days || 30);
   const [freezeDaysTotal, setFreezeDaysTotal] = useState(tariff?.freeze_days_total || 0);
+  const [freezeDaysInput, setFreezeDaysInput] = useState<string>((tariff?.freeze_days_total ?? 0).toString());
   const [features, setFeatures] = useState<string[]>(tariff?.features || []);
   const [newFeature, setNewFeature] = useState('');
   const [active, setActive] = useState(tariff?.active ?? true);
@@ -538,8 +539,31 @@ export const TariffModal: React.FC<TariffModalProps> = ({
             <div className="relative">
               <input
                 type="number"
-                value={freezeDaysTotal}
-                onChange={(e) => setFreezeDaysTotal(Math.max(0, Math.min(90, Number(e.target.value))))}
+                value={freezeDaysInput}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setFreezeDaysInput(value);
+                  const numValue = value === '' ? 0 : Number(value);
+                  if (!isNaN(numValue)) {
+                    setFreezeDaysTotal(Math.max(0, Math.min(90, numValue)));
+                  }
+                }}
+                onBlur={(e) => {
+                  const numValue = e.target.value === '' ? 0 : Number(e.target.value);
+                  if (isNaN(numValue) || numValue < 0) {
+                    setFreezeDaysInput('0');
+                    setFreezeDaysTotal(0);
+                  } else {
+                    const clampedValue = Math.max(0, Math.min(90, numValue));
+                    setFreezeDaysInput(clampedValue.toString());
+                    setFreezeDaysTotal(clampedValue);
+                  }
+                }}
+                onFocus={(e) => {
+                  if (e.target.value === '0') {
+                    setFreezeDaysInput('');
+                  }
+                }}
                 className="w-full border border-gray-200 rounded-lg p-2 pr-14"
                 min={0}
                 max={90}
