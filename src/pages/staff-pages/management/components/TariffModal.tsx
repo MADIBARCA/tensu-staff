@@ -31,7 +31,6 @@ export const TariffModal: React.FC<TariffModalProps> = ({
   const [sessionsCount, setSessionsCount] = useState(tariff?.sessions_count || 8);
   const [validityDays, setValidityDays] = useState(tariff?.validity_days || 30);
   const [freezeDaysTotal, setFreezeDaysTotal] = useState(tariff?.freeze_days_total || 0);
-  const [freezeDaysInput, setFreezeDaysInput] = useState<string>((tariff?.freeze_days_total ?? 0).toString());
   const [features, setFeatures] = useState<string[]>(tariff?.features || []);
   const [newFeature, setNewFeature] = useState('');
   const [active, setActive] = useState(tariff?.active ?? true);
@@ -519,11 +518,20 @@ export const TariffModal: React.FC<TariffModalProps> = ({
                 type="number"
                 value={price || ''}
                 onChange={(e) => {
-                  setPrice(Number(e.target.value));
-                  setErrors({ ...errors, price: '' });
+                  const val = e.target.value === '' ? 0 : Number(e.target.value);
+                  if (!isNaN(val) && val >= 0) {
+                    setPrice(val);
+                    setErrors({ ...errors, price: '' });
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (!/[0-9.]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
+                    e.preventDefault();
+                  }
                 }}
                 className={`w-full border rounded-lg p-2 pr-10 ${errors.price ? 'border-red-500' : 'border-gray-200'}`}
                 min={0}
+                step="0.01"
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">₸</span>
             </div>
@@ -539,29 +547,16 @@ export const TariffModal: React.FC<TariffModalProps> = ({
             <div className="relative">
               <input
                 type="number"
-                value={freezeDaysInput}
+                value={freezeDaysTotal || ''}
                 onChange={(e) => {
-                  const value = e.target.value;
-                  setFreezeDaysInput(value);
-                  const numValue = value === '' ? 0 : Number(value);
-                  if (!isNaN(numValue)) {
-                    setFreezeDaysTotal(Math.max(0, Math.min(90, numValue)));
+                  const val = e.target.value === '' ? 0 : Number(e.target.value);
+                  if (!isNaN(val) && val >= 0 && val <= 90) {
+                    setFreezeDaysTotal(val);
                   }
                 }}
-                onBlur={(e) => {
-                  const numValue = e.target.value === '' ? 0 : Number(e.target.value);
-                  if (isNaN(numValue) || numValue < 0) {
-                    setFreezeDaysInput('0');
-                    setFreezeDaysTotal(0);
-                  } else {
-                    const clampedValue = Math.max(0, Math.min(90, numValue));
-                    setFreezeDaysInput(clampedValue.toString());
-                    setFreezeDaysTotal(clampedValue);
-                  }
-                }}
-                onFocus={(e) => {
-                  if (e.target.value === '0') {
-                    setFreezeDaysInput('');
+                onKeyDown={(e) => {
+                  if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
+                    e.preventDefault();
                   }
                 }}
                 className="w-full border border-gray-200 rounded-lg p-2 pr-14"
