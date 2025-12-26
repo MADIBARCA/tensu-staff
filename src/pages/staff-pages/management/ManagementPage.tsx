@@ -338,33 +338,20 @@ export default function ManagementPage() {
     if (!initDataRaw) return;
 
     try {
-      // Ensure features is always an array, even if empty
-      const featuresArray = Array.isArray(data.features) ? data.features : [];
-      
-      const requestData = {
-      name: data.name,
-      type: data.type,
-      payment_type: data.payment_type,
-      price: data.price,
-      club_ids: data.club_ids,
-      section_ids: data.section_ids,
-      group_ids: data.group_ids,
-      sessions_count: data.sessions_count,
-      validity_days: data.validity_days,
-      freeze_days_total: data.freeze_days_total,
-      features: featuresArray,
-      active: data.active,
-      };
-      
-      console.log('Creating tariff with data:', JSON.stringify(requestData, null, 2));
-      console.log('Features array:', requestData.features);
-      console.log('Features type:', typeof requestData.features, Array.isArray(requestData.features));
-      console.log('Features length:', requestData.features.length);
-      
-      const response = await tariffsApi.create(requestData, initDataRaw);
-
-      console.log('Tariff creation response:', JSON.stringify(response.data, null, 2));
-      console.log('Response features:', response.data?.features);
+      const response = await tariffsApi.create({
+        name: data.name,
+        type: data.type,
+        payment_type: data.payment_type,
+        price: data.price,
+        club_ids: data.club_ids,
+        section_ids: data.section_ids,
+        group_ids: data.group_ids,
+        sessions_count: data.sessions_count,
+        validity_days: data.validity_days,
+        freeze_days_total: data.freeze_days_total,
+        features: data.features,
+        active: data.active,
+      }, initDataRaw);
 
       if (response.data) {
         const newTariff: Tariff = {
@@ -396,7 +383,7 @@ export default function ManagementPage() {
     if (!initDataRaw) return;
 
     try {
-      const requestData = {
+      const response = await tariffsApi.update(id, {
         name: data.name,
         type: data.type,
         payment_type: data.payment_type,
@@ -407,14 +394,9 @@ export default function ManagementPage() {
         sessions_count: data.sessions_count,
         validity_days: data.validity_days,
         freeze_days_total: data.freeze_days_total,
-        features: data.features || [],
+        features: data.features,
         active: data.active,
-      };
-      
-      console.log('Updating tariff with data:', JSON.stringify(requestData, null, 2));
-      console.log('Features array:', requestData.features);
-      
-      const response = await tariffsApi.update(id, requestData, initDataRaw);
+      }, initDataRaw);
 
       if (response.data) {
         setTariffs(tariffs.map(t =>
