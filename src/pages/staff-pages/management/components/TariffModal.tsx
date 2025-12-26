@@ -273,6 +273,13 @@ export const TariffModal: React.FC<TariffModalProps> = ({
 
   const handleSubmit = () => {
     if (validate()) {
+      // Ensure features is always an array
+      const featuresArray = Array.isArray(features) ? features : [];
+      
+      console.log('TariffModal - Submitting with features:', featuresArray);
+      console.log('TariffModal - Features length:', featuresArray.length);
+      console.log('TariffModal - Features content:', JSON.stringify(featuresArray));
+      
       const data: CreateTariffData = {
         name,
         type: determinePackageType(),
@@ -284,7 +291,7 @@ export const TariffModal: React.FC<TariffModalProps> = ({
         sessions_count: paymentType === 'session_pack' ? sessionsCount : undefined,
         validity_days: paymentType === 'session_pack' ? validityDays : undefined,
         freeze_days_total: freezeDaysTotal,
-        features,
+        features: featuresArray,
         active,
       };
       onSave(data);
