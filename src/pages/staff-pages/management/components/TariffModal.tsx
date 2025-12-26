@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { X, ChevronDown, ChevronRight, Check, Plus, Trash2, Sparkles } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import type { Tariff, Club, Section, CreateTariffData, PaymentType, PackageType } from '../types';
@@ -23,6 +23,40 @@ export const TariffModal: React.FC<TariffModalProps> = ({
 }) => {
   const { t } = useI18n();
   const isEditing = !!tariff;
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+
+  // Handle input focus to detect keyboard open/close
+  useEffect(() => {
+    const handleFocus = (e: FocusEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) {
+        setIsKeyboardOpen(true);
+        // Scroll the focused element into view with a small delay for keyboard animation
+        setTimeout(() => {
+          (e.target as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+      }
+    };
+    
+    const handleBlur = () => {
+      // Small delay to prevent flicker when switching between inputs
+      setTimeout(() => {
+        if (!document.activeElement || 
+            (!(document.activeElement instanceof HTMLInputElement) && 
+             !(document.activeElement instanceof HTMLTextAreaElement) &&
+             !(document.activeElement instanceof HTMLSelectElement))) {
+          setIsKeyboardOpen(false);
+        }
+      }, 100);
+    };
+
+    document.addEventListener('focusin', handleFocus);
+    document.addEventListener('focusout', handleBlur);
+    
+    return () => {
+      document.removeEventListener('focusin', handleFocus);
+      document.removeEventListener('focusout', handleBlur);
+    };
+  }, []);
 
   // Form state
   const [name, setName] = useState(tariff?.name || '');
@@ -274,7 +308,7 @@ export const TariffModal: React.FC<TariffModalProps> = ({
     <div className="fixed inset-0 z-50 bg-white overflow-y-auto">
       <div className="min-h-full w-full max-w-md mx-auto flex flex-col">
         {/* Header with mt-20 to avoid Telegram UI buttons */}
-        <div className="sticky top-0 bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200 mt-20">
+        <div className={`bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200 mt-20 ${isKeyboardOpen ? '' : 'sticky top-0'}`}>
           <h2 className="text-lg font-semibold text-gray-900">
             {isEditing ? t('management.pricing.editTitle') : t('management.pricing.createTitle')}
           </h2>
@@ -666,8 +700,8 @@ export const TariffModal: React.FC<TariffModalProps> = ({
           </label>
         </div>
 
-        {/* Footer with safe bottom padding */}
-        <div className="sticky bottom-0 bg-white p-4 border-t border-gray-200 flex gap-3 pb-8">
+        {/* Footer - not sticky when keyboard is open to avoid covering inputs */}
+        <div className={`bg-white p-4 border-t border-gray-200 flex gap-3 pb-8 ${isKeyboardOpen ? '' : 'sticky bottom-0'}`}>
           <button
             onClick={onClose}
             className="flex-1 px-4 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50"
