@@ -338,7 +338,7 @@ export default function ManagementPage() {
     if (!initDataRaw) return;
 
     try {
-      const response = await tariffsApi.create({
+      const requestData = {
       name: data.name,
       type: data.type,
       payment_type: data.payment_type,
@@ -349,9 +349,18 @@ export default function ManagementPage() {
       sessions_count: data.sessions_count,
       validity_days: data.validity_days,
       freeze_days_total: data.freeze_days_total,
-      features: data.features,
+      features: data.features || [],
       active: data.active,
-      }, initDataRaw);
+      };
+      
+      console.log('Creating tariff with data:', JSON.stringify(requestData, null, 2));
+      console.log('Features array:', requestData.features);
+      console.log('Features type:', typeof requestData.features, Array.isArray(requestData.features));
+      
+      const response = await tariffsApi.create(requestData, initDataRaw);
+
+      console.log('Tariff creation response:', JSON.stringify(response.data, null, 2));
+      console.log('Response features:', response.data?.features);
 
       if (response.data) {
         const newTariff: Tariff = {
@@ -383,7 +392,7 @@ export default function ManagementPage() {
     if (!initDataRaw) return;
 
     try {
-      const response = await tariffsApi.update(id, {
+      const requestData = {
         name: data.name,
         type: data.type,
         payment_type: data.payment_type,
@@ -394,9 +403,14 @@ export default function ManagementPage() {
         sessions_count: data.sessions_count,
         validity_days: data.validity_days,
         freeze_days_total: data.freeze_days_total,
-        features: data.features,
+        features: data.features || [],
         active: data.active,
-      }, initDataRaw);
+      };
+      
+      console.log('Updating tariff with data:', JSON.stringify(requestData, null, 2));
+      console.log('Features array:', requestData.features);
+      
+      const response = await tariffsApi.update(id, requestData, initDataRaw);
 
       if (response.data) {
         setTariffs(tariffs.map(t =>
