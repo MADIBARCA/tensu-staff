@@ -873,6 +873,7 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
         <ImageCropModal
           image={cropImage}
           aspect={cropAspect}
+          kind={cropKind}
           onClose={() => {
             setShowCropModal(false);
             if (cropImage) {
@@ -881,7 +882,6 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
             }
           }}
           onCrop={handleCropComplete}
-          title={cropKind === 'logo' ? 'Crop Logo (Square)' : 'Crop Cover Image (16:9)'}
         />
       )}
     </div>

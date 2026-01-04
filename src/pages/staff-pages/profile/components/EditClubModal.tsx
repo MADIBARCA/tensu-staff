@@ -904,6 +904,7 @@ export const EditClubModal: React.FC<EditClubModalProps> = ({
           <ImageCropModal
             image={cropImage}
             aspect={cropAspect}
+            kind={cropKind}
             onClose={() => {
               setShowCropModal(false);
               if (cropImage) {

@@ -31,6 +31,18 @@ const RU: Dict = {
   'common.saving': 'Сохранение...',
   'common.edit': 'Редактировать',
   'common.you': 'вы',
+
+  // Image Crop Modal
+  'imageCrop.titleLogo': 'Обрезка логотипа',
+  'imageCrop.titleCover': 'Обрезка обложки',
+  'imageCrop.hintLogo': 'Переместите и масштабируйте для идеальной формы',
+  'imageCrop.hintCover': 'Выберите область для обложки 16:9',
+  'imageCrop.logo': 'Логотип',
+  'imageCrop.cover': 'Обложка',
+  'imageCrop.zoom': 'Масштаб',
+  'imageCrop.reset': 'Сброс',
+  'imageCrop.apply': 'Применить',
+  'imageCrop.instruction': 'Перетащите изображение для изменения позиции',
   'language.change': 'Сменить язык',
   'language.russian': 'Русский',
   'language.kazakh': 'Қазақша',
@@ -768,6 +780,19 @@ const KK: Dict = {
   'common.saving': 'Сақталуда...',
   'common.edit': 'Өңдеу',
   'common.you': 'сіз',
+
+  // Image Crop Modal
+  'imageCrop.titleLogo': 'Логотипті қию',
+  'imageCrop.titleCover': 'Мұқабаны қию',
+  'imageCrop.hintLogo': 'Тамаша пішін үшін жылжытыңыз және масштабтаңыз',
+  'imageCrop.hintCover': '16:9 мұқаба үшін аймақты таңдаңыз',
+  'imageCrop.logo': 'Логотип',
+  'imageCrop.cover': 'Мұқаба',
+  'imageCrop.zoom': 'Масштаб',
+  'imageCrop.reset': 'Қалпына келтіру',
+  'imageCrop.apply': 'Қолдану',
+  'imageCrop.instruction': 'Орнын өзгерту үшін суретті сүйреңіз',
+
   'language.change': 'Тілді өзгерту',
   'language.russian': 'Орысша',
   'language.kazakh': 'Қазақша',
@@ -1517,6 +1542,18 @@ const EN: Dict = {
   'common.you': 'you',
   'common.optional': 'optional',
   'common.retry': 'Retry',
+
+  // Image Crop Modal
+  'imageCrop.titleLogo': 'Crop Logo',
+  'imageCrop.titleCover': 'Crop Cover',
+  'imageCrop.hintLogo': 'Move and scale for perfect shape',
+  'imageCrop.hintCover': 'Select area for 16:9 cover',
+  'imageCrop.logo': 'Logo',
+  'imageCrop.cover': 'Cover',
+  'imageCrop.zoom': 'Zoom',
+  'imageCrop.reset': 'Reset',
+  'imageCrop.apply': 'Apply',
+  'imageCrop.instruction': 'Drag image to reposition',
   
   // Language
   'language.change': 'Change language',
