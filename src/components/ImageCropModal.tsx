@@ -58,7 +58,7 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
   const aspectLabel = kind === 'logo' ? '1:1' : '16:9';
 
   return (
-    <div className="fixed inset-0 z-[60] bg-black/90 flex flex-col">
+    <div className="fixed inset-0 z-[60] bg-black/90 flex flex-col mt-30">
       {/* Header */}
       <div className="shrink-0 flex items-center justify-between px-4 py-3 bg-black/50 backdrop-blur-sm">
         <button
