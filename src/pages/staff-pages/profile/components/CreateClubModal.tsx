@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Plus, Clock, Loader2, Upload, Trash2, Image as ImageIcon } from 'lucide-react';
+import { TelegramIcon, InstagramIcon, WhatsAppIcon } from '@/components/SocialIcons';
 import { useI18n } from '@/i18n/i18n';
 import { PhoneInput } from '@/components/PhoneInput';
 import { isValidPhoneNumber } from 'libphonenumber-js';
@@ -442,7 +443,7 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               {t('profile.createClub.logoUrl')}
-              <span className="text-xs font-normal text-gray-500 ml-1">(Square, 1:1)</span>
+              <span className="text-xs font-normal text-gray-500 ml-1">{t('profile.createClub.logoRatio')}</span>
             </label>
             {formData.logo_url ? (
               <div className="space-y-3">
@@ -472,7 +473,7 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
                       onClick={() => logoInputRef.current?.click()}
                       disabled={isDisabled}
                       className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-50"
-                      title="Change logo"
+                      title={t('profile.createClub.changeLogo')}
                     >
                       <Upload size={16} className="text-gray-600" />
                     </button>
@@ -485,7 +486,7 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
                   className="w-full px-4 py-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   <Trash2 size={16} />
-                  Remove Logo
+                  {t('profile.createClub.removeLogo')}
                 </button>
               </div>
             ) : (
@@ -517,8 +518,8 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
                     <>
                       <Loader2 size={32} className="animate-spin text-blue-500" />
                       <div className="text-center">
-                        <div className="text-sm font-medium text-gray-700 mb-1">Uploading logo...</div>
-                        <div className="text-xs text-gray-500">{logoUploadProgress}% complete</div>
+                        <div className="text-sm font-medium text-gray-700 mb-1">{t('profile.createClub.uploadingLogo')}</div>
+                        <div className="text-xs text-gray-500">{logoUploadProgress}% {t('profile.createClub.complete')}</div>
                       </div>
                       <div className="w-full max-w-xs h-2 bg-gray-200 rounded-full overflow-hidden">
                         <div 
@@ -533,9 +534,9 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
                         <Upload size={24} className="text-gray-400" />
                       </div>
                       <div className="text-center">
-                        <div className="text-sm font-medium text-gray-700 mb-1">Upload Club Logo</div>
-                        <div className="text-xs text-gray-500">Click to select or drag and drop</div>
-                        <div className="text-xs text-gray-400 mt-1">Max 1.5MB • JPEG, PNG, WebP</div>
+                        <div className="text-sm font-medium text-gray-700 mb-1">{t('profile.createClub.uploadLogo')}</div>
+                        <div className="text-xs text-gray-500">{t('profile.createClub.uploadHint')}</div>
+                        <div className="text-xs text-gray-400 mt-1">{t('profile.createClub.logoFormat')}</div>
                       </div>
                     </>
                   )}
@@ -553,7 +554,7 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               {t('profile.createClub.coverUrl')}
-              <span className="text-xs font-normal text-gray-500 ml-1">(Banner, 16:9)</span>
+              <span className="text-xs font-normal text-gray-500 ml-1">{t('profile.createClub.coverRatio')}</span>
             </label>
             {formData.cover_url ? (
               <div className="space-y-3">
@@ -583,7 +584,7 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
                       onClick={() => coverInputRef.current?.click()}
                       disabled={isDisabled}
                       className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-50"
-                      title="Change cover"
+                      title={t('profile.createClub.changeCover')}
                     >
                       <Upload size={16} className="text-gray-600" />
                     </button>
@@ -596,7 +597,7 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
                   className="w-full px-4 py-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   <Trash2 size={16} />
-                  Remove Cover
+                  {t('profile.createClub.removeCover')}
                 </button>
               </div>
             ) : (
@@ -628,8 +629,8 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
                     <>
                       <Loader2 size={32} className="animate-spin text-blue-500" />
                       <div className="text-center">
-                        <div className="text-sm font-medium text-gray-700 mb-1">Uploading cover...</div>
-                        <div className="text-xs text-gray-500">{coverUploadProgress}% complete</div>
+                        <div className="text-sm font-medium text-gray-700 mb-1">{t('profile.createClub.uploadingCover')}</div>
+                        <div className="text-xs text-gray-500">{coverUploadProgress}% {t('profile.createClub.complete')}</div>
                       </div>
                       <div className="w-full max-w-xs h-2 bg-gray-200 rounded-full overflow-hidden">
                         <div 
@@ -644,9 +645,9 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
                         <ImageIcon size={28} className="text-gray-400" />
                       </div>
                       <div className="text-center">
-                        <div className="text-sm font-medium text-gray-700 mb-1">Upload Cover Image</div>
-                        <div className="text-xs text-gray-500">Click to select or drag and drop</div>
-                        <div className="text-xs text-gray-400 mt-1">Max 5MB • JPEG, PNG, WebP • 16:9 ratio</div>
+                        <div className="text-sm font-medium text-gray-700 mb-1">{t('profile.createClub.uploadCover')}</div>
+                        <div className="text-xs text-gray-500">{t('profile.createClub.uploadHint')}</div>
+                        <div className="text-xs text-gray-400 mt-1">{t('profile.createClub.coverFormat')}</div>
                       </div>
                     </>
                   )}
@@ -661,44 +662,65 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
           </div>
 
           {/* Social Links */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             <label className="block text-sm font-medium text-gray-700">
               {t('profile.createClub.socialLinks')}
             </label>
-            <input
-              type="url"
-              value={formData.telegram_link}
-              onChange={(e) => setFormData({ ...formData, telegram_link: e.target.value })}
-              disabled={isDisabled}
-              className={`w-full border rounded-lg p-3 text-gray-900 caret-black disabled:bg-gray-100 ${
-                errors.telegram_link ? 'border-red-500' : 'border-gray-200'
-              }`}
-              placeholder="Telegram (https://t.me/...)"
-            />
+            
+            {/* Telegram */}
+            <div className="flex items-center gap-2">
+              <TelegramIcon size={18} className="text-blue-500 shrink-0" />
+              <input
+                type="url"
+                value={formData.telegram_link}
+                onChange={(e) => {
+                  setFormData({ ...formData, telegram_link: e.target.value });
+                  setErrors({ ...errors, telegram_link: '' });
+                }}
+                disabled={isDisabled}
+                className={`flex-1 border rounded-lg p-2.5 text-sm text-gray-900 caret-black disabled:bg-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  errors.telegram_link ? 'border-red-500' : 'border-gray-200'
+                }`}
+                placeholder="https://t.me/your_channel"
+              />
+            </div>
             {errors.telegram_link && (
-              <p className="text-red-500 text-xs">{errors.telegram_link}</p>
+              <p className="text-red-500 text-xs ml-7">{errors.telegram_link}</p>
             )}
-            <input
-              type="url"
-              value={formData.instagram_link}
-              onChange={(e) => setFormData({ ...formData, instagram_link: e.target.value })}
-              disabled={isDisabled}
-              className={`w-full border rounded-lg p-3 text-gray-900 caret-black disabled:bg-gray-100 ${
-                errors.instagram_link ? 'border-red-500' : 'border-gray-200'
-              }`}
-              placeholder="Instagram (https://instagram.com/...)"
-            />
+            
+            {/* Instagram */}
+            <div className="flex items-center gap-2">
+              <InstagramIcon size={18} className="text-pink-500 shrink-0" />
+              <input
+                type="url"
+                value={formData.instagram_link}
+                onChange={(e) => {
+                  setFormData({ ...formData, instagram_link: e.target.value });
+                  setErrors({ ...errors, instagram_link: '' });
+                }}
+                disabled={isDisabled}
+                className={`flex-1 border rounded-lg p-2.5 text-sm text-gray-900 caret-black disabled:bg-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  errors.instagram_link ? 'border-red-500' : 'border-gray-200'
+                }`}
+                placeholder="https://instagram.com/your_page"
+              />
+            </div>
             {errors.instagram_link && (
-              <p className="text-red-500 text-xs">{errors.instagram_link}</p>
+              <p className="text-red-500 text-xs ml-7">{errors.instagram_link}</p>
             )}
-            <input
-              type="text"
-              value={formData.whatsapp_link}
-              onChange={(e) => setFormData({ ...formData, whatsapp_link: e.target.value })}
-              disabled={isDisabled}
-              className="w-full border border-gray-200 rounded-lg p-3 text-gray-900 caret-black disabled:bg-gray-100"
-              placeholder="WhatsApp (+7...)"
-            />
+            
+            {/* WhatsApp */}
+            <div className="flex items-center gap-2">
+              <WhatsAppIcon size={18} className="text-green-500 shrink-0" />
+              <input
+                type="text"
+                value={formData.whatsapp_link}
+                onChange={(e) => setFormData({ ...formData, whatsapp_link: e.target.value })}
+                disabled={isDisabled}
+                className="flex-1 border border-gray-200 rounded-lg p-2.5 text-sm text-gray-900 caret-black disabled:bg-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="https://wa.me/77001234567"
+              />
+            </div>
           </div>
 
           {/* Tags */}

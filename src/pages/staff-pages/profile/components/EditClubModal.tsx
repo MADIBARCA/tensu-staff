@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { X, Loader2, MapPin, Phone, Clock, Link2, Instagram, MessageCircle, Tag } from 'lucide-react';
+import { X, Loader2, MapPin, Phone, Clock, Tag } from 'lucide-react';
+import { TelegramIcon, InstagramIcon, WhatsAppIcon } from '@/components/SocialIcons';
 import { useI18n } from '@/i18n/i18n';
 import { clubsApi } from '@/functions/axios/axiosFunctions';
 import { useTelegram } from '@/hooks/useTelegram';
@@ -309,7 +310,7 @@ export const EditClubModal: React.FC<EditClubModalProps> = ({
             
             {/* Telegram */}
             <div className="flex items-center gap-2">
-              <Link2 size={18} className="text-blue-500" />
+              <TelegramIcon size={18} className="text-blue-500 shrink-0" />
               <input
                 type="url"
                 value={formData.telegram_link}
@@ -326,7 +327,7 @@ export const EditClubModal: React.FC<EditClubModalProps> = ({
             
             {/* Instagram */}
             <div className="flex items-center gap-2">
-              <Instagram size={18} className="text-pink-500" />
+              <InstagramIcon size={18} className="text-pink-500 shrink-0" />
               <input
                 type="url"
                 value={formData.instagram_link}
@@ -343,7 +344,7 @@ export const EditClubModal: React.FC<EditClubModalProps> = ({
             
             {/* WhatsApp */}
             <div className="flex items-center gap-2">
-              <MessageCircle size={18} className="text-green-500" />
+              <WhatsAppIcon size={18} className="text-green-500 shrink-0" />
               <input
                 type="url"
                 value={formData.whatsapp_link}
