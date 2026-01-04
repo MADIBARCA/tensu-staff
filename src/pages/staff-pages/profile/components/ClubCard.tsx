@@ -81,7 +81,7 @@ export const ClubCard: React.FC<ClubCardProps> = ({ club, clubRoles, currentUser
   const hasSocialLinks = club.telegram_link || club.instagram_link || club.whatsapp_link;
 
   return (
-    <div className="bg-white rounded overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100">
+    <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100">
       {/* Cover Image with Gradient Overlay */}
       <div
         onClick={onClick}
@@ -124,7 +124,7 @@ export const ClubCard: React.FC<ClubCardProps> = ({ club, clubRoles, currentUser
             {/* Logo */}
             <div className="shrink-0">
               {club.logo_url ? (
-                <div className="w-16 h-16 rounded-2xl overflow-hidden border-[3px] border-white shadow-xl bg-white">
+                <div className="w-16 h-16 rounded-full overflow-hidden border-[3px] border-white shadow-xl bg-white">
                   <img
                     src={club.logo_url}
                     alt={`${club.name} logo`}
