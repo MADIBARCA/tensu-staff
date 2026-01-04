@@ -7,8 +7,6 @@ import type { CreateClubData } from '../types';
 import { cities, availableTags } from '../mockData';
 import { ImageCropModal } from '@/components/ImageCropModal';
 import { uploadClubImage, processImageWithCrop, type ClubImageUploadResult } from '@/lib/storageUpload';
-// Note: Install react-easy-crop: npm install react-easy-crop
-// @ts-expect-error - react-easy-crop types will be available after installation
 import type { Area } from 'react-easy-crop';
 
 interface CreateClubModalProps {
