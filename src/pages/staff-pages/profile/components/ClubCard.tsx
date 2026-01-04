@@ -81,7 +81,7 @@ export const ClubCard: React.FC<ClubCardProps> = ({ club, clubRoles, currentUser
   const hasSocialLinks = club.telegram_link || club.instagram_link || club.whatsapp_link;
 
   return (
-    <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100">
+    <div className="bg-white rounded overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100">
       {/* Cover Image with Gradient Overlay */}
       <div
         onClick={onClick}
