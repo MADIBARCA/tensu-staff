@@ -1,5 +1,6 @@
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage, ensureAnonAuth } from './firebase';
+import { optimizeImage } from './imageOptimization';
 
 export interface UploadOptions {
   kind: 'logo' | 'cover';
@@ -11,26 +12,22 @@ export interface ClubImageUploadResult {
   storagePath: string;
 }
 
-const MAX_LOGO_SIZE = 1.5 * 1024 * 1024; // 1.5MB input
-const MAX_COVER_SIZE = 5 * 1024 * 1024; // 5MB input
-const MAX_LOGO_OUTPUT_SIZE = 300 * 1024; // 300KB output
-const MAX_COVER_OUTPUT_SIZE = 1.5 * 1024 * 1024; // 1.5MB output
+const MAX_LOGO_INPUT_SIZE = 10 * 1024 * 1024; // 10MB input (safety guard)
+const MAX_COVER_INPUT_SIZE = 15 * 1024 * 1024; // 15MB input (safety guard)
 
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 /**
- * Validate file before processing
+ * Validate file before processing (only type and safety guard size)
  */
 function validateFile(file: File, kind: 'logo' | 'cover'): void {
   if (!ALLOWED_MIME_TYPES.includes(file.type)) {
-    throw new Error('Only JPEG, PNG, and WebP images are allowed');
+    throw new Error('INVALID_FILE_TYPE');
   }
 
-  const maxSize = kind === 'logo' ? MAX_LOGO_SIZE : MAX_COVER_SIZE;
+  const maxSize = kind === 'logo' ? MAX_LOGO_INPUT_SIZE : MAX_COVER_INPUT_SIZE;
   if (file.size > maxSize) {
-    throw new Error(
-      `Image is too large. Maximum size: ${kind === 'logo' ? '1.5MB' : '5MB'}`
-    );
+    throw new Error(kind === 'logo' ? 'LOGO_TOO_LARGE_INPUT' : 'COVER_TOO_LARGE_INPUT');
   }
 }
 
@@ -99,7 +96,8 @@ function canvasToWebPBlob(
 }
 
 /**
- * Process logo image: square crop, 512x512, max 300KB
+ * Process logo image: square crop, 512x512
+ * Note: Output will be optimized by optimizeImage() before upload
  */
 async function processLogo(
   img: HTMLImageElement
@@ -111,31 +109,13 @@ async function processLogo(
   const cropArea = { x, y, width: size, height: size };
   const outputSize = 512;
 
-  let canvas = createCanvas(img, cropArea, outputSize, outputSize);
-  let quality = 0.9;
-  let blob = await canvasToWebPBlob(canvas, quality);
-
-  // Reduce quality if too large
-  if (blob.size > MAX_LOGO_OUTPUT_SIZE) {
-    quality = 0.7;
-    blob = await canvasToWebPBlob(canvas, quality);
-  }
-
-  if (blob.size > MAX_LOGO_OUTPUT_SIZE) {
-    // Try smaller size
-    canvas = createCanvas(img, cropArea, 256, 256);
-    blob = await canvasToWebPBlob(canvas, 0.8);
-  }
-
-  if (blob.size > MAX_LOGO_OUTPUT_SIZE) {
-    throw new Error('Image is too large after processing. Please choose a smaller image.');
-  }
-
-  return blob;
+  const canvas = createCanvas(img, cropArea, outputSize, outputSize);
+  return await canvasToWebPBlob(canvas, 0.9);
 }
 
 /**
- * Process cover image: 16:9 crop, max width 1600px, max 1.5MB
+ * Process cover image: 16:9 crop, max width 1600px
+ * Note: Output will be optimized by optimizeImage() before upload
  */
 async function processCover(
   img: HTMLImageElement
@@ -167,33 +147,13 @@ async function processCover(
   const outputHeight = (outputWidth / cropWidth) * cropHeight;
 
   const cropArea = { x: cropX, y: cropY, width: cropWidth, height: cropHeight };
-  let canvas = createCanvas(img, cropArea, outputWidth, outputHeight);
-  let quality = 0.85;
-  let blob = await canvasToWebPBlob(canvas, quality);
-
-  // Reduce quality if too large
-  if (blob.size > MAX_COVER_OUTPUT_SIZE) {
-    quality = 0.7;
-    blob = await canvasToWebPBlob(canvas, quality);
-  }
-
-  if (blob.size > MAX_COVER_OUTPUT_SIZE) {
-    // Try smaller width
-    const smallerWidth = 1200;
-    const smallerHeight = (smallerWidth / cropWidth) * cropHeight;
-    canvas = createCanvas(img, cropArea, smallerWidth, smallerHeight);
-    blob = await canvasToWebPBlob(canvas, 0.75);
-  }
-
-  if (blob.size > MAX_COVER_OUTPUT_SIZE) {
-    throw new Error('Image is too large after processing. Please choose a smaller image.');
-  }
-
-  return blob;
+  const canvas = createCanvas(img, cropArea, outputWidth, outputHeight);
+  return await canvasToWebPBlob(canvas, 0.85);
 }
 
 /**
  * Process image with crop area (for interactive cropping)
+ * Returns cropped blob that will be optimized later
  */
 export async function processImageWithCrop(
   file: File,
@@ -224,24 +184,7 @@ export async function processImageWithCrop(
     };
     
     const canvas = createCanvas(img, centeredCrop, 512, 512);
-    let quality = 0.9;
-    let blob = await canvasToWebPBlob(canvas, quality);
-
-    if (blob.size > MAX_LOGO_OUTPUT_SIZE) {
-      quality = 0.7;
-      blob = await canvasToWebPBlob(canvas, quality);
-    }
-
-    if (blob.size > MAX_LOGO_OUTPUT_SIZE) {
-      const smallerCanvas = createCanvas(img, centeredCrop, 256, 256);
-      blob = await canvasToWebPBlob(smallerCanvas, 0.8);
-    }
-
-    if (blob.size > MAX_LOGO_OUTPUT_SIZE) {
-      throw new Error('Image is too large after processing. Please choose a smaller image.');
-    }
-
-    return blob;
+    return await canvasToWebPBlob(canvas, 0.9);
   } else {
     // For cover, maintain 16:9 ratio
     const targetRatio = 16 / 9;
@@ -264,32 +207,49 @@ export async function processImageWithCrop(
     const outputWidth = Math.min(finalCrop.width, maxWidth);
     const outputHeight = (outputWidth / finalCrop.width) * finalCrop.height;
 
-    let canvas = createCanvas(img, finalCrop, outputWidth, outputHeight);
-    let quality = 0.85;
-    let blob = await canvasToWebPBlob(canvas, quality);
-
-    if (blob.size > MAX_COVER_OUTPUT_SIZE) {
-      quality = 0.7;
-      blob = await canvasToWebPBlob(canvas, quality);
-    }
-
-    if (blob.size > MAX_COVER_OUTPUT_SIZE) {
-      const smallerWidth = 1200;
-      const smallerHeight = (smallerWidth / finalCrop.width) * finalCrop.height;
-      canvas = createCanvas(img, finalCrop, smallerWidth, smallerHeight);
-      blob = await canvasToWebPBlob(canvas, 0.75);
-    }
-
-    if (blob.size > MAX_COVER_OUTPUT_SIZE) {
-      throw new Error('Image is too large after processing. Please choose a smaller image.');
-    }
-
-    return blob;
+    const canvas = createCanvas(img, finalCrop, outputWidth, outputHeight);
+    return await canvasToWebPBlob(canvas, 0.85);
   }
 }
 
 /**
- * Upload club image to Firebase Storage
+ * Upload optimized blob to Firebase Storage
+ */
+export async function uploadOptimizedBlob(
+  optimizedBlob: Blob,
+  options: UploadOptions,
+  onProgress?: (progress: number) => void
+): Promise<ClubImageUploadResult> {
+  // Ensure anonymous auth
+  await ensureAnonAuth();
+
+  // Upload to Firebase Storage
+  const storagePath = `club-images/${options.clubKey}/${options.kind}.webp`;
+  const storageRef = ref(storage, storagePath);
+
+  // Simulate progress for small files (Firebase doesn't provide progress for small uploads)
+  if (onProgress) {
+    onProgress(10);
+    setTimeout(() => onProgress(50), 100);
+    setTimeout(() => onProgress(90), 200);
+  }
+
+  await uploadBytes(storageRef, optimizedBlob);
+  
+  if (onProgress) {
+    onProgress(100);
+  }
+
+  const downloadURL = await getDownloadURL(storageRef);
+
+  return {
+    downloadURL,
+    storagePath,
+  };
+}
+
+/**
+ * Upload club image to Firebase Storage (legacy - for non-cropped uploads)
  */
 export async function uploadClubImage(
   file: File,
@@ -311,27 +271,8 @@ export async function uploadClubImage(
     processedBlob = await processCover(img);
   }
 
-  // Upload to Firebase Storage
-  const storagePath = `club-images/${options.clubKey}/${options.kind}.webp`;
-  const storageRef = ref(storage, storagePath);
+  // Optimize the processed blob
+  const optimizedBlob = await optimizeImage(processedBlob, { kind: options.kind });
 
-  // Simulate progress for small files (Firebase doesn't provide progress for small uploads)
-  if (onProgress) {
-    onProgress(10);
-    setTimeout(() => onProgress(50), 100);
-    setTimeout(() => onProgress(90), 200);
-  }
-
-  await uploadBytes(storageRef, processedBlob);
-  
-  if (onProgress) {
-    onProgress(100);
-  }
-
-  const downloadURL = await getDownloadURL(storageRef);
-
-  return {
-    downloadURL,
-    storagePath,
-  };
+  return uploadOptimizedBlob(optimizedBlob, options, onProgress);
 }

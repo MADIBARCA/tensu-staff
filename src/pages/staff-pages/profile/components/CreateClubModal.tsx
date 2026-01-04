@@ -7,7 +7,8 @@ import { isValidPhoneNumber } from 'libphonenumber-js';
 import type { CreateClubData } from '../types';
 import { cities, availableTags } from '../mockData';
 import { ImageCropModal } from '@/components/ImageCropModal';
-import { uploadClubImage, processImageWithCrop, type ClubImageUploadResult } from '@/lib/storageUpload';
+import { uploadOptimizedBlob, processImageWithCrop, type ClubImageUploadResult } from '@/lib/storageUpload';
+import { optimizeImage } from '@/lib/imageOptimization';
 import type { Area } from 'react-easy-crop';
 
 interface CreateClubModalProps {
@@ -51,6 +52,8 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
   const [coverUploadProgress, setCoverUploadProgress] = useState<number>(0);
   const [logoUploadError, setLogoUploadError] = useState<string>('');
   const [coverUploadError, setCoverUploadError] = useState<string>('');
+  const [isOptimizingLogo, setIsOptimizingLogo] = useState<boolean>(false);
+  const [isOptimizingCover, setIsOptimizingCover] = useState<boolean>(false);
   const [showCropModal, setShowCropModal] = useState(false);
   const [cropImage, setCropImage] = useState<string>('');
   const [cropKind, setCropKind] = useState<'logo' | 'cover'>('logo');
@@ -160,7 +163,7 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
   const handleFileSelect = (file: File, kind: 'logo' | 'cover') => {
     // Validate file type
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-      const errorMsg = 'Only JPEG, PNG, and WebP images are allowed';
+      const errorMsg = t('profile.createClub.errors.invalidFileType');
       if (kind === 'logo') {
         setLogoUploadError(errorMsg);
       } else {
@@ -169,10 +172,12 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
       return;
     }
 
-    // Validate file size
-    const maxSize = kind === 'logo' ? 1.5 * 1024 * 1024 : 5 * 1024 * 1024;
+    // Validate file size (safety guard - increased limits)
+    const maxSize = kind === 'logo' ? 10 * 1024 * 1024 : 15 * 1024 * 1024; // 10MB logo, 15MB cover
     if (file.size > maxSize) {
-      const errorMsg = `Image is too large. Maximum size: ${kind === 'logo' ? '1.5MB' : '5MB'}`;
+      const errorMsg = kind === 'logo' 
+        ? t('profile.createClub.errors.logoTooLargeInput')
+        : t('profile.createClub.errors.coverTooLargeInput');
       if (kind === 'logo') {
         setLogoUploadError(errorMsg);
       } else {
@@ -212,20 +217,33 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
     if (!file) return;
 
     try {
+      // Set optimizing state
       if (cropKind === 'logo') {
-        setLogoUploadProgress(10);
+        setIsOptimizingLogo(true);
         setLogoUploadError('');
       } else {
-        setCoverUploadProgress(10);
+        setIsOptimizingCover(true);
         setCoverUploadError('');
       }
 
       // Process image with crop
       const processedBlob = await processImageWithCrop(file, cropKind, croppedArea, zoom);
 
-      // Upload to Firebase
-      const result: ClubImageUploadResult = await uploadClubImage(
-        new File([processedBlob], file.name, { type: 'image/webp' }),
+      // Optimize image
+      const optimizedBlob = await optimizeImage(processedBlob, { kind: cropKind });
+
+      // Clear optimizing state and start upload
+      if (cropKind === 'logo') {
+        setIsOptimizingLogo(false);
+        setLogoUploadProgress(10);
+      } else {
+        setIsOptimizingCover(false);
+        setCoverUploadProgress(10);
+      }
+
+      // Upload optimized blob to Firebase
+      const result: ClubImageUploadResult = await uploadOptimizedBlob(
+        optimizedBlob,
         { kind: cropKind, clubKey },
         (progress) => {
           if (cropKind === 'logo') {
@@ -251,13 +269,33 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
         setCropImage('');
       }
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Failed to upload image';
+      let errorMsg: string;
+      if (error instanceof Error) {
+        if (error.message === 'IMAGE_TOO_LARGE_AFTER_OPTIMIZATION') {
+          errorMsg = cropKind === 'logo'
+            ? t('profile.createClub.errors.logoTooLargeAfterOptimization')
+            : t('profile.createClub.errors.coverTooLargeAfterOptimization');
+        } else if (error.message === 'INVALID_FILE_TYPE') {
+          errorMsg = t('profile.createClub.errors.invalidFileType');
+        } else if (error.message === 'LOGO_TOO_LARGE_INPUT' || error.message === 'COVER_TOO_LARGE_INPUT') {
+          errorMsg = cropKind === 'logo'
+            ? t('profile.createClub.errors.logoTooLargeInput')
+            : t('profile.createClub.errors.coverTooLargeInput');
+        } else {
+          errorMsg = t('profile.createClub.errors.uploadFailed');
+        }
+      } else {
+        errorMsg = t('profile.createClub.errors.uploadFailed');
+      }
+      
       if (cropKind === 'logo') {
         setLogoUploadError(errorMsg);
         setLogoUploadProgress(0);
+        setIsOptimizingLogo(false);
       } else {
         setCoverUploadError(errorMsg);
         setCoverUploadProgress(0);
+        setIsOptimizingCover(false);
       }
     }
   };
@@ -290,7 +328,7 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
     }
   };
 
-  const isDisabled = loading || isSubmitting || (logoUploadProgress > 0 && logoUploadProgress < 100) || (coverUploadProgress > 0 && coverUploadProgress < 100);
+  const isDisabled = loading || isSubmitting || isOptimizingLogo || isOptimizingCover || (logoUploadProgress > 0 && logoUploadProgress < 100) || (coverUploadProgress > 0 && coverUploadProgress < 100);
 
   return (
     <div className="fixed inset-0 z-50 bg-white overflow-y-auto">
@@ -514,7 +552,15 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
                       : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50/30'
                   } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
-                  {logoUploadProgress > 0 && logoUploadProgress < 100 ? (
+                  {isOptimizingLogo ? (
+                    <>
+                      <Loader2 size={32} className="animate-spin text-blue-500" />
+                      <div className="text-center">
+                        <div className="text-sm font-medium text-gray-700 mb-1">{t('profile.createClub.optimizingLogo')}</div>
+                        <div className="text-xs text-gray-500">{t('profile.createClub.optimizingHint')}</div>
+                      </div>
+                    </>
+                  ) : logoUploadProgress > 0 && logoUploadProgress < 100 ? (
                     <>
                       <Loader2 size={32} className="animate-spin text-blue-500" />
                       <div className="text-center">
@@ -625,7 +671,15 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
                       : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50/30'
                   } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
-                  {coverUploadProgress > 0 && coverUploadProgress < 100 ? (
+                  {isOptimizingCover ? (
+                    <>
+                      <Loader2 size={32} className="animate-spin text-blue-500" />
+                      <div className="text-center">
+                        <div className="text-sm font-medium text-gray-700 mb-1">{t('profile.createClub.optimizingCover')}</div>
+                        <div className="text-xs text-gray-500">{t('profile.createClub.optimizingHint')}</div>
+                      </div>
+                    </>
+                  ) : coverUploadProgress > 0 && coverUploadProgress < 100 ? (
                     <>
                       <Loader2 size={32} className="animate-spin text-blue-500" />
                       <div className="text-center">
