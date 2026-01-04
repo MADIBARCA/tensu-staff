@@ -66,24 +66,71 @@ export const ClubCard: React.FC<ClubCardProps> = ({ club, clubRoles, currentUser
   const showPayButton = isPaymentDue || club.status === 'frozen' || club.status === 'pending';
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+      {/* Cover Image */}
+      {club.cover_url && (
+        <div
+          onClick={onClick}
+          className="relative w-full h-32 bg-gradient-to-br from-blue-500 to-purple-600 overflow-hidden cursor-pointer aspect-video"
+        >
+          <img
+            src={club.cover_url}
+            alt={`${club.name} cover`}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              // Hide image on error, show gradient background
+              e.currentTarget.style.display = 'none';
+            }}
+          />
+          {/* Gradient overlay for better text readability */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+        </div>
+      )}
+
       {/* Header */}
       <div
         onClick={onClick}
-        className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+        className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${club.cover_url ? '-mt-16 relative z-10' : ''}`}
       >
-        <div className="flex items-start justify-between mb-3">
+        {/* Logo and Name Section */}
+        <div className="flex items-start gap-3 mb-3">
+          {/* Logo */}
+          {club.logo_url ? (
+            <div className="relative shrink-0">
+              <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-white shadow-md bg-white">
+                <img
+                  src={club.logo_url}
+                  alt={`${club.name} logo`}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    // Fallback to placeholder
+                    e.currentTarget.style.display = 'none';
+                    const parent = e.currentTarget.parentElement;
+                    if (parent) {
+                      parent.innerHTML = '<div class="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">' + club.name.charAt(0).toUpperCase() + '</div>';
+                    }
+                  }}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-md shrink-0">
+              {club.name.charAt(0).toUpperCase()}
+            </div>
+          )}
+
+          {/* Name and Status */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               <h3 className="font-semibold text-gray-900 truncate">{club.name}</h3>
               <span
-                className={`px-2 py-0.5 text-xs font-medium rounded-full ${getStatusColor(club.status)}`}
+                className={`px-2 py-0.5 text-xs font-medium rounded-full shrink-0 ${getStatusColor(club.status)}`}
               >
                 {getStatusLabel(club.status)}
               </span>
             </div>
             <div className="flex items-center gap-1 text-sm text-gray-600">
-              <MapPin size={14} />
+              <MapPin size={14} className="shrink-0" />
               <span className="truncate">{club.address}</span>
             </div>
             {/* User Role Badge */}
@@ -103,7 +150,7 @@ export const ClubCard: React.FC<ClubCardProps> = ({ club, clubRoles, currentUser
               </div>
             )}
           </div>
-          <ChevronRight size={20} className="text-gray-400 shrink-0" />
+          <ChevronRight size={20} className="text-gray-400 shrink-0 mt-1" />
         </div>
 
         <div className="flex items-center gap-4 text-sm text-gray-600">

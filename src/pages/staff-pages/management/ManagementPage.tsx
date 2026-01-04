@@ -339,18 +339,18 @@ export default function ManagementPage() {
 
     try {
       const response = await tariffsApi.create({
-        name: data.name,
-        type: data.type,
-        payment_type: data.payment_type,
-        price: data.price,
-        club_ids: data.club_ids,
-        section_ids: data.section_ids,
-        group_ids: data.group_ids,
-        sessions_count: data.sessions_count,
-        validity_days: data.validity_days,
+      name: data.name,
+      type: data.type,
+      payment_type: data.payment_type,
+      price: data.price,
+      club_ids: data.club_ids,
+      section_ids: data.section_ids,
+      group_ids: data.group_ids,
+      sessions_count: data.sessions_count,
+      validity_days: data.validity_days,
         freeze_days_total: data.freeze_days_total,
         features: data.features,
-        active: data.active,
+      active: data.active,
       }, initDataRaw);
 
       if (response.data) {

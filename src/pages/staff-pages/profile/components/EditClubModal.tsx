@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Loader2, MapPin, Phone, Clock, Tag } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { X, Loader2, MapPin, Phone, Clock, Tag, Upload, Trash2 } from 'lucide-react';
 import { TelegramIcon, InstagramIcon, WhatsAppIcon } from '@/components/SocialIcons';
 import { useI18n } from '@/i18n/i18n';
 import { clubsApi } from '@/functions/axios/axiosFunctions';
@@ -7,6 +7,10 @@ import { useTelegram } from '@/hooks/useTelegram';
 import type { Club } from '../types';
 import type { UpdateClubRequest } from '@/functions/axios/requests';
 import { isValidPhoneNumber, parsePhoneNumber, AsYouType } from 'libphonenumber-js';
+import { ImageCropModal } from '@/components/ImageCropModal';
+import { uploadOptimizedBlob, processImageWithCrop, type ClubImageUploadResult } from '@/lib/storageUpload';
+import { optimizeImage } from '@/lib/imageOptimization';
+import type { Area } from 'react-easy-crop';
 
 interface EditClubModalProps {
   club: Club;
@@ -28,6 +32,8 @@ export const EditClubModal: React.FC<EditClubModalProps> = ({
     city: club.city,
     address: club.address,
     phone: club.phone,
+    logo_url: club.logo_url || '',
+    cover_url: club.cover_url || '',
     telegram_link: club.telegram_link || '',
     instagram_link: club.instagram_link || '',
     whatsapp_link: club.whatsapp_link || '',
@@ -39,6 +45,34 @@ export const EditClubModal: React.FC<EditClubModalProps> = ({
   const [customTag, setCustomTag] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Image upload state
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string>(club.logo_url || '');
+  const [coverPreview, setCoverPreview] = useState<string>(club.cover_url || '');
+  const [logoUploadProgress, setLogoUploadProgress] = useState<number>(0);
+  const [coverUploadProgress, setCoverUploadProgress] = useState<number>(0);
+  const [logoUploadError, setLogoUploadError] = useState<string>('');
+  const [coverUploadError, setCoverUploadError] = useState<string>('');
+  const [isOptimizingLogo, setIsOptimizingLogo] = useState<boolean>(false);
+  const [isOptimizingCover, setIsOptimizingCover] = useState<boolean>(false);
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [cropImage, setCropImage] = useState<string>('');
+  const [cropKind, setCropKind] = useState<'logo' | 'cover'>('logo');
+  const [cropAspect, setCropAspect] = useState<number>(1);
+
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+
+  // Cleanup preview URLs on unmount
+  useEffect(() => {
+    return () => {
+      if (logoPreview && logoPreview.startsWith('blob:')) URL.revokeObjectURL(logoPreview);
+      if (coverPreview && coverPreview.startsWith('blob:')) URL.revokeObjectURL(coverPreview);
+      if (cropImage) URL.revokeObjectURL(cropImage);
+    };
+  }, [logoPreview, coverPreview, cropImage]);
 
   const availableTags = [
     'fitness', 'yoga', 'martial_arts', 'swimming', 'tennis', 'dance',
@@ -73,6 +107,176 @@ export const EditClubModal: React.FC<EditClubModalProps> = ({
   const handleRemoveTag = (tag: string) => {
     setFormData({ ...formData, tags: formData.tags.filter(t => t !== tag) });
   };
+
+  const handleFileSelect = (file: File, kind: 'logo' | 'cover') => {
+    // Validate file type
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      const errorMsg = t('profile.createClub.errors.invalidFileType');
+      if (kind === 'logo') {
+        setLogoUploadError(errorMsg);
+      } else {
+        setCoverUploadError(errorMsg);
+      }
+      return;
+    }
+
+    // Validate file size (safety guard - increased limits)
+    const maxSize = kind === 'logo' ? 10 * 1024 * 1024 : 15 * 1024 * 1024; // 10MB logo, 15MB cover
+    if (file.size > maxSize) {
+      const errorMsg = kind === 'logo' 
+        ? t('profile.createClub.errors.logoTooLargeInput')
+        : t('profile.createClub.errors.coverTooLargeInput');
+      if (kind === 'logo') {
+        setLogoUploadError(errorMsg);
+      } else {
+        setCoverUploadError(errorMsg);
+      }
+      return;
+    }
+
+    // Clear errors
+    if (kind === 'logo') {
+      setLogoUploadError('');
+      setLogoFile(file);
+    } else {
+      setCoverUploadError('');
+      setCoverFile(file);
+    }
+
+    // Create preview
+    const previewUrl = URL.createObjectURL(file);
+    if (kind === 'logo') {
+      setLogoPreview(previewUrl);
+    } else {
+      setCoverPreview(previewUrl);
+    }
+
+    // Open crop modal
+    setCropImage(previewUrl);
+    setCropKind(kind);
+    setCropAspect(kind === 'logo' ? 1 : 16 / 9);
+    setShowCropModal(true);
+  };
+
+  const handleCropComplete = async (croppedArea: Area, zoom: number) => {
+    setShowCropModal(false);
+    
+    const file = cropKind === 'logo' ? logoFile : coverFile;
+    if (!file) return;
+
+    try {
+      // Set optimizing state
+      if (cropKind === 'logo') {
+        setIsOptimizingLogo(true);
+        setLogoUploadError('');
+      } else {
+        setIsOptimizingCover(true);
+        setCoverUploadError('');
+      }
+
+      // Process image with crop
+      const processedBlob = await processImageWithCrop(file, cropKind, croppedArea, zoom);
+
+      // Optimize image
+      const optimizedBlob = await optimizeImage(processedBlob, { kind: cropKind });
+
+      // Clear optimizing state and start upload
+      if (cropKind === 'logo') {
+        setIsOptimizingLogo(false);
+        setLogoUploadProgress(10);
+      } else {
+        setIsOptimizingCover(false);
+        setCoverUploadProgress(10);
+      }
+
+      // Upload optimized blob to Firebase
+      const result: ClubImageUploadResult = await uploadOptimizedBlob(
+        optimizedBlob,
+        { kind: cropKind, clubKey: club.id.toString() },
+        (progress) => {
+          if (cropKind === 'logo') {
+            setLogoUploadProgress(progress);
+          } else {
+            setCoverUploadProgress(progress);
+          }
+        }
+      );
+
+      // Update form data
+      if (cropKind === 'logo') {
+        setFormData({ ...formData, logo_url: result.downloadURL });
+        setLogoUploadProgress(100);
+      } else {
+        setFormData({ ...formData, cover_url: result.downloadURL });
+        setCoverUploadProgress(100);
+      }
+
+      // Cleanup
+      if (cropImage) {
+        URL.revokeObjectURL(cropImage);
+        setCropImage('');
+      }
+    } catch (error) {
+      let errorMsg: string;
+      if (error instanceof Error) {
+        if (error.message === 'IMAGE_TOO_LARGE_AFTER_OPTIMIZATION') {
+          errorMsg = cropKind === 'logo'
+            ? t('profile.createClub.errors.logoTooLargeAfterOptimization')
+            : t('profile.createClub.errors.coverTooLargeAfterOptimization');
+        } else if (error.message === 'INVALID_FILE_TYPE') {
+          errorMsg = t('profile.createClub.errors.invalidFileType');
+        } else if (error.message === 'LOGO_TOO_LARGE_INPUT' || error.message === 'COVER_TOO_LARGE_INPUT') {
+          errorMsg = cropKind === 'logo'
+            ? t('profile.createClub.errors.logoTooLargeInput')
+            : t('profile.createClub.errors.coverTooLargeInput');
+        } else {
+          errorMsg = t('profile.createClub.errors.uploadFailed');
+        }
+      } else {
+        errorMsg = t('profile.createClub.errors.uploadFailed');
+      }
+      
+      if (cropKind === 'logo') {
+        setLogoUploadError(errorMsg);
+        setLogoUploadProgress(0);
+        setIsOptimizingLogo(false);
+      } else {
+        setCoverUploadError(errorMsg);
+        setCoverUploadProgress(0);
+        setIsOptimizingCover(false);
+      }
+    }
+  };
+
+  const handleRemoveImage = (kind: 'logo' | 'cover') => {
+    if (kind === 'logo') {
+      setFormData({ ...formData, logo_url: '' });
+      setLogoFile(null);
+      if (logoPreview && logoPreview.startsWith('blob:')) {
+        URL.revokeObjectURL(logoPreview);
+      }
+      setLogoPreview('');
+      setLogoUploadProgress(0);
+      setLogoUploadError('');
+      if (logoInputRef.current) {
+        logoInputRef.current.value = '';
+      }
+    } else {
+      setFormData({ ...formData, cover_url: '' });
+      setCoverFile(null);
+      if (coverPreview && coverPreview.startsWith('blob:')) {
+        URL.revokeObjectURL(coverPreview);
+      }
+      setCoverPreview('');
+      setCoverUploadProgress(0);
+      setCoverUploadError('');
+      if (coverInputRef.current) {
+        coverInputRef.current.value = '';
+      }
+    }
+  };
+
+  const isDisabled = isSubmitting || isOptimizingLogo || isOptimizingCover || (logoUploadProgress > 0 && logoUploadProgress < 100) || (coverUploadProgress > 0 && coverUploadProgress < 100);
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -143,6 +347,8 @@ export const EditClubModal: React.FC<EditClubModalProps> = ({
         city: formData.city.trim(),
         address: formData.address.trim(),
         phone: formattedPhone,
+        logo_url: formData.logo_url || undefined,
+        cover_url: formData.cover_url || undefined,
         telegram_url: formData.telegram_link || undefined,
         instagram_url: formData.instagram_link || undefined,
         whatsapp_url: formData.whatsapp_link || undefined,
@@ -177,6 +383,266 @@ export const EditClubModal: React.FC<EditClubModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="flex-1 p-4 space-y-4">
+          {/* Logo Upload */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t('profile.createClub.logo')}
+            </label>
+            {logoPreview ? (
+              <div className="space-y-2">
+                <div className="relative w-full aspect-square max-w-xs mx-auto bg-gray-100 rounded-xl overflow-hidden border-2 border-gray-200">
+                  <img
+                    src={logoPreview}
+                    alt="Logo preview"
+                    className="w-full h-full object-cover"
+                  />
+                  {(isOptimizingLogo || (logoUploadProgress > 0 && logoUploadProgress < 100)) && (
+                    <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-2">
+                      {isOptimizingLogo ? (
+                        <>
+                          <Loader2 size={32} className="animate-spin text-white" />
+                          <div className="text-center">
+                            <div className="text-sm font-medium text-white mb-1">{t('profile.createClub.optimizingLogo')}</div>
+                            <div className="text-xs text-white/80">{t('profile.createClub.optimizingHint')}</div>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <Loader2 size={32} className="animate-spin text-white" />
+                          <div className="text-center">
+                            <div className="text-sm font-medium text-white mb-1">{t('profile.createClub.uploadingLogo')}</div>
+                            <div className="text-xs text-white/80">{logoUploadProgress}% {t('profile.createClub.complete')}</div>
+                          </div>
+                          <div className="w-full max-w-xs h-2 bg-white/20 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-white rounded-full transition-all duration-300"
+                              style={{ width: `${logoUploadProgress}%` }}
+                            />
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                  {!isOptimizingLogo && logoUploadProgress === 100 && (
+                    <button
+                      type="button"
+                      onClick={() => logoInputRef.current?.click()}
+                      disabled={isDisabled}
+                      className="absolute top-2 right-2 p-2 bg-white/90 backdrop-blur-sm rounded-lg shadow-md hover:bg-white transition-colors disabled:opacity-50"
+                    >
+                      <Upload size={16} className="text-gray-600" />
+                    </button>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveImage('logo')}
+                  disabled={isDisabled}
+                  className="w-full px-4 py-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  <Trash2 size={16} />
+                  {t('profile.createClub.removeLogo')}
+                </button>
+              </div>
+            ) : (
+              <div>
+                <input
+                  ref={logoInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleFileSelect(file, 'logo');
+                  }}
+                  disabled={isDisabled}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => logoInputRef.current?.click()}
+                  disabled={isDisabled}
+                  className={`w-full border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center gap-3 transition-all ${
+                    logoUploadError
+                      ? 'border-red-300 bg-red-50'
+                      : isOptimizingLogo || (logoUploadProgress > 0 && logoUploadProgress < 100)
+                      ? 'border-blue-400 bg-blue-50'
+                      : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50/30'
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  {isOptimizingLogo ? (
+                    <>
+                      <Loader2 size={32} className="animate-spin text-blue-500" />
+                      <div className="text-center">
+                        <div className="text-sm font-medium text-gray-700 mb-1">{t('profile.createClub.optimizingLogo')}</div>
+                        <div className="text-xs text-gray-500">{t('profile.createClub.optimizingHint')}</div>
+                      </div>
+                    </>
+                  ) : logoUploadProgress > 0 && logoUploadProgress < 100 ? (
+                    <>
+                      <Loader2 size={32} className="animate-spin text-blue-500" />
+                      <div className="text-center">
+                        <div className="text-sm font-medium text-gray-700 mb-1">{t('profile.createClub.uploadingLogo')}</div>
+                        <div className="text-xs text-gray-500">{logoUploadProgress}% {t('profile.createClub.complete')}</div>
+                      </div>
+                      <div className="w-full max-w-xs h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-blue-500 rounded-full transition-all duration-300"
+                          style={{ width: `${logoUploadProgress}%` }}
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="p-4 bg-white rounded-full border-2 border-gray-200">
+                        <Upload size={24} className="text-gray-400" />
+                      </div>
+                      <div className="text-center">
+                        <div className="text-sm font-medium text-gray-700 mb-1">{t('profile.createClub.uploadLogo')}</div>
+                        <div className="text-xs text-gray-500">{t('profile.createClub.uploadHint')}</div>
+                        <div className="text-xs text-gray-400 mt-1">{t('profile.createClub.logoFormat')}</div>
+                      </div>
+                    </>
+                  )}
+                </button>
+                {logoUploadError && (
+                  <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-red-600 text-xs font-medium">{logoUploadError}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Cover Upload */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t('profile.createClub.cover')}
+            </label>
+            {coverPreview ? (
+              <div className="space-y-2">
+                <div className="relative w-full aspect-video max-w-full bg-gray-100 rounded-xl overflow-hidden border-2 border-gray-200">
+                  <img
+                    src={coverPreview}
+                    alt="Cover preview"
+                    className="w-full h-full object-cover"
+                  />
+                  {(isOptimizingCover || (coverUploadProgress > 0 && coverUploadProgress < 100)) && (
+                    <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-2">
+                      {isOptimizingCover ? (
+                        <>
+                          <Loader2 size={32} className="animate-spin text-white" />
+                          <div className="text-center">
+                            <div className="text-sm font-medium text-white mb-1">{t('profile.createClub.optimizingCover')}</div>
+                            <div className="text-xs text-white/80">{t('profile.createClub.optimizingHint')}</div>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <Loader2 size={32} className="animate-spin text-white" />
+                          <div className="text-center">
+                            <div className="text-sm font-medium text-white mb-1">{t('profile.createClub.uploadingCover')}</div>
+                            <div className="text-xs text-white/80">{coverUploadProgress}% {t('profile.createClub.complete')}</div>
+                          </div>
+                          <div className="w-full max-w-xs h-2 bg-white/20 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-white rounded-full transition-all duration-300"
+                              style={{ width: `${coverUploadProgress}%` }}
+                            />
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                  {!isOptimizingCover && coverUploadProgress === 100 && (
+                    <button
+                      type="button"
+                      onClick={() => coverInputRef.current?.click()}
+                      disabled={isDisabled}
+                      className="absolute top-2 right-2 p-2 bg-white/90 backdrop-blur-sm rounded-lg shadow-md hover:bg-white transition-colors disabled:opacity-50"
+                    >
+                      <Upload size={16} className="text-gray-600" />
+                    </button>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveImage('cover')}
+                  disabled={isDisabled}
+                  className="w-full px-4 py-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  <Trash2 size={16} />
+                  {t('profile.createClub.removeCover')}
+                </button>
+              </div>
+            ) : (
+              <div>
+                <input
+                  ref={coverInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleFileSelect(file, 'cover');
+                  }}
+                  disabled={isDisabled}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => coverInputRef.current?.click()}
+                  disabled={isDisabled}
+                  className={`w-full border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center gap-3 transition-all ${
+                    coverUploadError
+                      ? 'border-red-300 bg-red-50'
+                      : isOptimizingCover || (coverUploadProgress > 0 && coverUploadProgress < 100)
+                      ? 'border-blue-400 bg-blue-50'
+                      : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50/30'
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  {isOptimizingCover ? (
+                    <>
+                      <Loader2 size={32} className="animate-spin text-blue-500" />
+                      <div className="text-center">
+                        <div className="text-sm font-medium text-gray-700 mb-1">{t('profile.createClub.optimizingCover')}</div>
+                        <div className="text-xs text-gray-500">{t('profile.createClub.optimizingHint')}</div>
+                      </div>
+                    </>
+                  ) : coverUploadProgress > 0 && coverUploadProgress < 100 ? (
+                    <>
+                      <Loader2 size={32} className="animate-spin text-blue-500" />
+                      <div className="text-center">
+                        <div className="text-sm font-medium text-gray-700 mb-1">{t('profile.createClub.uploadingCover')}</div>
+                        <div className="text-xs text-gray-500">{coverUploadProgress}% {t('profile.createClub.complete')}</div>
+                      </div>
+                      <div className="w-full max-w-xs h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-blue-500 rounded-full transition-all duration-300"
+                          style={{ width: `${coverUploadProgress}%` }}
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="p-4 bg-white rounded-full border-2 border-gray-200">
+                        <Upload size={24} className="text-gray-400" />
+                      </div>
+                      <div className="text-center">
+                        <div className="text-sm font-medium text-gray-700 mb-1">{t('profile.createClub.uploadCover')}</div>
+                        <div className="text-xs text-gray-500">{t('profile.createClub.uploadHint')}</div>
+                        <div className="text-xs text-gray-400 mt-1">{t('profile.createClub.coverFormat')}</div>
+                      </div>
+                    </>
+                  )}
+                </button>
+                {coverUploadError && (
+                  <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-red-600 text-xs font-medium">{coverUploadError}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* Club Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -432,6 +898,22 @@ export const EditClubModal: React.FC<EditClubModalProps> = ({
             </div>
           </div>
         </form>
+
+        {/* Crop Modal */}
+        {showCropModal && cropImage && (
+          <ImageCropModal
+            image={cropImage}
+            aspect={cropAspect}
+            onClose={() => {
+              setShowCropModal(false);
+              if (cropImage) {
+                URL.revokeObjectURL(cropImage);
+                setCropImage('');
+              }
+            }}
+            onCrop={handleCropComplete}
+          />
+        )}
 
         {/* Footer */}
         <div className="sticky bottom-0 bg-white p-4 pb-8 border-t border-gray-200 flex gap-3">

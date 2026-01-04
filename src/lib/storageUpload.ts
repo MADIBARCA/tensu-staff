@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { storage, ensureAnonAuth } from './firebase';
 import { optimizeImage } from './imageOptimization';
@@ -221,96 +220,39 @@ export async function uploadOptimizedBlob(
   options: UploadOptions,
   onProgress?: (progress: number) => void
 ): Promise<ClubImageUploadResult> {
-  try {
-    // Ensure anonymous auth and get user
-    const user = await ensureAnonAuth();
+  // Ensure anonymous auth
+  await ensureAnonAuth();
 
-    // Force token refresh before upload to ensure it's attached
-    try {
-      const token = await user.getIdToken(true);
-      if (import.meta.env.DEV) {
-        console.log('[Storage Upload] Auth token retrieved, length:', token.length);
-        console.log('[Storage Upload] User UID:', user.uid);
-      }
-    } catch (tokenError) {
-      console.error('[Storage Upload] Failed to get auth token:', tokenError);
-      throw new Error('Failed to authenticate: ' + (tokenError instanceof Error ? tokenError.message : String(tokenError)));
-    }
+  // Upload to Firebase Storage
+  const storagePath = `club-images/${options.clubKey}/${options.kind}.webp`;
+  const storageRef = ref(storage, storagePath);
 
-    // Upload to Firebase Storage
-    const storagePath = `club-images/${options.clubKey}/${options.kind}.webp`;
-    const storageRef = ref(storage, storagePath);
-
-    if (import.meta.env.DEV) {
-      console.log('[Storage Upload] Starting upload:', {
-        path: storagePath,
-        blobSize: optimizedBlob.size,
-        kind: options.kind,
-      });
-    }
-
-    await new Promise<void>((resolve, reject) => {
-      const task = uploadBytesResumable(storageRef, optimizedBlob);
-
-      task.on(
-        'state_changed',
-        (snapshot) => {
-          if (onProgress) {
-            const progress =
-              (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            onProgress(Math.round(progress));
-          }
-        },
-        (error) => {
-          // Enhanced error logging
-          console.error('[Storage Upload] Upload error:', {
-            code: error.code,
-            message: error.message,
-            serverResponse: error.serverResponse,
-            fullError: error,
-          });
-          reject(error);
-        },
-        () => {
-          if (import.meta.env.DEV) {
-            console.log('[Storage Upload] Upload completed successfully');
-          }
-          resolve();
+  await new Promise<void>((resolve, reject) => {
+    const task = uploadBytesResumable(storageRef, optimizedBlob);
+  
+    task.on(
+      'state_changed',
+      (snapshot) => {
+        if (onProgress) {
+          const progress =
+            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          onProgress(Math.round(progress));
         }
-      );
-    });
-
-    if (onProgress) {
-      onProgress(100);
-    }
-
-    const downloadURL = await getDownloadURL(storageRef);
-
-    if (import.meta.env.DEV) {
-      console.log('[Storage Upload] Download URL obtained:', downloadURL);
-    }
-
-    return {
-      downloadURL,
-      storagePath,
-    };
-  } catch (error) {
-    // Comprehensive error logging
-    console.error('[Storage Upload] Upload failed:', {
-      error,
-      code: (error as any)?.code,
-      message: (error as any)?.message,
-      serverResponse: (error as any)?.serverResponse,
-      kind: options.kind,
-      clubKey: options.clubKey,
-    });
-
-    // Re-throw with more context
-    if (error instanceof Error) {
-      throw error;
-    }
-    throw new Error('Upload failed: ' + String(error));
+      },
+      (error) => reject(error),
+      () => resolve()
+    );
+  });  
+  if (onProgress) {
+    onProgress(100);
   }
+
+  const downloadURL = await getDownloadURL(storageRef);
+
+  return {
+    downloadURL,
+    storagePath,
+  };
 }
 
 /**
