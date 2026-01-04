@@ -8,7 +8,7 @@ import { cities, availableTags } from '../mockData';
 import { ImageCropModal } from '@/components/ImageCropModal';
 import { uploadClubImage, processImageWithCrop, type ClubImageUploadResult } from '@/lib/storageUpload';
 // Note: Install react-easy-crop: npm install react-easy-crop
-// @ts-ignore - react-easy-crop will be installed
+// @ts-expect-error - react-easy-crop types will be available after installation
 import type { Area } from 'react-easy-crop';
 
 interface CreateClubModalProps {
@@ -442,31 +442,52 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
 
           {/* Logo Upload */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               {t('profile.createClub.logoUrl')}
+              <span className="text-xs font-normal text-gray-500 ml-1">(Square, 1:1)</span>
             </label>
             {formData.logo_url ? (
-              <div className="relative">
-                <div className="relative w-32 h-32 border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-50">
-                  <img
-                    src={formData.logo_url}
-                    alt="Logo preview"
-                    className="w-full h-full object-cover"
-                  />
-                  {logoUploadProgress > 0 && logoUploadProgress < 100 && (
-                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                      <div className="text-white text-sm font-medium">{logoUploadProgress}%</div>
-                    </div>
+              <div className="space-y-3">
+                <div className="relative group">
+                  <div className="relative w-32 h-32 mx-auto border-2 border-gray-200 rounded-xl overflow-hidden bg-gray-50 shadow-sm">
+                    <img
+                      src={formData.logo_url}
+                      alt="Logo preview"
+                      className="w-full h-full object-cover"
+                    />
+                    {logoUploadProgress > 0 && logoUploadProgress < 100 && (
+                      <div className="absolute inset-0 bg-black bg-opacity-60 flex flex-col items-center justify-center backdrop-blur-sm">
+                        <Loader2 size={28} className="animate-spin text-white mb-2" />
+                        <div className="text-white text-sm font-semibold">{logoUploadProgress}%</div>
+                        <div className="w-20 h-1 bg-white bg-opacity-30 rounded-full mt-2 overflow-hidden">
+                          <div 
+                            className="h-full bg-white rounded-full transition-all duration-300"
+                            style={{ width: `${logoUploadProgress}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  {logoUploadProgress === 0 && (
+                    <button
+                      type="button"
+                      onClick={() => logoInputRef.current?.click()}
+                      disabled={isDisabled}
+                      className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-50"
+                      title="Change logo"
+                    >
+                      <Upload size={16} className="text-gray-600" />
+                    </button>
                   )}
                 </div>
                 <button
                   type="button"
                   onClick={() => handleRemoveImage('logo')}
                   disabled={isDisabled}
-                  className="mt-2 px-3 py-1.5 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 flex items-center gap-1"
+                  className="w-full px-4 py-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  <Trash2 size={14} />
-                  Remove
+                  <Trash2 size={16} />
+                  Remove Logo
                 </button>
               </div>
             ) : (
@@ -486,27 +507,45 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
                   type="button"
                   onClick={() => logoInputRef.current?.click()}
                   disabled={isDisabled}
-                  className={`w-full border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center gap-2 transition-colors ${
+                  className={`w-full border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center gap-3 transition-all ${
                     logoUploadError
                       ? 'border-red-300 bg-red-50'
-                      : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+                      : logoUploadProgress > 0 && logoUploadProgress < 100
+                      ? 'border-blue-400 bg-blue-50'
+                      : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50/30'
                   } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   {logoUploadProgress > 0 && logoUploadProgress < 100 ? (
                     <>
-                      <Loader2 size={24} className="animate-spin text-blue-500" />
-                      <span className="text-sm text-gray-600">Uploading... {logoUploadProgress}%</span>
+                      <Loader2 size={32} className="animate-spin text-blue-500" />
+                      <div className="text-center">
+                        <div className="text-sm font-medium text-gray-700 mb-1">Uploading logo...</div>
+                        <div className="text-xs text-gray-500">{logoUploadProgress}% complete</div>
+                      </div>
+                      <div className="w-full max-w-xs h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-blue-500 rounded-full transition-all duration-300"
+                          style={{ width: `${logoUploadProgress}%` }}
+                        />
+                      </div>
                     </>
                   ) : (
                     <>
-                      <Upload size={24} className="text-gray-400" />
-                      <span className="text-sm text-gray-600">Upload Logo</span>
-                      <span className="text-xs text-gray-400">Max 1.5MB • JPEG, PNG, WebP</span>
+                      <div className="p-4 bg-white rounded-full border-2 border-gray-200">
+                        <Upload size={24} className="text-gray-400" />
+                      </div>
+                      <div className="text-center">
+                        <div className="text-sm font-medium text-gray-700 mb-1">Upload Club Logo</div>
+                        <div className="text-xs text-gray-500">Click to select or drag and drop</div>
+                        <div className="text-xs text-gray-400 mt-1">Max 1.5MB • JPEG, PNG, WebP</div>
+                      </div>
                     </>
                   )}
                 </button>
                 {logoUploadError && (
-                  <p className="text-red-500 text-xs mt-1">{logoUploadError}</p>
+                  <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-red-600 text-xs font-medium">{logoUploadError}</p>
+                  </div>
                 )}
               </div>
             )}
@@ -514,31 +553,52 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
 
           {/* Cover Upload */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               {t('profile.createClub.coverUrl')}
+              <span className="text-xs font-normal text-gray-500 ml-1">(Banner, 16:9)</span>
             </label>
             {formData.cover_url ? (
-              <div className="relative">
-                <div className="relative w-full h-48 border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-50">
-                  <img
-                    src={formData.cover_url}
-                    alt="Cover preview"
-                    className="w-full h-full object-cover"
-                  />
-                  {coverUploadProgress > 0 && coverUploadProgress < 100 && (
-                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                      <div className="text-white text-sm font-medium">{coverUploadProgress}%</div>
-                    </div>
+              <div className="space-y-3">
+                <div className="relative group">
+                  <div className="relative w-full h-48 border-2 border-gray-200 rounded-xl overflow-hidden bg-gray-50 shadow-sm">
+                    <img
+                      src={formData.cover_url}
+                      alt="Cover preview"
+                      className="w-full h-full object-cover"
+                    />
+                    {coverUploadProgress > 0 && coverUploadProgress < 100 && (
+                      <div className="absolute inset-0 bg-black bg-opacity-60 flex flex-col items-center justify-center backdrop-blur-sm">
+                        <Loader2 size={32} className="animate-spin text-white mb-2" />
+                        <div className="text-white text-sm font-semibold">{coverUploadProgress}%</div>
+                        <div className="w-32 h-1.5 bg-white bg-opacity-30 rounded-full mt-2 overflow-hidden">
+                          <div 
+                            className="h-full bg-white rounded-full transition-all duration-300"
+                            style={{ width: `${coverUploadProgress}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  {coverUploadProgress === 0 && (
+                    <button
+                      type="button"
+                      onClick={() => coverInputRef.current?.click()}
+                      disabled={isDisabled}
+                      className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-50"
+                      title="Change cover"
+                    >
+                      <Upload size={16} className="text-gray-600" />
+                    </button>
                   )}
                 </div>
                 <button
                   type="button"
                   onClick={() => handleRemoveImage('cover')}
                   disabled={isDisabled}
-                  className="mt-2 px-3 py-1.5 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 flex items-center gap-1"
+                  className="w-full px-4 py-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  <Trash2 size={14} />
-                  Remove
+                  <Trash2 size={16} />
+                  Remove Cover
                 </button>
               </div>
             ) : (
@@ -558,27 +618,45 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
                   type="button"
                   onClick={() => coverInputRef.current?.click()}
                   disabled={isDisabled}
-                  className={`w-full border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center gap-2 transition-colors ${
+                  className={`w-full border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center gap-3 transition-all ${
                     coverUploadError
                       ? 'border-red-300 bg-red-50'
-                      : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+                      : coverUploadProgress > 0 && coverUploadProgress < 100
+                      ? 'border-blue-400 bg-blue-50'
+                      : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50/30'
                   } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   {coverUploadProgress > 0 && coverUploadProgress < 100 ? (
                     <>
-                      <Loader2 size={24} className="animate-spin text-blue-500" />
-                      <span className="text-sm text-gray-600">Uploading... {coverUploadProgress}%</span>
+                      <Loader2 size={32} className="animate-spin text-blue-500" />
+                      <div className="text-center">
+                        <div className="text-sm font-medium text-gray-700 mb-1">Uploading cover...</div>
+                        <div className="text-xs text-gray-500">{coverUploadProgress}% complete</div>
+                      </div>
+                      <div className="w-full max-w-xs h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-blue-500 rounded-full transition-all duration-300"
+                          style={{ width: `${coverUploadProgress}%` }}
+                        />
+                      </div>
                     </>
                   ) : (
                     <>
-                      <ImageIcon size={24} className="text-gray-400" />
-                      <span className="text-sm text-gray-600">Upload Cover Image</span>
-                      <span className="text-xs text-gray-400">Max 5MB • JPEG, PNG, WebP • 16:9 ratio</span>
+                      <div className="p-4 bg-white rounded-full border-2 border-gray-200">
+                        <ImageIcon size={28} className="text-gray-400" />
+                      </div>
+                      <div className="text-center">
+                        <div className="text-sm font-medium text-gray-700 mb-1">Upload Cover Image</div>
+                        <div className="text-xs text-gray-500">Click to select or drag and drop</div>
+                        <div className="text-xs text-gray-400 mt-1">Max 5MB • JPEG, PNG, WebP • 16:9 ratio</div>
+                      </div>
                     </>
                   )}
                 </button>
                 {coverUploadError && (
-                  <p className="text-red-500 text-xs mt-1">{coverUploadError}</p>
+                  <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-red-600 text-xs font-medium">{coverUploadError}</p>
+                  </div>
                 )}
               </div>
             )}
