@@ -1,10 +1,15 @@
-import React, { useState } from 'react';
-import { X, Plus, Clock, Loader2 } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { X, Plus, Clock, Loader2, Upload, Trash2, Image as ImageIcon } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import { PhoneInput } from '@/components/PhoneInput';
 import { isValidPhoneNumber } from 'libphonenumber-js';
 import type { CreateClubData } from '../types';
 import { cities, availableTags } from '../mockData';
+import { ImageCropModal } from '@/components/ImageCropModal';
+import { uploadClubImage, processImageWithCrop, type ClubImageUploadResult } from '@/lib/storageUpload';
+// Note: Install react-easy-crop: npm install react-easy-crop
+// @ts-ignore - react-easy-crop will be installed
+import type { Area } from 'react-easy-crop';
 
 interface CreateClubModalProps {
   onClose: () => void;
@@ -36,6 +41,33 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [customTag, setCustomTag] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Image upload state
+  const [clubKey] = useState(() => `tmp-${Date.now()}`);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string>('');
+  const [coverPreview, setCoverPreview] = useState<string>('');
+  const [logoUploadProgress, setLogoUploadProgress] = useState<number>(0);
+  const [coverUploadProgress, setCoverUploadProgress] = useState<number>(0);
+  const [logoUploadError, setLogoUploadError] = useState<string>('');
+  const [coverUploadError, setCoverUploadError] = useState<string>('');
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [cropImage, setCropImage] = useState<string>('');
+  const [cropKind, setCropKind] = useState<'logo' | 'cover'>('logo');
+  const [cropAspect, setCropAspect] = useState<number>(1);
+
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+
+  // Cleanup preview URLs on unmount
+  useEffect(() => {
+    return () => {
+      if (logoPreview) URL.revokeObjectURL(logoPreview);
+      if (coverPreview) URL.revokeObjectURL(coverPreview);
+      if (cropImage) URL.revokeObjectURL(cropImage);
+    };
+  }, [logoPreview, coverPreview, cropImage]);
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -126,7 +158,140 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
     }
   };
 
-  const isDisabled = loading || isSubmitting;
+  const handleFileSelect = (file: File, kind: 'logo' | 'cover') => {
+    // Validate file type
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      const errorMsg = 'Only JPEG, PNG, and WebP images are allowed';
+      if (kind === 'logo') {
+        setLogoUploadError(errorMsg);
+      } else {
+        setCoverUploadError(errorMsg);
+      }
+      return;
+    }
+
+    // Validate file size
+    const maxSize = kind === 'logo' ? 1.5 * 1024 * 1024 : 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      const errorMsg = `Image is too large. Maximum size: ${kind === 'logo' ? '1.5MB' : '5MB'}`;
+      if (kind === 'logo') {
+        setLogoUploadError(errorMsg);
+      } else {
+        setCoverUploadError(errorMsg);
+      }
+      return;
+    }
+
+    // Clear errors
+    if (kind === 'logo') {
+      setLogoUploadError('');
+      setLogoFile(file);
+    } else {
+      setCoverUploadError('');
+      setCoverFile(file);
+    }
+
+    // Create preview
+    const previewUrl = URL.createObjectURL(file);
+    if (kind === 'logo') {
+      setLogoPreview(previewUrl);
+    } else {
+      setCoverPreview(previewUrl);
+    }
+
+    // Open crop modal
+    setCropImage(previewUrl);
+    setCropKind(kind);
+    setCropAspect(kind === 'logo' ? 1 : 16 / 9);
+    setShowCropModal(true);
+  };
+
+  const handleCropComplete = async (croppedArea: Area, zoom: number) => {
+    setShowCropModal(false);
+    
+    const file = cropKind === 'logo' ? logoFile : coverFile;
+    if (!file) return;
+
+    try {
+      if (cropKind === 'logo') {
+        setLogoUploadProgress(10);
+        setLogoUploadError('');
+      } else {
+        setCoverUploadProgress(10);
+        setCoverUploadError('');
+      }
+
+      // Process image with crop
+      const processedBlob = await processImageWithCrop(file, cropKind, croppedArea, zoom);
+
+      // Upload to Firebase
+      const result: ClubImageUploadResult = await uploadClubImage(
+        new File([processedBlob], file.name, { type: 'image/webp' }),
+        { kind: cropKind, clubKey },
+        (progress) => {
+          if (cropKind === 'logo') {
+            setLogoUploadProgress(progress);
+          } else {
+            setCoverUploadProgress(progress);
+          }
+        }
+      );
+
+      // Update form data
+      if (cropKind === 'logo') {
+        setFormData({ ...formData, logo_url: result.downloadURL });
+        setLogoUploadProgress(100);
+      } else {
+        setFormData({ ...formData, cover_url: result.downloadURL });
+        setCoverUploadProgress(100);
+      }
+
+      // Cleanup
+      if (cropImage) {
+        URL.revokeObjectURL(cropImage);
+        setCropImage('');
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Failed to upload image';
+      if (cropKind === 'logo') {
+        setLogoUploadError(errorMsg);
+        setLogoUploadProgress(0);
+      } else {
+        setCoverUploadError(errorMsg);
+        setCoverUploadProgress(0);
+      }
+    }
+  };
+
+  const handleRemoveImage = (kind: 'logo' | 'cover') => {
+    if (kind === 'logo') {
+      setFormData({ ...formData, logo_url: '' });
+      setLogoFile(null);
+      if (logoPreview) {
+        URL.revokeObjectURL(logoPreview);
+        setLogoPreview('');
+      }
+      setLogoUploadProgress(0);
+      setLogoUploadError('');
+      if (logoInputRef.current) {
+        logoInputRef.current.value = '';
+      }
+    } else {
+      setFormData({ ...formData, cover_url: '' });
+      setCoverFile(null);
+      if (coverPreview) {
+        URL.revokeObjectURL(coverPreview);
+        setCoverPreview('');
+      }
+      setCoverUploadProgress(0);
+      setCoverUploadError('');
+      if (coverInputRef.current) {
+        coverInputRef.current.value = '';
+      }
+    }
+  };
+
+  const isDisabled = loading || isSubmitting || (logoUploadProgress > 0 && logoUploadProgress < 100) || (coverUploadProgress > 0 && coverUploadProgress < 100);
 
   return (
     <div className="fixed inset-0 z-50 bg-white overflow-y-auto">
@@ -275,34 +440,148 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
             </div>
           </div>
 
-          {/* Logo URL */}
+          {/* Logo Upload */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               {t('profile.createClub.logoUrl')}
             </label>
-            <input
-              type="url"
-              value={formData.logo_url}
-              onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
-              disabled={isDisabled}
-              className="w-full border border-gray-200 rounded-lg p-3 text-gray-900 caret-black disabled:bg-gray-100"
-              placeholder="https://..."
-            />
+            {formData.logo_url ? (
+              <div className="relative">
+                <div className="relative w-32 h-32 border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-50">
+                  <img
+                    src={formData.logo_url}
+                    alt="Logo preview"
+                    className="w-full h-full object-cover"
+                  />
+                  {logoUploadProgress > 0 && logoUploadProgress < 100 && (
+                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                      <div className="text-white text-sm font-medium">{logoUploadProgress}%</div>
+                    </div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveImage('logo')}
+                  disabled={isDisabled}
+                  className="mt-2 px-3 py-1.5 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 flex items-center gap-1"
+                >
+                  <Trash2 size={14} />
+                  Remove
+                </button>
+              </div>
+            ) : (
+              <div>
+                <input
+                  ref={logoInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleFileSelect(file, 'logo');
+                  }}
+                  disabled={isDisabled}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => logoInputRef.current?.click()}
+                  disabled={isDisabled}
+                  className={`w-full border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center gap-2 transition-colors ${
+                    logoUploadError
+                      ? 'border-red-300 bg-red-50'
+                      : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  {logoUploadProgress > 0 && logoUploadProgress < 100 ? (
+                    <>
+                      <Loader2 size={24} className="animate-spin text-blue-500" />
+                      <span className="text-sm text-gray-600">Uploading... {logoUploadProgress}%</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload size={24} className="text-gray-400" />
+                      <span className="text-sm text-gray-600">Upload Logo</span>
+                      <span className="text-xs text-gray-400">Max 1.5MB • JPEG, PNG, WebP</span>
+                    </>
+                  )}
+                </button>
+                {logoUploadError && (
+                  <p className="text-red-500 text-xs mt-1">{logoUploadError}</p>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* Cover URL */}
+          {/* Cover Upload */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               {t('profile.createClub.coverUrl')}
             </label>
-            <input
-              type="url"
-              value={formData.cover_url}
-              onChange={(e) => setFormData({ ...formData, cover_url: e.target.value })}
-              disabled={isDisabled}
-              className="w-full border border-gray-200 rounded-lg p-3 text-gray-900 caret-black disabled:bg-gray-100"
-              placeholder="https://..."
-            />
+            {formData.cover_url ? (
+              <div className="relative">
+                <div className="relative w-full h-48 border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-50">
+                  <img
+                    src={formData.cover_url}
+                    alt="Cover preview"
+                    className="w-full h-full object-cover"
+                  />
+                  {coverUploadProgress > 0 && coverUploadProgress < 100 && (
+                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                      <div className="text-white text-sm font-medium">{coverUploadProgress}%</div>
+                    </div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveImage('cover')}
+                  disabled={isDisabled}
+                  className="mt-2 px-3 py-1.5 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 flex items-center gap-1"
+                >
+                  <Trash2 size={14} />
+                  Remove
+                </button>
+              </div>
+            ) : (
+              <div>
+                <input
+                  ref={coverInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleFileSelect(file, 'cover');
+                  }}
+                  disabled={isDisabled}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => coverInputRef.current?.click()}
+                  disabled={isDisabled}
+                  className={`w-full border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center gap-2 transition-colors ${
+                    coverUploadError
+                      ? 'border-red-300 bg-red-50'
+                      : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  {coverUploadProgress > 0 && coverUploadProgress < 100 ? (
+                    <>
+                      <Loader2 size={24} className="animate-spin text-blue-500" />
+                      <span className="text-sm text-gray-600">Uploading... {coverUploadProgress}%</span>
+                    </>
+                  ) : (
+                    <>
+                      <ImageIcon size={24} className="text-gray-400" />
+                      <span className="text-sm text-gray-600">Upload Cover Image</span>
+                      <span className="text-xs text-gray-400">Max 5MB • JPEG, PNG, WebP • 16:9 ratio</span>
+                    </>
+                  )}
+                </button>
+                {coverUploadError && (
+                  <p className="text-red-500 text-xs mt-1">{coverUploadError}</p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Social Links */}
@@ -436,6 +715,23 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Crop Modal */}
+      {showCropModal && cropImage && (
+        <ImageCropModal
+          image={cropImage}
+          aspect={cropAspect}
+          onClose={() => {
+            setShowCropModal(false);
+            if (cropImage) {
+              URL.revokeObjectURL(cropImage);
+              setCropImage('');
+            }
+          }}
+          onCrop={handleCropComplete}
+          title={cropKind === 'logo' ? 'Crop Logo (Square)' : 'Crop Cover Image (16:9)'}
+        />
+      )}
     </div>
   );
 };
