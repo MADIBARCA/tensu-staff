@@ -1,4 +1,4 @@
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { storage, ensureAnonAuth } from './firebase';
 import { optimizeImage } from './imageOptimization';
 
@@ -227,15 +227,22 @@ export async function uploadOptimizedBlob(
   const storagePath = `club-images/${options.clubKey}/${options.kind}.webp`;
   const storageRef = ref(storage, storagePath);
 
-  // Simulate progress for small files (Firebase doesn't provide progress for small uploads)
-  if (onProgress) {
-    onProgress(10);
-    setTimeout(() => onProgress(50), 100);
-    setTimeout(() => onProgress(90), 200);
-  }
-
-  await uploadBytes(storageRef, optimizedBlob);
+  await new Promise<void>((resolve, reject) => {
+    const task = uploadBytesResumable(storageRef, optimizedBlob);
   
+    task.on(
+      'state_changed',
+      (snapshot) => {
+        if (onProgress) {
+          const progress =
+            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          onProgress(Math.round(progress));
+        }
+      },
+      (error) => reject(error),
+      () => resolve()
+    );
+  });  
   if (onProgress) {
     onProgress(100);
   }
