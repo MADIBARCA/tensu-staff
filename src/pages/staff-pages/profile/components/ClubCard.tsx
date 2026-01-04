@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { MapPin, Clock, Users, AlertTriangle, ChevronRight, Tag } from 'lucide-react';
+import { MapPin, Clock, Users, AlertTriangle, ChevronRight, Phone, GraduationCap } from 'lucide-react';
+import { TelegramIcon, InstagramIcon, WhatsAppIcon } from '@/components/SocialIcons';
 import { useI18n } from '@/i18n/i18n';
 import type { Club } from '../types';
 import type { ClubWithRole, CreateStaffResponse } from '@/functions/axios/responses';
@@ -49,166 +50,238 @@ export const ClubCard: React.FC<ClubCardProps> = ({ club, clubRoles, currentUser
   const getStatusColor = (status: string): string => {
     switch (status) {
       case 'active':
-        return 'bg-green-100 text-green-700';
+        return 'bg-emerald-500 text-white';
       case 'frozen':
-        return 'bg-blue-100 text-blue-700';
+        return 'bg-blue-500 text-white';
       case 'pending':
-        return 'bg-yellow-100 text-yellow-700';
+        return 'bg-amber-500 text-white';
       case 'deactivated':
-        return 'bg-gray-100 text-gray-700';
+        return 'bg-gray-400 text-white';
       default:
-        return 'bg-gray-100 text-gray-700';
+        return 'bg-gray-400 text-white';
+    }
+  };
+
+  const getRoleBadgeStyle = (role: string): string => {
+    switch (role) {
+      case 'owner':
+        return 'bg-gradient-to-r from-purple-500 to-pink-500 text-white';
+      case 'admin':
+        return 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white';
+      case 'coach':
+        return 'bg-gradient-to-r from-green-500 to-emerald-500 text-white';
+      default:
+        return 'bg-gray-500 text-white';
     }
   };
 
   const isPaymentDue = club.membership && club.membership.days_until_expiry <= 7;
   const isExpired = club.membership && club.membership.days_until_expiry <= 0;
   const showPayButton = isPaymentDue || club.status === 'frozen' || club.status === 'pending';
+  const hasSocialLinks = club.telegram_link || club.instagram_link || club.whatsapp_link;
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-      {/* Cover Image Section */}
-      {club.cover_url && (
-        <div
-          onClick={onClick}
-          className="relative w-full h-24 cursor-pointer"
-        >
-          {/* Cover Image */}
+    <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100">
+      {/* Cover Image with Gradient Overlay */}
+      <div
+        onClick={onClick}
+        className="relative w-full h-28 cursor-pointer overflow-hidden"
+      >
+        {club.cover_url ? (
           <img
             src={club.cover_url}
             alt={`${club.name} cover`}
             className="w-full h-full object-cover"
             onError={(e) => {
-              // Hide image on error, show gradient background
               e.currentTarget.style.display = 'none';
             }}
           />
-          {/* Fallback gradient */}
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 -z-10" />
-        </div>
-      )}
-
-      {/* Content Card */}
-      <div
-        onClick={onClick}
-        className={`relative bg-white cursor-pointer ${club.cover_url ? '-mt-6 rounded-t-2xl' : ''}`}
-      >
-        {/* Logo - positioned at the edge when cover exists */}
-        <div className={`flex items-start gap-3 p-4 ${club.cover_url ? 'pt-0' : ''}`}>
-          {/* Logo Container */}
-          <div className={`shrink-0 ${club.cover_url ? '-mt-8' : ''}`}>
-            {club.logo_url ? (
-              <div className="w-14 h-14 rounded-xl overflow-hidden border-[3px] border-white shadow-lg bg-white">
-                <img
-                  src={club.logo_url}
-                  alt={`${club.name} logo`}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                    const parent = e.currentTarget.parentElement;
-                    if (parent) {
-                      parent.innerHTML = '<div class="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">' + club.name.charAt(0).toUpperCase() + '</div>';
-                    }
-                  }}
-                />
-              </div>
-            ) : (
-              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-lg border-[3px] border-white">
-                {club.name.charAt(0).toUpperCase()}
-              </div>
-            )}
-          </div>
-
-          {/* Name, Status, Address - all on white background */}
-          <div className={`flex-1 min-w-0 ${club.cover_url ? 'pt-2' : ''}`}>
-            <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-              <h3 className="font-semibold text-gray-900 truncate text-base">{club.name}</h3>
-              <span
-                className={`px-2 py-0.5 text-xs font-medium rounded-full shrink-0 ${getStatusColor(club.status)}`}
-              >
-                {getStatusLabel(club.status)}
-              </span>
-            </div>
-            <div className="flex items-center gap-1 text-sm text-gray-500">
-              <MapPin size={13} className="shrink-0" />
-              <span className="truncate">{club.address}</span>
-            </div>
-          </div>
-
-          {/* Arrow */}
-          <ChevronRight size={20} className={`text-gray-400 shrink-0 ${club.cover_url ? 'mt-2' : 'mt-1'}`} />
+        ) : null}
+        {/* Fallback/Overlay gradient */}
+        <div className={`absolute inset-0 ${club.cover_url ? 'bg-gradient-to-t from-black/70 via-black/20 to-transparent' : 'bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500'}`} />
+        
+        {/* Status Badge - Top Right */}
+        <div className="absolute top-3 right-3">
+          <span className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full shadow-lg ${getStatusColor(club.status)}`}>
+            {getStatusLabel(club.status)}
+          </span>
         </div>
 
-        {/* Details Section */}
-        <div className="px-4 pb-3 space-y-2.5">
-          {/* Role Badge */}
-          {userRoleInClub && (
-            <div>
-              <span className={`inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full ${
-                userRoleInClub === 'owner' 
-                  ? 'bg-purple-100 text-purple-700' 
-                  : userRoleInClub === 'admin'
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'bg-green-100 text-green-700'
-              }`}>
-                {userRoleInClub === 'owner' && t('profile.club.role.owner')}
-                {userRoleInClub === 'admin' && t('profile.club.role.admin')}
-                {userRoleInClub === 'coach' && t('profile.club.role.coach')}
-              </span>
-            </div>
-          )}
-
-          {/* Working Hours & Sections */}
-          <div className="flex items-center gap-4 text-sm text-gray-500">
-            <div className="flex items-center gap-1.5">
-              <Clock size={14} className="text-gray-400" />
-              <span>{club.working_hours_start && club.working_hours_end ? `${club.working_hours_start} - ${club.working_hours_end}` : (club.working_hours || '09:00 - 21:00')}</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Users size={14} className="text-gray-400" />
-              <span>{club.sections_count} {t('profile.club.sections')}</span>
-            </div>
+        {/* Role Badge - Top Left */}
+        {userRoleInClub && (
+          <div className="absolute top-3 left-3">
+            <span className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full shadow-lg ${getRoleBadgeStyle(userRoleInClub)}`}>
+              {userRoleInClub === 'owner' && t('profile.club.role.owner')}
+              {userRoleInClub === 'admin' && t('profile.club.role.admin')}
+              {userRoleInClub === 'coach' && t('profile.club.role.coach')}
+            </span>
           </div>
+        )}
 
-          {/* Tags */}
-          {club.tags && club.tags.length > 0 && (
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <Tag size={12} className="text-gray-400 shrink-0" />
-              {club.tags.slice(0, 3).map((tag, index) => (
-                <span
-                  key={index}
-                  className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded-full"
-                >
-                  {tag}
-                </span>
-              ))}
-              {club.tags.length > 3 && (
-                <span className="text-xs text-gray-400">
-                  +{club.tags.length - 3}
-                </span>
+        {/* Club Name on Cover */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 pt-8">
+          <div className="flex items-end gap-3">
+            {/* Logo */}
+            <div className="shrink-0">
+              {club.logo_url ? (
+                <div className="w-16 h-16 rounded-2xl overflow-hidden border-[3px] border-white shadow-xl bg-white">
+                  <img
+                    src={club.logo_url}
+                    alt={`${club.name} logo`}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      const parent = e.currentTarget.parentElement;
+                      if (parent) {
+                        parent.innerHTML = `<div class="w-full h-full bg-white flex items-center justify-center text-blue-600 font-bold text-xl">${club.name.charAt(0).toUpperCase()}</div>`;
+                      }
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center text-blue-600 font-bold text-xl shadow-xl border-[3px] border-white">
+                  {club.name.charAt(0).toUpperCase()}
+                </div>
               )}
             </div>
-          )}
-
-          {/* Payment warning */}
-          {isPaymentDue && !isExpired && (
-            <div className="flex items-center gap-2 p-2.5 bg-yellow-50 border border-yellow-100 rounded-lg">
-              <AlertTriangle size={16} className="text-yellow-600 shrink-0" />
-              <span className="text-sm text-yellow-700">
-                {t('profile.club.paymentDue', { days: club.membership?.days_until_expiry ?? 0 })}
-              </span>
+            
+            {/* Name and Location */}
+            <div className="flex-1 min-w-0 mb-1">
+              <h3 className="font-bold text-white text-lg truncate drop-shadow-lg">{club.name}</h3>
+              <div className="flex items-center gap-1 text-white/90 text-sm">
+                <MapPin size={12} className="shrink-0" />
+                <span className="truncate">{club.city}</span>
+              </div>
             </div>
-          )}
 
-          {isExpired && (
-            <div className="flex items-center gap-2 p-2.5 bg-red-50 border border-red-100 rounded-lg">
-              <AlertTriangle size={16} className="text-red-600 shrink-0" />
-              <span className="text-sm text-red-700">
-                {t('profile.club.paymentOverdue')}
-              </span>
-            </div>
-          )}
+            {/* Arrow */}
+            <ChevronRight size={24} className="text-white/80 shrink-0 mb-2" />
+          </div>
         </div>
+      </div>
+
+      {/* Content Section */}
+      <div onClick={onClick} className="cursor-pointer">
+        {/* Address */}
+        <div className="px-4 pt-3 pb-2">
+          <p className="text-sm text-gray-600 line-clamp-1">{club.address}</p>
+        </div>
+
+        {/* Stats Row */}
+        <div className="px-4 py-2 flex items-center gap-2 flex-wrap">
+          {/* Working Hours */}
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-50 rounded-lg">
+            <Clock size={14} className="text-blue-500" />
+            <span className="text-xs font-medium text-gray-700">
+              {club.working_hours_start && club.working_hours_end 
+                ? `${club.working_hours_start} - ${club.working_hours_end}` 
+                : (club.working_hours || '09:00 - 21:00')}
+            </span>
+          </div>
+          
+          {/* Sections */}
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-50 rounded-lg">
+            <Users size={14} className="text-purple-500" />
+            <span className="text-xs font-medium text-gray-700">{club.sections_count}</span>
+          </div>
+
+          {/* Students */}
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-50 rounded-lg">
+            <GraduationCap size={14} className="text-green-500" />
+            <span className="text-xs font-medium text-gray-700">{club.students_count}</span>
+          </div>
+        </div>
+
+        {/* Tags */}
+        {club.tags && club.tags.length > 0 && (
+          <div className="px-4 py-2 flex items-center gap-1.5 flex-wrap">
+            {club.tags.slice(0, 4).map((tag, index) => (
+              <span
+                key={index}
+                className="px-2 py-0.5 text-[10px] font-medium bg-blue-50 text-blue-600 rounded-full"
+              >
+                {tag}
+              </span>
+            ))}
+            {club.tags.length > 4 && (
+              <span className="text-[10px] text-gray-400 font-medium">
+                +{club.tags.length - 4}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Social Links & Phone */}
+        {(hasSocialLinks || club.phone) && (
+          <div className="px-4 py-2 flex items-center gap-2">
+            {club.phone && (
+              <a
+                href={`tel:${club.phone}`}
+                onClick={(e) => e.stopPropagation()}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"
+              >
+                <Phone size={12} className="text-gray-600" />
+                <span className="text-[10px] font-medium text-gray-600">{t('profile.club.call')}</span>
+              </a>
+            )}
+            {club.telegram_link && (
+              <a
+                href={club.telegram_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="p-2 bg-[#229ED9]/10 hover:bg-[#229ED9]/20 rounded-full transition-colors"
+              >
+                <TelegramIcon size={14} className="text-[#229ED9]" />
+              </a>
+            )}
+            {club.instagram_link && (
+              <a
+                href={club.instagram_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="p-2 bg-pink-50 hover:bg-pink-100 rounded-full transition-colors"
+              >
+                <InstagramIcon size={14} className="text-pink-500" />
+              </a>
+            )}
+            {club.whatsapp_link && (
+              <a
+                href={club.whatsapp_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="p-2 bg-green-50 hover:bg-green-100 rounded-full transition-colors"
+              >
+                <WhatsAppIcon size={14} className="text-green-500" />
+              </a>
+            )}
+          </div>
+        )}
+
+        {/* Payment warnings */}
+        {isPaymentDue && !isExpired && (
+          <div className="mx-4 mb-3 flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+            <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+              <AlertTriangle size={16} className="text-amber-600" />
+            </div>
+            <span className="text-sm text-amber-700 font-medium">
+              {t('profile.club.paymentDue', { days: club.membership?.days_until_expiry ?? 0 })}
+            </span>
+          </div>
+        )}
+
+        {isExpired && (
+          <div className="mx-4 mb-3 flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl">
+            <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+              <AlertTriangle size={16} className="text-red-600" />
+            </div>
+            <span className="text-sm text-red-700 font-medium">
+              {t('profile.club.paymentOverdue')}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Payment Button */}
@@ -219,7 +292,7 @@ export const ClubCard: React.FC<ClubCardProps> = ({ club, clubRoles, currentUser
               e.stopPropagation();
               onPayment();
             }}
-            className="w-full py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium text-sm"
+            className="w-full py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 font-semibold text-sm shadow-lg shadow-blue-500/25"
           >
             {t('profile.club.payNow')}
           </button>

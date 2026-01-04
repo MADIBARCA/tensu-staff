@@ -478,57 +478,59 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
           </div>
 
           {/* Logo Upload */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('profile.createClub.logoUrl')}
-              <span className="text-xs font-normal text-gray-500 ml-1">{t('profile.createClub.logoRatio')}</span>
+          <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-4">
+            <label className="block text-sm font-semibold text-gray-800 mb-3">
+              {t('profile.createClub.logo')}
+              <span className="text-xs font-normal text-gray-500 ml-2">{t('profile.createClub.logoRatio')}</span>
             </label>
-            {formData.logo_url ? (
-              <div className="space-y-3">
-                <div className="relative group">
-                  <div className="relative w-32 h-32 mx-auto border-2 border-gray-200 rounded-xl overflow-hidden bg-gray-50 shadow-sm">
-                    <img
-                      src={formData.logo_url}
-                      alt="Logo preview"
-                      className="w-full h-full object-cover"
-                    />
-                    {logoUploadProgress > 0 && logoUploadProgress < 100 && (
-                      <div className="absolute inset-0 bg-black bg-opacity-60 flex flex-col items-center justify-center backdrop-blur-sm">
-                        <Loader2 size={28} className="animate-spin text-white mb-2" />
-                        <div className="text-white text-sm font-semibold">{logoUploadProgress}%</div>
-                        <div className="w-20 h-1 bg-white bg-opacity-30 rounded-full mt-2 overflow-hidden">
-                          <div 
-                            className="h-full bg-white rounded-full transition-all duration-300"
-                            style={{ width: `${logoUploadProgress}%` }}
-                          />
+            <div className="flex items-center gap-4">
+              {/* Logo Preview Circle */}
+              <div className="relative">
+                {formData.logo_url ? (
+                  <div className="relative">
+                    <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-xl bg-white">
+                      <img
+                        src={formData.logo_url}
+                        alt="Logo preview"
+                        className="w-full h-full object-cover"
+                      />
+                      {(isOptimizingLogo || (logoUploadProgress > 0 && logoUploadProgress < 100)) && (
+                        <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center rounded-full">
+                          <Loader2 size={24} className="animate-spin text-white" />
+                          {logoUploadProgress > 0 && (
+                            <span className="text-white text-xs font-bold mt-1">{logoUploadProgress}%</span>
+                          )}
                         </div>
-                      </div>
+                      )}
+                    </div>
+                    {logoUploadProgress === 100 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveImage('logo')}
+                        disabled={isDisabled}
+                        className="absolute -top-1 -right-1 w-7 h-7 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg transition-colors"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     )}
                   </div>
-                  {logoUploadProgress === 0 && (
-                    <button
-                      type="button"
-                      onClick={() => logoInputRef.current?.click()}
-                      disabled={isDisabled}
-                      className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-50"
-                      title={t('profile.createClub.changeLogo')}
-                    >
-                      <Upload size={16} className="text-gray-600" />
-                    </button>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleRemoveImage('logo')}
-                  disabled={isDisabled}
-                  className="w-full px-4 py-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  <Trash2 size={16} />
-                  {t('profile.createClub.removeLogo')}
-                </button>
-              </div>
-            ) : (
-              <div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => logoInputRef.current?.click()}
+                    disabled={isDisabled}
+                    className="w-24 h-24 rounded-full border-4 border-dashed border-gray-300 bg-white hover:border-blue-400 hover:bg-blue-50 flex flex-col items-center justify-center gap-1 transition-all disabled:opacity-50"
+                  >
+                    {isOptimizingLogo ? (
+                      <Loader2 size={24} className="animate-spin text-blue-500" />
+                    ) : (
+                      <>
+                        <Upload size={20} className="text-gray-400" />
+                        <span className="text-[10px] text-gray-400 font-medium">1:1</span>
+                      </>
+                    )}
+                  </button>
+                )}
                 <input
                   ref={logoInputRef}
                   type="file"
@@ -540,177 +542,132 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
                   disabled={isDisabled}
                   className="hidden"
                 />
-                <button
-                  type="button"
-                  onClick={() => logoInputRef.current?.click()}
-                  disabled={isDisabled}
-                  className={`w-full border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center gap-3 transition-all ${
-                    logoUploadError
-                      ? 'border-red-300 bg-red-50'
-                      : logoUploadProgress > 0 && logoUploadProgress < 100
-                      ? 'border-blue-400 bg-blue-50'
-                      : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50/30'
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
-                >
-                  {isOptimizingLogo ? (
-                    <>
-                      <Loader2 size={32} className="animate-spin text-blue-500" />
-                      <div className="text-center">
-                        <div className="text-sm font-medium text-gray-700 mb-1">{t('profile.createClub.optimizingLogo')}</div>
-                        <div className="text-xs text-gray-500">{t('profile.createClub.optimizingHint')}</div>
-                      </div>
-                    </>
-                  ) : logoUploadProgress > 0 && logoUploadProgress < 100 ? (
-                    <>
-                      <Loader2 size={32} className="animate-spin text-blue-500" />
-                      <div className="text-center">
-                        <div className="text-sm font-medium text-gray-700 mb-1">{t('profile.createClub.uploadingLogo')}</div>
-                        <div className="text-xs text-gray-500">{logoUploadProgress}% {t('profile.createClub.complete')}</div>
-                      </div>
-                      <div className="w-full max-w-xs h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-blue-500 rounded-full transition-all duration-300"
-                          style={{ width: `${logoUploadProgress}%` }}
-                        />
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="p-4 bg-white rounded-full border-2 border-gray-200">
-                        <Upload size={24} className="text-gray-400" />
-                      </div>
-                      <div className="text-center">
-                        <div className="text-sm font-medium text-gray-700 mb-1">{t('profile.createClub.uploadLogo')}</div>
-                        <div className="text-xs text-gray-500">{t('profile.createClub.uploadHint')}</div>
-                        <div className="text-xs text-gray-400 mt-1">{t('profile.createClub.logoFormat')}</div>
-                      </div>
-                    </>
-                  )}
-                </button>
-                {logoUploadError && (
-                  <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-red-600 text-xs font-medium">{logoUploadError}</p>
-                  </div>
+              </div>
+              
+              {/* Info & Actions */}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-gray-600 mb-2">{t('profile.createClub.uploadHint')}</p>
+                <p className="text-xs text-gray-400">{t('profile.createClub.logoFormat')}</p>
+                {formData.logo_url && logoUploadProgress === 100 && (
+                  <button
+                    type="button"
+                    onClick={() => logoInputRef.current?.click()}
+                    disabled={isDisabled}
+                    className="mt-2 text-xs text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    {t('profile.createClub.changeLogo')}
+                  </button>
                 )}
+              </div>
+            </div>
+            {logoUploadError && (
+              <div className="mt-3 p-2 bg-red-100 border border-red-200 rounded-lg">
+                <p className="text-red-600 text-xs font-medium">{logoUploadError}</p>
               </div>
             )}
           </div>
 
           {/* Cover Upload */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('profile.createClub.coverUrl')}
-              <span className="text-xs font-normal text-gray-500 ml-1">{t('profile.createClub.coverRatio')}</span>
+          <div className="bg-gradient-to-br from-pink-50 to-orange-50 rounded-2xl p-4">
+            <label className="block text-sm font-semibold text-gray-800 mb-3">
+              {t('profile.createClub.cover')}
+              <span className="text-xs font-normal text-gray-500 ml-2">{t('profile.createClub.coverRatio')}</span>
             </label>
+            <input
+              ref={coverInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleFileSelect(file, 'cover');
+              }}
+              disabled={isDisabled}
+              className="hidden"
+            />
             {formData.cover_url ? (
               <div className="space-y-3">
                 <div className="relative group">
-                  <div className="relative w-full h-48 border-2 border-gray-200 rounded-xl overflow-hidden bg-gray-50 shadow-sm">
+                  <div className="relative w-full aspect-video rounded-xl overflow-hidden border-2 border-white shadow-xl bg-gray-100">
                     <img
                       src={formData.cover_url}
                       alt="Cover preview"
                       className="w-full h-full object-cover"
                     />
-                    {coverUploadProgress > 0 && coverUploadProgress < 100 && (
-                      <div className="absolute inset-0 bg-black bg-opacity-60 flex flex-col items-center justify-center backdrop-blur-sm">
+                    {(isOptimizingCover || (coverUploadProgress > 0 && coverUploadProgress < 100)) && (
+                      <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center">
                         <Loader2 size={32} className="animate-spin text-white mb-2" />
-                        <div className="text-white text-sm font-semibold">{coverUploadProgress}%</div>
-                        <div className="w-32 h-1.5 bg-white bg-opacity-30 rounded-full mt-2 overflow-hidden">
-                          <div 
-                            className="h-full bg-white rounded-full transition-all duration-300"
-                            style={{ width: `${coverUploadProgress}%` }}
-                          />
-                        </div>
+                        <div className="text-white text-sm font-bold">{isOptimizingCover ? t('profile.createClub.optimizingCover') : `${coverUploadProgress}%`}</div>
+                        {coverUploadProgress > 0 && (
+                          <div className="w-32 h-1.5 bg-white/30 rounded-full mt-2 overflow-hidden">
+                            <div 
+                              className="h-full bg-white rounded-full transition-all duration-300"
+                              style={{ width: `${coverUploadProgress}%` }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {coverUploadProgress === 100 && (
+                      <div className="absolute top-2 right-2 flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => coverInputRef.current?.click()}
+                          disabled={isDisabled}
+                          className="p-2 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg hover:bg-white transition-colors"
+                        >
+                          <Upload size={16} className="text-gray-600" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage('cover')}
+                          disabled={isDisabled}
+                          className="p-2 bg-red-500/90 backdrop-blur-sm rounded-lg shadow-lg hover:bg-red-600 transition-colors"
+                        >
+                          <Trash2 size={16} className="text-white" />
+                        </button>
                       </div>
                     )}
                   </div>
-                  {coverUploadProgress === 0 && (
-                    <button
-                      type="button"
-                      onClick={() => coverInputRef.current?.click()}
-                      disabled={isDisabled}
-                      className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-50"
-                      title={t('profile.createClub.changeCover')}
-                    >
-                      <Upload size={16} className="text-gray-600" />
-                    </button>
-                  )}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleRemoveImage('cover')}
-                  disabled={isDisabled}
-                  className="w-full px-4 py-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  <Trash2 size={16} />
-                  {t('profile.createClub.removeCover')}
-                </button>
+                <p className="text-xs text-gray-500 text-center">{t('profile.createClub.coverFormat')}</p>
               </div>
             ) : (
-              <div>
-                <input
-                  ref={coverInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleFileSelect(file, 'cover');
-                  }}
-                  disabled={isDisabled}
-                  className="hidden"
-                />
-                <button
-                  type="button"
-                  onClick={() => coverInputRef.current?.click()}
-                  disabled={isDisabled}
-                  className={`w-full border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center gap-3 transition-all ${
-                    coverUploadError
-                      ? 'border-red-300 bg-red-50'
-                      : coverUploadProgress > 0 && coverUploadProgress < 100
-                      ? 'border-blue-400 bg-blue-50'
-                      : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50/30'
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
-                >
-                  {isOptimizingCover ? (
-                    <>
-                      <Loader2 size={32} className="animate-spin text-blue-500" />
-                      <div className="text-center">
-                        <div className="text-sm font-medium text-gray-700 mb-1">{t('profile.createClub.optimizingCover')}</div>
-                        <div className="text-xs text-gray-500">{t('profile.createClub.optimizingHint')}</div>
-                      </div>
-                    </>
-                  ) : coverUploadProgress > 0 && coverUploadProgress < 100 ? (
-                    <>
-                      <Loader2 size={32} className="animate-spin text-blue-500" />
-                      <div className="text-center">
-                        <div className="text-sm font-medium text-gray-700 mb-1">{t('profile.createClub.uploadingCover')}</div>
-                        <div className="text-xs text-gray-500">{coverUploadProgress}% {t('profile.createClub.complete')}</div>
-                      </div>
-                      <div className="w-full max-w-xs h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-blue-500 rounded-full transition-all duration-300"
-                          style={{ width: `${coverUploadProgress}%` }}
-                        />
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="p-4 bg-white rounded-full border-2 border-gray-200">
-                        <ImageIcon size={28} className="text-gray-400" />
-                      </div>
-                      <div className="text-center">
-                        <div className="text-sm font-medium text-gray-700 mb-1">{t('profile.createClub.uploadCover')}</div>
-                        <div className="text-xs text-gray-500">{t('profile.createClub.uploadHint')}</div>
-                        <div className="text-xs text-gray-400 mt-1">{t('profile.createClub.coverFormat')}</div>
-                      </div>
-                    </>
-                  )}
-                </button>
-                {coverUploadError && (
-                  <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-red-600 text-xs font-medium">{coverUploadError}</p>
-                  </div>
+              <button
+                type="button"
+                onClick={() => coverInputRef.current?.click()}
+                disabled={isDisabled}
+                className={`w-full aspect-video border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-2 transition-all ${
+                  coverUploadError
+                    ? 'border-red-300 bg-red-50'
+                    : isOptimizingCover || (coverUploadProgress > 0 && coverUploadProgress < 100)
+                    ? 'border-blue-400 bg-blue-50'
+                    : 'border-gray-300 bg-white/50 hover:border-blue-400 hover:bg-white'
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
+                {isOptimizingCover ? (
+                  <>
+                    <Loader2 size={28} className="animate-spin text-blue-500" />
+                    <span className="text-sm text-gray-600">{t('profile.createClub.optimizingCover')}</span>
+                  </>
+                ) : coverUploadProgress > 0 && coverUploadProgress < 100 ? (
+                  <>
+                    <Loader2 size={28} className="animate-spin text-blue-500" />
+                    <span className="text-sm text-gray-600">{coverUploadProgress}%</span>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-14 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                      <ImageIcon size={20} className="text-white" />
+                    </div>
+                    <span className="text-sm font-medium text-gray-700">{t('profile.createClub.uploadCover')}</span>
+                    <span className="text-xs text-gray-400">16:9</span>
+                  </>
                 )}
+              </button>
+            )}
+            {coverUploadError && (
+              <div className="mt-3 p-2 bg-red-100 border border-red-200 rounded-lg">
+                <p className="text-red-600 text-xs font-medium">{coverUploadError}</p>
               </div>
             )}
           </div>
