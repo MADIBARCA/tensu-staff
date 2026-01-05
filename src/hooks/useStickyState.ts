@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 /**
  * Hook to detect when a sticky element becomes active using IntersectionObserver.
@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from 'react';
  * @returns Object containing:
  *   - isSticky: boolean indicating if sticky is active
  *   - sentinelRef: ref to attach to the sentinel element (place before sticky element)
- *   - stickyRef: ref to attach to the sticky element
+ *   - stickyRef: ref to attach to the sticky element (supports div, header, and other HTMLElements)
  */
 export function useStickyState(enabled: boolean = true) {
   const [isSticky, setIsSticky] = useState(false);
@@ -48,6 +48,6 @@ export function useStickyState(enabled: boolean = true) {
   return {
     isSticky,
     sentinelRef,
-    stickyRef,
+    stickyRef: stickyRef as React.RefObject<HTMLElement>,
   };
 }
