@@ -42,7 +42,7 @@ export const PayMembershipModal: React.FC<PayMembershipModalProps> = ({
 
   if (isSuccess) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-30 z-[60] flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
         <div className="bg-white w-full max-w-sm rounded-xl p-6 text-center">
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Check size={32} className="text-green-600" />

@@ -12,7 +12,7 @@ export const ParticipantsModal: React.FC<ParticipantsModalProps> = ({ training, 
   const { t } = useI18n();
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end sm:items-center justify-center">
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center">
       <div className="bg-white w-full sm:max-w-md sm:rounded-xl rounded-t-xl max-h-[70vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">

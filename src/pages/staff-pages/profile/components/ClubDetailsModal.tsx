@@ -47,7 +47,7 @@ export const ClubDetailsModal: React.FC<ClubDetailsModalProps> = ({ onClose }) =
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-30 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
         <div className="bg-white w-full max-w-md rounded-xl p-6">
           <div className="text-center py-8">Загрузка...</div>
         </div>

@@ -30,7 +30,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-30 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
       <div className="bg-white w-full max-w-md rounded-xl p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900">Редактировать профиль</h2>

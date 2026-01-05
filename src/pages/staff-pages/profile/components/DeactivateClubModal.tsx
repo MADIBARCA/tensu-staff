@@ -36,7 +36,7 @@ export const DeactivateClubModal: React.FC<DeactivateClubModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-30 z-[60] flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
       <div className="bg-white w-full max-w-sm rounded-xl p-6">
         {/* Icon */}
         <div className="flex items-center justify-center mb-4">

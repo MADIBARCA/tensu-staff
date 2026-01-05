@@ -195,7 +195,7 @@ export const EditTrainingModal: React.FC<EditTrainingModalProps> = ({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black bg-opacity-30 z-50">
+      <div className="fixed inset-0 bg-black/50 z-50">
         <div className="bg-white w-full h-full overflow-hidden flex flex-col">
           {/* Header */}
           <div className="p-4 border-b border-gray-200 mt-20">
@@ -449,7 +449,7 @@ export const EditTrainingModal: React.FC<EditTrainingModalProps> = ({
 
       {/* Series Dialog */}
       {showSeriesDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-sm rounded-2xl p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               {t('training.series.dialog.title')}
@@ -481,7 +481,7 @@ export const EditTrainingModal: React.FC<EditTrainingModalProps> = ({
 
       {/* Cancel Dialog */}
       {showCancelDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-sm rounded-2xl p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               {t('training.cancel.dialog.title')}

@@ -175,7 +175,7 @@ export const ClubDetailsModalNew: React.FC<ClubDetailsModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-30 z-50">
+    <div className="fixed inset-0 bg-black/50 z-50">
       <div className="bg-white w-full h-full overflow-hidden flex flex-col">
         {/* Header */}
         <div className="p-4 border-b border-gray-200 mt-20">

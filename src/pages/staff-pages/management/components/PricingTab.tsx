@@ -122,7 +122,7 @@ export const PricingTab: React.FC<PricingTabProps> = ({
 
       {/* Delete Confirmation */}
       {deletingTariff && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-sm rounded-xl p-6">
             <div className="flex items-center justify-center mb-4">
               <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
