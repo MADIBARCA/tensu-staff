@@ -97,7 +97,8 @@ export const Layout: React.FC<LayoutProps> = ({
       {title && (
         <header className="bg-white border-b border-gray-100 sticky top-0 z-20">
           <div className="px-4 py-4">
-            <div className={`flex items-center justify-between ${isScrolled ? 'mt-20' : ''}`}>
+            <div className={`flex items-center justify-between transition-transform duration-300 ease-out will-change-transform 
+              ${isScrolled ? 'translate-y-20' : 'translate-y-0'}`}>
               <div className="flex items-center gap-3">
                 {showBackButton && (
                   <button
