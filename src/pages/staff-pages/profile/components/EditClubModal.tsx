@@ -85,10 +85,9 @@ export const EditClubModal: React.FC<EditClubModalProps> = ({
       setIsScrolled(scrollContainer.scrollTop > 0);
     };
 
+    scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
     // Check initial scroll position
     handleScroll();
-
-    scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
 
     return () => {
       scrollContainer.removeEventListener('scroll', handleScroll);
@@ -392,7 +391,7 @@ export const EditClubModal: React.FC<EditClubModalProps> = ({
 
   return (
     <div id="edit-club-modal-scroll" className="fixed inset-0 z-50 bg-white overflow-y-auto">
-      <div className="min-h-full w-full max-w-md mx-auto flex flex-col">
+      <div className="min-h-full w-full max-w-md mx-auto flex flex-col pt-20">
         {/* Header */}
         <div className={clsx(
           "sticky top-0 bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200",
