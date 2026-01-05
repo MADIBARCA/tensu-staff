@@ -12,7 +12,6 @@ import {
   Bell,
 } from "lucide-react";
 import { notificationsApi } from "@/functions/axios/axiosFunctions";
-import { useStickyState } from "@/hooks/useStickyState";
 
 interface NavItem {
   icon: LucideIcon;
@@ -37,6 +36,7 @@ export const Layout: React.FC<LayoutProps> = ({
   const location = useLocation();
   const { t } = useI18n();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isScrolled, setIsScrolled] = useState(false);
 
   const fetchUnreadCount = useCallback(async () => {
     try {
@@ -61,6 +61,22 @@ export const Layout: React.FC<LayoutProps> = ({
     return () => clearInterval(interval);
   }, [fetchUnreadCount]);
 
+  // Scroll detection for sticky header
+  useEffect(() => {
+    if (!title) return; // Only track scroll if header exists
+
+    const handleScroll = () => {
+      const scrollY = window.scrollY || document.documentElement.scrollTop;
+      setIsScrolled(scrollY > 0);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    // Check initial scroll position
+    handleScroll();
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [title]);
+
   // Refetch when navigating away from notifications page
   useEffect(() => {
     if (location.pathname !== '/staff/notifications') {
@@ -75,21 +91,11 @@ export const Layout: React.FC<LayoutProps> = ({
     { icon: User, label: t('nav.profile'), path: "/staff/profile" },
   ];
 
-  const { isSticky, sentinelRef, stickyRef } = useStickyState(!!title);
-
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Sentinel for sticky detection */}
-      {title && <div ref={sentinelRef} className="h-0" />}
-      
       {/* Header */}
       {title && (
-        <header 
-          ref={stickyRef}
-          className={`bg-white border-b border-gray-100 sticky top-0 z-20 transition-all duration-200 ${
-            isSticky ? 'mt-20' : ''
-          }`}
-        >
+        <header className="bg-white border-b border-gray-100 sticky top-0 z-20">
           <div className="px-4 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -128,7 +134,7 @@ export const Layout: React.FC<LayoutProps> = ({
       )}
 
       {/* Main Content */}
-      <main className="flex-1 pb-20">{children}</main>
+      <main className={`flex-1 pb-20 ${title && isScrolled ? 'mt-20' : ''}`}>{children}</main>
 
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-20">

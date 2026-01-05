@@ -10,7 +10,6 @@ import { ImageCropModal } from '@/components/ImageCropModal';
 import { uploadOptimizedBlob, processImageWithCrop, type ClubImageUploadResult } from '@/lib/storageUpload';
 import { optimizeImage } from '@/lib/imageOptimization';
 import type { Area } from 'react-easy-crop';
-import { useStickyState } from '@/hooks/useStickyState';
 
 interface CreateClubModalProps {
   onClose: () => void;
@@ -331,21 +330,11 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
 
   const isDisabled = loading || isSubmitting || isOptimizingLogo || isOptimizingCover || (logoUploadProgress > 0 && logoUploadProgress < 100) || (coverUploadProgress > 0 && coverUploadProgress < 100);
 
-  const { isSticky, sentinelRef, stickyRef } = useStickyState(true);
-
   return (
     <div className="fixed inset-0 z-50 bg-white overflow-y-auto">
       <div className="min-h-full w-full max-w-md mx-auto flex flex-col">
-        {/* Sentinel for sticky detection */}
-        <div ref={sentinelRef} className="h-0" />
-        
         {/* Header */}
-        <div 
-          ref={stickyRef as React.Ref<HTMLDivElement>}
-          className={`sticky top-0 bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200 transition-all duration-200 ${
-            isSticky ? 'mt-20' : ''
-          }`}
-        >
+        <div className="sticky top-0 bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200 mt-20">
           <h2 className="text-lg font-semibold text-gray-900">
             {t('profile.createClub.title')}
           </h2>
@@ -542,7 +531,7 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
                     )}
                   </button>
                 )}
-                <input
+            <input
                   ref={logoInputRef}
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
@@ -550,11 +539,11 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
                     const file = e.target.files?.[0];
                     if (file) handleFileSelect(file, 'logo');
                   }}
-                  disabled={isDisabled}
+              disabled={isDisabled}
                   className="hidden"
-                />
-              </div>
-              
+            />
+          </div>
+
               {/* Info & Actions */}
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-gray-600 mb-2">{t('profile.createClub.uploadHint')}</p>
@@ -692,19 +681,19 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
             {/* Telegram */}
             <div className="flex items-center gap-2">
               <TelegramIcon size={18} className="text-blue-500 shrink-0" />
-              <input
-                type="url"
-                value={formData.telegram_link}
+            <input
+              type="url"
+              value={formData.telegram_link}
                 onChange={(e) => {
                   setFormData({ ...formData, telegram_link: e.target.value });
                   setErrors({ ...errors, telegram_link: '' });
                 }}
-                disabled={isDisabled}
+              disabled={isDisabled}
                 className={`flex-1 border rounded-lg p-2.5 text-sm text-gray-900 caret-black disabled:bg-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.telegram_link ? 'border-red-500' : 'border-gray-200'
-                }`}
+                errors.telegram_link ? 'border-red-500' : 'border-gray-200'
+              }`}
                 placeholder="https://t.me/your_channel"
-              />
+            />
             </div>
             {errors.telegram_link && (
               <p className="text-red-500 text-xs ml-7">{errors.telegram_link}</p>
@@ -713,19 +702,19 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
             {/* Instagram */}
             <div className="flex items-center gap-2">
               <InstagramIcon size={18} className="text-pink-500 shrink-0" />
-              <input
-                type="url"
-                value={formData.instagram_link}
+            <input
+              type="url"
+              value={formData.instagram_link}
                 onChange={(e) => {
                   setFormData({ ...formData, instagram_link: e.target.value });
                   setErrors({ ...errors, instagram_link: '' });
                 }}
-                disabled={isDisabled}
+              disabled={isDisabled}
                 className={`flex-1 border rounded-lg p-2.5 text-sm text-gray-900 caret-black disabled:bg-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.instagram_link ? 'border-red-500' : 'border-gray-200'
-                }`}
+                errors.instagram_link ? 'border-red-500' : 'border-gray-200'
+              }`}
                 placeholder="https://instagram.com/your_page"
-              />
+            />
             </div>
             {errors.instagram_link && (
               <p className="text-red-500 text-xs ml-7">{errors.instagram_link}</p>
@@ -734,14 +723,14 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
             {/* WhatsApp */}
             <div className="flex items-center gap-2">
               <WhatsAppIcon size={18} className="text-green-500 shrink-0" />
-              <input
-                type="text"
-                value={formData.whatsapp_link}
-                onChange={(e) => setFormData({ ...formData, whatsapp_link: e.target.value })}
-                disabled={isDisabled}
+            <input
+              type="text"
+              value={formData.whatsapp_link}
+              onChange={(e) => setFormData({ ...formData, whatsapp_link: e.target.value })}
+              disabled={isDisabled}
                 className="flex-1 border border-gray-200 rounded-lg p-2.5 text-sm text-gray-900 caret-black disabled:bg-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="https://wa.me/77001234567"
-              />
+            />
             </div>
           </div>
 

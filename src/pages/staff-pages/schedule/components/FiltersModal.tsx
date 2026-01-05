@@ -2,7 +2,6 @@ import React from 'react';
 import { useI18n } from '@/i18n/i18n';
 import { X, Check } from 'lucide-react';
 import type { Club, Trainer, Filters } from '../SchedulePage';
-import { useStickyState } from '@/hooks/useStickyState';
 
 interface FiltersModalProps {
   clubs: Club[];
@@ -54,21 +53,11 @@ export const FiltersModal: React.FC<FiltersModalProps> = ({
     });
   };
 
-  const { isSticky, sentinelRef, stickyRef } = useStickyState(true);
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end sm:items-center justify-center">
       <div className="bg-white w-full sm:max-w-md sm:rounded-xl rounded-t-xl max-h-[80vh] overflow-hidden flex flex-col">
-        {/* Sentinel for sticky detection */}
-        <div ref={sentinelRef} className="h-0" />
-        
         {/* Header */}
-        <div 
-          ref={stickyRef as React.Ref<HTMLDivElement>}
-          className={`sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between transition-all duration-200 ${
-            isSticky ? 'mt-20' : ''
-          }`}
-        >
+        <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900">{t('schedule.filters')}</h2>
           <button
             onClick={onClose}

@@ -5,7 +5,6 @@ import { PhoneInput } from '@/components/PhoneInput';
 import { isValidPhoneNumber } from 'libphonenumber-js';
 import type { CreateEmployeeData, Club, EmployeeRole, Employee } from '../types';
 import type { ClubWithRole, CreateStaffResponse } from '@/functions/axios/responses';
-import { useStickyState } from '@/hooks/useStickyState';
 
 interface AddEmployeeModalProps {
   clubs: Club[];
@@ -143,21 +142,11 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
     }
   };
 
-  const { isSticky, sentinelRef, stickyRef } = useStickyState(true);
-
   return (
     <div className="fixed inset-0 z-50 bg-white overflow-y-auto">
       <div className="min-h-full w-full max-w-md mx-auto flex flex-col">
-        {/* Sentinel for sticky detection */}
-        <div ref={sentinelRef} className="h-0" />
-        
         {/* Header with mt-20 to avoid Telegram UI buttons */}
-        <div 
-          ref={stickyRef as React.Ref<HTMLDivElement>}
-          className={`sticky top-0 bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200 transition-all duration-200 ${
-            isSticky ? 'mt-20' : ''
-          }`}
-        >
+        <div className="sticky top-0 bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200 mt-20">
           <h2 className="text-lg font-semibold text-gray-900">
             {t('management.employees.addTitle')}
           </h2>
