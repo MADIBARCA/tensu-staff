@@ -800,7 +800,7 @@ export const EditClubModal: React.FC<EditClubModalProps> = ({
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
-                  {tag}
+                  {t(`profile.createClub.tags.${tag}`)}
                 </button>
               ))}
             </div>

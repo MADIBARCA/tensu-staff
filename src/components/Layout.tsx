@@ -78,7 +78,7 @@ export const Layout: React.FC<LayoutProps> = ({
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
       {title && (
-        <header className="bg-white border-b border-gray-100 sticky top-0 z-20">
+        <header className="bg-white border-b border-gray-100 sticky z-20">
           <div className="px-4 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
