@@ -3,6 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <script>
+      (function () {
+        const tg = window.Telegram?.WebApp;
+        if (!tg) return;
+
+        try {
+          tg.ready();
+          tg.collapse();
+          setTimeout(() => tg.collapse(), 50);
+        } catch (e) {}
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tensu Staff</title>
   </head>
