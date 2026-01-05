@@ -289,7 +289,7 @@ export const SettingsSection: React.FC = () => {
 
       {/* Language Selection Modal */}
       {showLangModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 z-50 flex items-end">
+        <div className="fixed inset-0 bg-black/50 z-40 flex items-end">
           <div className="bg-white w-full rounded-t-xl p-4 pb-8">
             <h3 className="text-lg font-semibold mb-4">{t('language.change')}</h3>
             <div className="space-y-2">
