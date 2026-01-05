@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import clsx from 'clsx';
 import { X, Trash2, AlertTriangle, Loader2, Crown, Shield, Dumbbell, Clock, UserMinus } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import { teamApi } from '@/functions/axios/axiosFunctions';
@@ -40,6 +41,24 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
 }) => {
   const { t } = useI18n();
   const { initDataRaw } = useTelegram();
+  const [isScrolled, setIsScrolled] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Scroll detection for sticky header
+  useEffect(() => {
+    const modalElement = modalRef.current;
+    if (!modalElement) return;
+
+    const handleScroll = () => {
+      const scrollY = modalElement.scrollTop;
+      setIsScrolled(scrollY > 0);
+    };
+
+    modalElement.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); // Check initial scroll position
+
+    return () => modalElement.removeEventListener('scroll', handleScroll);
+  }, []);
   
   // Check if this is a pending invitation
   const isPendingInvitation = employee.invitation_id && employee.status === 'pending' && !employee.first_name;
@@ -237,10 +256,14 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-white overflow-y-auto">
+    <div ref={modalRef} className="fixed inset-0 z-50 bg-white overflow-y-auto">
       <div className="min-h-full w-full max-w-md mx-auto flex flex-col">
-        {/* Header with mt-20 to avoid Telegram UI buttons */}
-        <div className="sticky top-0 bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200 mt-20">
+        {/* Header */}
+        <div className={clsx(
+          "sticky top-0 bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200 overflow-hidden",
+          "transition-[padding-top] duration-300 ease-out will-change-[padding-top]",
+          isScrolled ? "pt-20" : "pt-0"
+        )}>
           <h2 className="text-lg font-semibold text-gray-900">
             {t('management.employees.editTitle')}
           </h2>

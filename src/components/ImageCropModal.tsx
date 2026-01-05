@@ -1,4 +1,5 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import clsx from 'clsx';
 import { X, Check, ZoomIn, ZoomOut, RotateCcw, Image, Maximize2 } from 'lucide-react';
 import Cropper from 'react-easy-crop';
 import type { Area } from 'react-easy-crop';
@@ -20,6 +21,25 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
   kind = 'logo',
 }) => {
   const { t } = useI18n();
+  const [isScrolled, setIsScrolled] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Scroll detection for sticky header (though this modal typically doesn't scroll)
+  useEffect(() => {
+    const modalElement = modalRef.current;
+    if (!modalElement) return;
+
+    const handleScroll = () => {
+      const scrollY = modalElement.scrollTop;
+      setIsScrolled(scrollY > 0);
+    };
+
+    modalElement.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); // Check initial scroll position
+
+    return () => modalElement.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
@@ -58,9 +78,13 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
   const aspectLabel = kind === 'logo' ? '1:1' : '16:9';
 
   return (
-    <div className="fixed inset-0 z-[60] bg-black/90 flex flex-col">
+    <div ref={modalRef} className="fixed inset-0 z-[60] bg-black/90 flex flex-col overflow-y-auto">
       {/* Header */}
-      <div className="shrink-0 flex items-center justify-between px-4 py-3 bg-black/50 backdrop-blur-sm mt-20">
+      <div className={clsx(
+        "shrink-0 flex items-center justify-between px-4 py-3 bg-black/50 backdrop-blur-sm overflow-hidden",
+        "transition-[padding-top] duration-300 ease-out will-change-[padding-top]",
+        isScrolled ? "pt-20" : "pt-0"
+      )}>
         <button
           onClick={onClose}
           className="p-2 text-white/70 hover:text-white transition-colors rounded-full hover:bg-white/10"

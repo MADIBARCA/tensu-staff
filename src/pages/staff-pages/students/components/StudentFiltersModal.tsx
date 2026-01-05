@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import clsx from 'clsx';
 import { X, Check, Building2 } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import type { Trainer, Group, StudentFilters, MembershipStatus, Club } from '../types';
@@ -21,6 +22,25 @@ export const StudentFiltersModal: React.FC<StudentFiltersModalProps> = ({
   onClose,
 }) => {
   const { t } = useI18n();
+  const [isScrolled, setIsScrolled] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  // Scroll detection for sticky header
+  useEffect(() => {
+    const contentElement = contentRef.current;
+    if (!contentElement) return;
+
+    const handleScroll = () => {
+      const scrollY = contentElement.scrollTop;
+      setIsScrolled(scrollY > 0);
+    };
+
+    contentElement.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); // Check initial scroll position
+
+    return () => contentElement.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const [localFilters, setLocalFilters] = useState<StudentFilters>(initialFilters);
 
   const statusOptions: { value: MembershipStatus | 'all'; label: string }[] = [
@@ -85,7 +105,11 @@ export const StudentFiltersModal: React.FC<StudentFiltersModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="bg-white w-full max-w-md rounded-xl max-h-screen overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 mt-20">
+        <div className={clsx(
+          "flex items-center justify-between p-4 border-b border-gray-200 overflow-hidden",
+          "transition-[padding-top] duration-300 ease-out will-change-[padding-top]",
+          isScrolled ? "pt-20" : "pt-0"
+        )}>
           <h2 className="text-lg font-semibold text-gray-900">
             {t('students.filter.title')}
           </h2>
@@ -97,7 +121,7 @@ export const StudentFiltersModal: React.FC<StudentFiltersModalProps> = ({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-8">
+        <div ref={contentRef} className="flex-1 overflow-y-auto p-4 space-y-6 pb-8">
           {/* Club Filter */}
           {clubs.length > 1 && (
             <div>

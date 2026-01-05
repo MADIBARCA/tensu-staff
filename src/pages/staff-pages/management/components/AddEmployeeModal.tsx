@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import clsx from 'clsx';
 import { X, AlertCircle, AlertTriangle, Crown, Shield, Dumbbell } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import { PhoneInput } from '@/components/PhoneInput';
@@ -24,6 +25,25 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
   onAdd,
 }) => {
   const { t } = useI18n();
+  const [isScrolled, setIsScrolled] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Scroll detection for sticky header
+  useEffect(() => {
+    const modalElement = modalRef.current;
+    if (!modalElement) return;
+
+    const handleScroll = () => {
+      const scrollY = modalElement.scrollTop;
+      setIsScrolled(scrollY > 0);
+    };
+
+    modalElement.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); // Check initial scroll position
+
+    return () => modalElement.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const [formData, setFormData] = useState<CreateEmployeeData>({
     phone: '',
     role: 'coach',
@@ -143,10 +163,14 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-white overflow-y-auto">
+    <div ref={modalRef} className="fixed inset-0 z-50 bg-white overflow-y-auto">
       <div className="min-h-full w-full max-w-md mx-auto flex flex-col">
-        {/* Header with mt-20 to avoid Telegram UI buttons */}
-        <div className="sticky top-0 bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200 mt-20">
+        {/* Header */}
+        <div className={clsx(
+          "sticky top-0 bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200 overflow-hidden",
+          "transition-[padding-top] duration-300 ease-out will-change-[padding-top]",
+          isScrolled ? "pt-20" : "pt-0"
+        )}>
           <h2 className="text-lg font-semibold text-gray-900">
             {t('management.employees.addTitle')}
           </h2>

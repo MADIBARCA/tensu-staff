@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import clsx from 'clsx';
 import { X, Plus, Clock, Loader2, Upload, Trash2, Image as ImageIcon } from 'lucide-react';
 import { TelegramIcon, InstagramIcon, WhatsAppIcon } from '@/components/SocialIcons';
 import { useI18n } from '@/i18n/i18n';
@@ -61,6 +62,24 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
 
   const logoInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Scroll detection for sticky header
+  useEffect(() => {
+    const modalElement = modalRef.current;
+    if (!modalElement) return;
+
+    const handleScroll = () => {
+      const scrollY = modalElement.scrollTop;
+      setIsScrolled(scrollY > 0);
+    };
+
+    modalElement.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); // Check initial scroll position
+
+    return () => modalElement.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Cleanup preview URLs on unmount
   useEffect(() => {
@@ -331,10 +350,14 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
   const isDisabled = loading || isSubmitting || isOptimizingLogo || isOptimizingCover || (logoUploadProgress > 0 && logoUploadProgress < 100) || (coverUploadProgress > 0 && coverUploadProgress < 100);
 
   return (
-    <div className="fixed inset-0 z-50 bg-white overflow-y-auto">
+    <div ref={modalRef} className="fixed inset-0 z-50 bg-white overflow-y-auto">
       <div className="min-h-full w-full max-w-md mx-auto flex flex-col">
         {/* Header */}
-        <div className="sticky top-0 bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200 mt-20">
+        <div className={clsx(
+          "sticky top-0 bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200 overflow-hidden",
+          "transition-[padding-top] duration-300 ease-out will-change-[padding-top]",
+          isScrolled ? "pt-20" : "pt-0"
+        )}>
           <h2 className="text-lg font-semibold text-gray-900">
             {t('profile.createClub.title')}
           </h2>

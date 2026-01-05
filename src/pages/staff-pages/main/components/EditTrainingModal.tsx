@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import clsx from 'clsx';
 import { X, MapPin, Users, Calendar, FileText, AlertTriangle } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import type { Training, Trainer, UpdateTrainingData } from '../types';
@@ -24,6 +25,24 @@ export const EditTrainingModal: React.FC<EditTrainingModalProps> = ({
   onCancel,
 }) => {
   const { t } = useI18n();
+  const [isScrolled, setIsScrolled] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Scroll detection for sticky header
+  useEffect(() => {
+    const modalElement = modalRef.current;
+    if (!modalElement) return;
+
+    const handleScroll = () => {
+      const scrollY = modalElement.scrollTop;
+      setIsScrolled(scrollY > 0);
+    };
+
+    modalElement.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); // Check initial scroll position
+
+    return () => modalElement.removeEventListener('scroll', handleScroll);
+  }, []);
   
   const [formData, setFormData] = useState<UpdateTrainingData>({
     date: training.date,
@@ -196,9 +215,13 @@ export const EditTrainingModal: React.FC<EditTrainingModalProps> = ({
   return (
     <>
       <div className="fixed inset-0 bg-black bg-opacity-30 z-50">
-        <div className="bg-white w-full h-full overflow-hidden flex flex-col">
+        <div ref={modalRef} className="bg-white w-full h-full overflow-y-auto flex flex-col">
           {/* Header */}
-          <div className="p-4 border-b border-gray-200 mt-20">
+          <div className={clsx(
+            "p-4 border-b border-gray-200 overflow-hidden",
+            "transition-[padding-top] duration-300 ease-out will-change-[padding-top]",
+            isScrolled ? "pt-20" : "pt-0"
+          )}>
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">

@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import clsx from 'clsx';
 import { X, MapPin, Phone, Clock, Users, Calendar, ChevronDown, ChevronUp, AlertTriangle, Power, Building2, User, Edit2, Loader2 } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import { EditClubModal } from './EditClubModal';
@@ -30,6 +31,25 @@ export const ClubDetailsModalNew: React.FC<ClubDetailsModalProps> = ({
   onRefresh,
 }) => {
   const { t } = useI18n();
+  const [isScrolled, setIsScrolled] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  // Scroll detection for sticky header
+  useEffect(() => {
+    const contentElement = contentRef.current;
+    if (!contentElement) return;
+
+    const handleScroll = () => {
+      const scrollY = contentElement.scrollTop;
+      setIsScrolled(scrollY > 0);
+    };
+
+    contentElement.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); // Check initial scroll position
+
+    return () => contentElement.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const [activeTab, setActiveTab] = useState<'analytics' | 'membership'>('analytics');
   const [showPaymentHistory, setShowPaymentHistory] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -254,7 +274,7 @@ export const ClubDetailsModalNew: React.FC<ClubDetailsModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div ref={contentRef} className="flex-1 overflow-y-auto p-4">
           {activeTab === 'analytics' ? (
             loadingAnalytics ? (
               <div className="flex items-center justify-center py-12">

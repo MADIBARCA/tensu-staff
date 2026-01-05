@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import clsx from 'clsx';
 import { X, ChevronDown, ChevronRight, Check, Plus, Trash2, Sparkles } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import type { Tariff, Club, Section, CreateTariffData, PaymentType, PackageType } from '../types';
@@ -24,6 +25,24 @@ export const TariffModal: React.FC<TariffModalProps> = ({
   const { t } = useI18n();
   const isEditing = !!tariff;
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Scroll detection for sticky header
+  useEffect(() => {
+    const modalElement = modalRef.current;
+    if (!modalElement) return;
+
+    const handleScroll = () => {
+      const scrollY = modalElement.scrollTop;
+      setIsScrolled(scrollY > 0);
+    };
+
+    modalElement.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); // Check initial scroll position
+
+    return () => modalElement.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Handle input focus to detect keyboard open/close
   useEffect(() => {
@@ -305,10 +324,15 @@ export const TariffModal: React.FC<TariffModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-white overflow-y-auto">
+    <div ref={modalRef} className="fixed inset-0 z-50 bg-white overflow-y-auto">
       <div className="min-h-full w-full max-w-md mx-auto flex flex-col">
-        {/* Header with mt-20 to avoid Telegram UI buttons */}
-        <div className={`bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200 mt-20 ${isKeyboardOpen ? '' : 'sticky top-0'}`}>
+        {/* Header */}
+        <div className={clsx(
+          "bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200 overflow-hidden",
+          "transition-[padding-top] duration-300 ease-out will-change-[padding-top]",
+          isScrolled ? "pt-20" : "pt-0",
+          isKeyboardOpen ? '' : 'sticky top-0'
+        )}>
           <h2 className="text-lg font-semibold text-gray-900">
             {isEditing ? t('management.pricing.editTitle') : t('management.pricing.createTitle')}
           </h2>
