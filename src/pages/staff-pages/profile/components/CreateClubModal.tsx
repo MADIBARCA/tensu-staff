@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import clsx from 'clsx';
 import { X, Plus, Clock, Loader2, Upload, Trash2, Image as ImageIcon } from 'lucide-react';
 import { TelegramIcon, InstagramIcon, WhatsAppIcon } from '@/components/SocialIcons';
 import { useI18n } from '@/i18n/i18n';
@@ -58,6 +59,7 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
   const [cropImage, setCropImage] = useState<string>('');
   const [cropKind, setCropKind] = useState<'logo' | 'cover'>('logo');
   const [cropAspect, setCropAspect] = useState<number>(1);
+  const [isScrolled, setIsScrolled] = useState<boolean>(false);
 
   const logoInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
@@ -70,6 +72,24 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
       if (cropImage) URL.revokeObjectURL(cropImage);
     };
   }, [logoPreview, coverPreview, cropImage]);
+
+  // Track scroll state inside modal
+  useEffect(() => {
+    const scrollContainer = document.getElementById('create-club-modal-scroll');
+    if (!scrollContainer) return;
+
+    const handleScroll = () => {
+      setIsScrolled(scrollContainer.scrollTop > 0);
+    };
+
+    scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+    // Check initial scroll position
+    handleScroll();
+
+    return () => {
+      scrollContainer.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -331,10 +351,14 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
   const isDisabled = loading || isSubmitting || isOptimizingLogo || isOptimizingCover || (logoUploadProgress > 0 && logoUploadProgress < 100) || (coverUploadProgress > 0 && coverUploadProgress < 100);
 
   return (
-    <div className="fixed inset-0 z-50 bg-white overflow-y-auto">
-      <div className="min-h-full w-full max-w-md mx-auto flex flex-col">
+    <div id="create-club-modal-scroll" className="fixed inset-0 z-50 bg-white overflow-y-auto overflow-x-hidden">
+      <div className="min-h-full w-full max-w-md mx-auto flex flex-col pt-23">
         {/* Header */}
-        <div className="sticky top-0 bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200 mt-20">
+        <div className={clsx(
+          "sticky top-0 bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200",
+          "transition-[padding-top] duration-300 ease-out will-change-[padding-top]",
+          isScrolled ? "pt-23" : ""
+        )}>
           <h2 className="text-lg font-semibold text-gray-900">
             {t('profile.createClub.title')}
           </h2>
