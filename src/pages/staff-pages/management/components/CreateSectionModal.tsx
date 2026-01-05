@@ -7,6 +7,7 @@ import { sectionsApi, groupsApi, scheduleApi } from '@/functions/axios/axiosFunc
 import type { Club, Employee } from '../types';
 import type { ClubWithRole, CreateStaffResponse, CreateSectionResponse } from '@/functions/axios/responses';
 import { levelOptions } from '../mockData';
+import { useStickyState } from '@/hooks/useStickyState';
 
 interface CreateSectionModalProps {
   clubs: Club[];
@@ -389,11 +390,21 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
     }
   };
 
+  const { isSticky, sentinelRef, stickyRef } = useStickyState(true);
+
   return (
     <div className="fixed inset-0 z-50 bg-white overflow-y-auto">
       <div className="min-h-full w-full max-w-lg mx-auto flex flex-col">
+        {/* Sentinel for sticky detection */}
+        <div ref={sentinelRef} className="h-0" />
+        
         {/* Header with mt-20 to avoid Telegram UI buttons */}
-        <div className="sticky top-0 bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200 mt-20">
+        <div 
+          ref={stickyRef}
+          className={`sticky top-0 bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200 transition-all duration-200 ${
+            isSticky ? 'mt-20' : ''
+          }`}
+        >
           <h2 className="text-lg font-semibold text-gray-900">
             {t('management.sections.createTitle')}
           </h2>

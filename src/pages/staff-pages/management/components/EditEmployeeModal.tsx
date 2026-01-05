@@ -5,6 +5,7 @@ import { teamApi } from '@/functions/axios/axiosFunctions';
 import { useTelegram } from '@/hooks/useTelegram';
 import type { Employee, Club, EmployeeRole, UpdateEmployeeData } from '../types';
 import type { ClubWithRole, CreateStaffResponse } from '@/functions/axios/responses';
+import { useStickyState } from '@/hooks/useStickyState';
 
 interface ClubRoleState {
   club_id: number;
@@ -236,11 +237,21 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
     }
   };
 
+  const { isSticky, sentinelRef, stickyRef } = useStickyState(true);
+
   return (
     <div className="fixed inset-0 z-50 bg-white overflow-y-auto">
       <div className="min-h-full w-full max-w-md mx-auto flex flex-col">
+        {/* Sentinel for sticky detection */}
+        <div ref={sentinelRef} className="h-0" />
+        
         {/* Header with mt-20 to avoid Telegram UI buttons */}
-        <div className="sticky top-0 bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200 mt-20">
+        <div 
+          ref={stickyRef}
+          className={`sticky top-0 bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200 transition-all duration-200 ${
+            isSticky ? 'mt-20' : ''
+          }`}
+        >
           <h2 className="text-lg font-semibold text-gray-900">
             {t('management.employees.editTitle')}
           </h2>

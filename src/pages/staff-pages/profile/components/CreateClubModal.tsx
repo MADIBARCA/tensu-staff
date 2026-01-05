@@ -10,6 +10,7 @@ import { ImageCropModal } from '@/components/ImageCropModal';
 import { uploadOptimizedBlob, processImageWithCrop, type ClubImageUploadResult } from '@/lib/storageUpload';
 import { optimizeImage } from '@/lib/imageOptimization';
 import type { Area } from 'react-easy-crop';
+import { useStickyState } from '@/hooks/useStickyState';
 
 interface CreateClubModalProps {
   onClose: () => void;
@@ -330,11 +331,21 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
 
   const isDisabled = loading || isSubmitting || isOptimizingLogo || isOptimizingCover || (logoUploadProgress > 0 && logoUploadProgress < 100) || (coverUploadProgress > 0 && coverUploadProgress < 100);
 
+  const { isSticky, sentinelRef, stickyRef } = useStickyState(true);
+
   return (
     <div className="fixed inset-0 z-50 bg-white overflow-y-auto">
       <div className="min-h-full w-full max-w-md mx-auto flex flex-col">
+        {/* Sentinel for sticky detection */}
+        <div ref={sentinelRef} className="h-0" />
+        
         {/* Header */}
-        <div className="sticky top-0 bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200 mt-20">
+        <div 
+          ref={stickyRef}
+          className={`sticky top-0 bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200 transition-all duration-200 ${
+            isSticky ? 'mt-20' : ''
+          }`}
+        >
           <h2 className="text-lg font-semibold text-gray-900">
             {t('profile.createClub.title')}
           </h2>

@@ -3,6 +3,7 @@ import { X, ChevronDown, ChevronRight, Check, Plus, Trash2, Sparkles } from 'luc
 import { useI18n } from '@/i18n/i18n';
 import type { Tariff, Club, Section, CreateTariffData, PaymentType, PackageType } from '../types';
 import type { ClubWithRole } from '@/functions/axios/responses';
+import { useStickyState } from '@/hooks/useStickyState';
 
 interface TariffModalProps {
   tariff?: Tariff;
@@ -304,11 +305,21 @@ export const TariffModal: React.FC<TariffModalProps> = ({
     return t('management.pricing.notSelected');
   };
 
+  const { isSticky, sentinelRef, stickyRef } = useStickyState(!isKeyboardOpen);
+
   return (
     <div className="fixed inset-0 z-50 bg-white overflow-y-auto">
       <div className="min-h-full w-full max-w-md mx-auto flex flex-col">
+        {/* Sentinel for sticky detection */}
+        {!isKeyboardOpen && <div ref={sentinelRef} className="h-0" />}
+        
         {/* Header with mt-20 to avoid Telegram UI buttons */}
-        <div className={`bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200 mt-20 ${isKeyboardOpen ? '' : 'sticky top-0'}`}>
+        <div 
+          ref={stickyRef}
+          className={`bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200 transition-all duration-200 ${
+            isKeyboardOpen ? '' : 'sticky top-0'
+          } ${isSticky && !isKeyboardOpen ? 'mt-20' : ''}`}
+        >
           <h2 className="text-lg font-semibold text-gray-900">
             {isEditing ? t('management.pricing.editTitle') : t('management.pricing.createTitle')}
           </h2>

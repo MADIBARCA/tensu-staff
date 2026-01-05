@@ -12,6 +12,7 @@ import {
   Bell,
 } from "lucide-react";
 import { notificationsApi } from "@/functions/axios/axiosFunctions";
+import { useStickyState } from "@/hooks/useStickyState";
 
 interface NavItem {
   icon: LucideIcon;
@@ -74,11 +75,21 @@ export const Layout: React.FC<LayoutProps> = ({
     { icon: User, label: t('nav.profile'), path: "/staff/profile" },
   ];
 
+  const { isSticky, sentinelRef, stickyRef } = useStickyState(!!title);
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* Sentinel for sticky detection */}
+      {title && <div ref={sentinelRef} className="h-0" />}
+      
       {/* Header */}
       {title && (
-        <header className="bg-white border-b border-gray-100 sticky top-3 z-20">
+        <header 
+          ref={stickyRef}
+          className={`bg-white border-b border-gray-100 sticky top-0 z-20 transition-all duration-200 ${
+            isSticky ? 'mt-20' : ''
+          }`}
+        >
           <div className="px-4 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
