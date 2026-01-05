@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -42,14 +42,20 @@ function AppRoutes() {
 
 export default function App() {
   const { lang } = useI18n();
-  React.useEffect(() => {
+  useEffect(() => {
     const tg = window.Telegram?.WebApp;
-    if (tg) {
-      tg.ready();
-      if (tg.isVersionAtLeast('7.7')) {
-        tg.disableVerticalSwipes();
+    if (!tg) return;
+  
+    tg.ready();
+  
+    setTimeout(() => {
+      tg.requestFullscreen?.();
+      tg.expand?.();
+  
+      if (tg.isVersionAtLeast?.("7.7")) {
+        tg.disableVerticalSwipes?.();
       }
-    }
+    }, 200);
   }, []);
 
   return (
