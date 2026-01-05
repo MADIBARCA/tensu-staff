@@ -391,12 +391,12 @@ export const EditClubModal: React.FC<EditClubModalProps> = ({
 
   return (
     <div id="edit-club-modal-scroll" className="fixed inset-0 z-50 bg-white overflow-y-auto">
-      <div className="min-h-full w-full max-w-md mx-auto flex flex-col pt-20">
+      <div className="min-h-full w-full max-w-md mx-auto flex flex-col pt-30">
         {/* Header */}
         <div className={clsx(
           "sticky top-0 bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200",
           "transition-[padding-top] duration-300 ease-out will-change-[padding-top]",
-          isScrolled ? "pt-20" : "pt-0"
+          isScrolled ? "pt-30" : "pt-0"
         )}>
           <h2 className="text-lg font-semibold text-gray-900">
             {t('profile.editClub.title')}
