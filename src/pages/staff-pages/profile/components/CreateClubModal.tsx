@@ -341,7 +341,7 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
         
         {/* Header */}
         <div 
-          ref={stickyRef}
+          ref={stickyRef as React.Ref<HTMLDivElement>}
           className={`sticky top-0 bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200 transition-all duration-200 ${
             isSticky ? 'mt-20' : ''
           }`}

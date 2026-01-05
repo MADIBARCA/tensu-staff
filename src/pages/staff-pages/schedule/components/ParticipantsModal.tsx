@@ -22,7 +22,7 @@ export const ParticipantsModal: React.FC<ParticipantsModalProps> = ({ training, 
         
         {/* Header */}
         <div 
-          ref={stickyRef}
+          ref={stickyRef as React.Ref<HTMLDivElement>}
           className={`sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between transition-all duration-200 ${
             isSticky ? 'mt-20' : ''
           }`}

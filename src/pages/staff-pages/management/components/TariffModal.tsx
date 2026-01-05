@@ -315,7 +315,7 @@ export const TariffModal: React.FC<TariffModalProps> = ({
         
         {/* Header with mt-20 to avoid Telegram UI buttons */}
         <div 
-          ref={stickyRef}
+          ref={stickyRef as React.Ref<HTMLDivElement>}
           className={`bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200 transition-all duration-200 ${
             isKeyboardOpen ? '' : 'sticky top-0'
           } ${isSticky && !isKeyboardOpen ? 'mt-20' : ''}`}
