@@ -198,7 +198,11 @@ export const ClubDetailsModalNew: React.FC<ClubDetailsModalProps> = ({
     <div className="fixed inset-0 bg-black bg-opacity-30 z-50">
       <div className="bg-white w-full h-full overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="p-4 border-b border-gray-200 mt-20">
+        <div className={clsx(
+          "p-4 border-b border-gray-200 overflow-hidden",
+          "transition-[padding-top] duration-300 ease-out will-change-[padding-top]",
+          isScrolled ? "pt-20" : "pt-0"
+        )}>
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
