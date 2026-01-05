@@ -62,27 +62,11 @@ export const EditClubModal: React.FC<EditClubModalProps> = ({
   const [cropImage, setCropImage] = useState<string>('');
   const [cropKind, setCropKind] = useState<'logo' | 'cover'>('logo');
   const [cropAspect, setCropAspect] = useState<number>(1);
+  const [isScrolled, setIsScrolled] = useState(false);
 
   const logoInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
-  const [isScrolled, setIsScrolled] = useState(false);
-  const modalRef = useRef<HTMLDivElement>(null);
-
-  // Scroll detection for sticky header
-  useEffect(() => {
-    const modalElement = modalRef.current;
-    if (!modalElement) return;
-
-    const handleScroll = () => {
-      const scrollY = modalElement.scrollTop;
-      setIsScrolled(scrollY > 0);
-    };
-
-    modalElement.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll(); // Check initial scroll position
-
-    return () => modalElement.removeEventListener('scroll', handleScroll);
-  }, []);
+  const modalScrollRef = useRef<HTMLDivElement>(null);
 
   // Cleanup preview URLs on unmount
   useEffect(() => {
@@ -92,6 +76,23 @@ export const EditClubModal: React.FC<EditClubModalProps> = ({
       if (cropImage) URL.revokeObjectURL(cropImage);
     };
   }, [logoPreview, coverPreview, cropImage]);
+
+  // Scroll detection for sticky header
+  useEffect(() => {
+    const scrollContainer = modalScrollRef.current;
+    if (!scrollContainer) return;
+
+    const handleScroll = () => {
+      const scrollTop = scrollContainer.scrollTop;
+      setIsScrolled(scrollTop > 0);
+    };
+
+    scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+    // Check initial scroll position
+    handleScroll();
+
+    return () => scrollContainer.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const availableTags = [
     'fitness', 'yoga', 'martial_arts', 'swimming', 'tennis', 'dance',
@@ -389,11 +390,11 @@ export const EditClubModal: React.FC<EditClubModalProps> = ({
   };
 
   return (
-    <div ref={modalRef} className="fixed inset-0 z-50 bg-white overflow-y-auto">
+    <div ref={modalScrollRef} className="fixed inset-0 z-50 bg-white overflow-y-auto">
       <div className="min-h-full w-full max-w-md mx-auto flex flex-col">
         {/* Header */}
         <div className={clsx(
-          "sticky top-0 bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200 overflow-hidden",
+          "sticky top-0 z-10 bg-white flex items-center justify-between p-4 border-b border-gray-200 overflow-hidden",
           "transition-[padding-top] duration-300 ease-out will-change-[padding-top]",
           isScrolled ? "pt-20" : "pt-0"
         )}>

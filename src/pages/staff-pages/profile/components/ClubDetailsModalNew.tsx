@@ -1,5 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
-import clsx from 'clsx';
+import React, { useState, useMemo, useEffect } from 'react';
 import { X, MapPin, Phone, Clock, Users, Calendar, ChevronDown, ChevronUp, AlertTriangle, Power, Building2, User, Edit2, Loader2 } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import { EditClubModal } from './EditClubModal';
@@ -31,25 +30,6 @@ export const ClubDetailsModalNew: React.FC<ClubDetailsModalProps> = ({
   onRefresh,
 }) => {
   const { t } = useI18n();
-  const [isScrolled, setIsScrolled] = useState(false);
-  const contentRef = useRef<HTMLDivElement>(null);
-
-  // Scroll detection for sticky header
-  useEffect(() => {
-    const contentElement = contentRef.current;
-    if (!contentElement) return;
-
-    const handleScroll = () => {
-      const scrollY = contentElement.scrollTop;
-      setIsScrolled(scrollY > 0);
-    };
-
-    contentElement.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll(); // Check initial scroll position
-
-    return () => contentElement.removeEventListener('scroll', handleScroll);
-  }, []);
-
   const [activeTab, setActiveTab] = useState<'analytics' | 'membership'>('analytics');
   const [showPaymentHistory, setShowPaymentHistory] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -198,11 +178,7 @@ export const ClubDetailsModalNew: React.FC<ClubDetailsModalProps> = ({
     <div className="fixed inset-0 bg-black bg-opacity-30 z-50">
       <div className="bg-white w-full h-full overflow-hidden flex flex-col">
         {/* Header */}
-        <div className={clsx(
-          "p-4 border-b border-gray-200 overflow-hidden",
-          "transition-[padding-top] duration-300 ease-out will-change-[padding-top]",
-          isScrolled ? "pt-20" : "pt-0"
-        )}>
+        <div className="p-4 border-b border-gray-200 mt-20">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
@@ -278,7 +254,7 @@ export const ClubDetailsModalNew: React.FC<ClubDetailsModalProps> = ({
         </div>
 
         {/* Content */}
-        <div ref={contentRef} className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-4">
           {activeTab === 'analytics' ? (
             loadingAnalytics ? (
               <div className="flex items-center justify-center py-12">

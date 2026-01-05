@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
-import clsx from 'clsx';
+import React, { useState, useEffect } from 'react';
 import { X, Phone, MessageCircle, ChevronDown, ChevronUp, Calendar, CreditCard, CheckCircle, Loader2 } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import type { Student, AttendanceRecord, PaymentRecord } from '../types';
@@ -21,25 +20,6 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
   onMarkAttendance,
 }) => {
   const { t } = useI18n();
-  const [isScrolled, setIsScrolled] = useState(false);
-  const contentRef = useRef<HTMLDivElement>(null);
-
-  // Scroll detection for sticky header
-  useEffect(() => {
-    const contentElement = contentRef.current;
-    if (!contentElement) return;
-
-    const handleScroll = () => {
-      const scrollY = contentElement.scrollTop;
-      setIsScrolled(scrollY > 0);
-    };
-
-    contentElement.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll(); // Check initial scroll position
-
-    return () => contentElement.removeEventListener('scroll', handleScroll);
-  }, []);
-
   const [showAttendance, setShowAttendance] = useState(false);
   const [showPayments, setShowPayments] = useState(false);
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
@@ -210,11 +190,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="bg-white w-full max-w-md rounded-xl max-h-screen overflow-hidden flex flex-col">
         {/* Header */}
-        <div className={clsx(
-          "flex items-center justify-between p-4 border-b border-gray-200 overflow-hidden",
-          "transition-[padding-top] duration-300 ease-out will-change-[padding-top]",
-          isScrolled ? "pt-20" : "pt-0"
-        )}>
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 mt-20">
           <h2 className="text-lg font-semibold text-gray-900">
             {t('students.details.title')}
           </h2>
@@ -227,7 +203,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
         </div>
 
         {/* Content */}
-        <div ref={contentRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {/* Student Info */}
           <div className="flex items-center gap-4">
             {student.photo_url ? (

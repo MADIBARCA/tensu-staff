@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState, useMemo, useEffect, useRef } from 'react';
-import clsx from 'clsx';
+import React, { useState, useMemo, useEffect } from 'react';
 import { X, Plus, Trash2, AlertTriangle, Calendar, Info } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import { useTelegram } from '@/hooks/useTelegram';
@@ -73,24 +72,6 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
 }) => {
   const { t } = useI18n();
   const { initDataRaw } = useTelegram();
-  const [isScrolled, setIsScrolled] = useState(false);
-  const modalRef = useRef<HTMLDivElement>(null);
-
-  // Scroll detection for sticky header
-  useEffect(() => {
-    const modalElement = modalRef.current;
-    if (!modalElement) return;
-
-    const handleScroll = () => {
-      const scrollY = modalElement.scrollTop;
-      setIsScrolled(scrollY > 0);
-    };
-
-    modalElement.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll(); // Check initial scroll position
-
-    return () => modalElement.removeEventListener('scroll', handleScroll);
-  }, []);
   
   const [loading, setLoading] = useState(false);
   const [loadingGroups, setLoadingGroups] = useState(true);
@@ -461,14 +442,10 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
   }
 
   return (
-    <div ref={modalRef} className="fixed inset-0 z-50 bg-white overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-white overflow-y-auto">
       <div className="min-h-full w-full max-w-lg mx-auto flex flex-col">
-        {/* Header */}
-        <div className={clsx(
-          "sticky top-0 bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200 overflow-hidden",
-          "transition-[padding-top] duration-300 ease-out will-change-[padding-top]",
-          isScrolled ? "pt-20" : "pt-0"
-        )}>
+        {/* Header with mt-20 to avoid Telegram UI buttons */}
+        <div className="sticky top-0 bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200 mt-20">
           <h2 className="text-lg font-semibold text-gray-900">
             {t('management.sections.editTitle')}
           </h2>
