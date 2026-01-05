@@ -97,7 +97,7 @@ export const Layout: React.FC<LayoutProps> = ({
       {title && (
         <header className="bg-white border-b border-gray-100 sticky top-0 z-20">
           <div className="px-4 py-4">
-            <div className="flex items-center justify-between">
+            <div className={`flex items-center justify-between ${isScrolled ? 'mt-20' : ''}`}>
               <div className="flex items-center gap-3">
                 {showBackButton && (
                   <button
@@ -134,7 +134,7 @@ export const Layout: React.FC<LayoutProps> = ({
       )}
 
       {/* Main Content */}
-      <main className={`flex-1 pb-20 ${title && isScrolled ? 'mt-20' : ''}`}>{children}</main>
+      <main className="flex-1 pb-20">{children}</main>
 
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-20">
