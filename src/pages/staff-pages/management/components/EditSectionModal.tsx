@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useMemo, useEffect } from 'react';
+import clsx from 'clsx';
 import { X, Plus, Trash2, AlertTriangle, Calendar, Info } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import { useTelegram } from '@/hooks/useTelegram';
@@ -80,6 +81,7 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
   const [groups, setGroups] = useState<GroupForm[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isScrolled, setIsScrolled] = useState<boolean>(false);
 
   // Check if current user can edit (must be owner or admin of the section's club)
   const canEdit = useMemo(() => {
@@ -436,16 +438,38 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
     }
   };
 
+  // Track scroll state inside modal
+  useEffect(() => {
+    const scrollContainer = document.getElementById('edit-section-modal-scroll');
+    if (!scrollContainer) return;
+
+    const handleScroll = () => {
+      setIsScrolled(scrollContainer.scrollTop > 0);
+    };
+
+    scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+    // Check initial scroll position
+    handleScroll();
+
+    return () => {
+      scrollContainer.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
   // Don't render modal if user doesn't have permission
   if (!canEdit) {
     return null;
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-white overflow-y-auto">
-      <div className="min-h-full w-full max-w-lg mx-auto flex flex-col">
-        {/* Header with mt-20 to avoid Telegram UI buttons */}
-        <div className="sticky top-0 bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200 mt-20">
+    <div id="edit-section-modal-scroll" className="fixed inset-0 z-50 bg-white overflow-y-auto">
+      <div className="min-h-full w-full max-w-lg mx-auto flex flex-col pt-23">
+        {/* Header */}
+        <div className={clsx(
+          "sticky top-0 bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200",
+          "transition-[padding-top] duration-300 ease-out will-change-[padding-top]",
+          isScrolled ? "pt-23" : ""
+        )}>
           <h2 className="text-lg font-semibold text-gray-900">
             {t('management.sections.editTitle')}
           </h2>

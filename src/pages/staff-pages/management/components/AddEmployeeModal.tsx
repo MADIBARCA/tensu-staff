@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import clsx from 'clsx';
 import { X, AlertCircle, AlertTriangle, Crown, Shield, Dumbbell } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import { PhoneInput } from '@/components/PhoneInput';
@@ -30,6 +31,7 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
     club_ids: [],
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isScrolled, setIsScrolled] = useState<boolean>(false);
 
   // Filter clubs to show only those where user is owner or admin
   const availableClubs = useMemo(() => {
@@ -142,11 +144,33 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
     }
   };
 
+  // Track scroll state inside modal
+  useEffect(() => {
+    const scrollContainer = document.getElementById('add-employee-modal-scroll');
+    if (!scrollContainer) return;
+
+    const handleScroll = () => {
+      setIsScrolled(scrollContainer.scrollTop > 0);
+    };
+
+    scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+    // Check initial scroll position
+    handleScroll();
+
+    return () => {
+      scrollContainer.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
   return (
-    <div className="fixed inset-0 z-50 bg-white overflow-y-auto">
-      <div className="min-h-full w-full max-w-md mx-auto flex flex-col">
-        {/* Header with mt-20 to avoid Telegram UI buttons */}
-        <div className="sticky top-0 bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200 mt-20">
+    <div id="add-employee-modal-scroll" className="fixed inset-0 z-50 bg-white overflow-y-auto">
+      <div className="min-h-full w-full max-w-md mx-auto flex flex-col pt-23">
+        {/* Header */}
+        <div className={clsx(
+          "sticky top-0 bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200",
+          "transition-[padding-top] duration-300 ease-out will-change-[padding-top]",
+          isScrolled ? "pt-23" : ""
+        )}>
           <h2 className="text-lg font-semibold text-gray-900">
             {t('management.employees.addTitle')}
           </h2>

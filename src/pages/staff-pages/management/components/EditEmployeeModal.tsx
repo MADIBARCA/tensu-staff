@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import clsx from 'clsx';
 import { X, Trash2, AlertTriangle, Loader2, Crown, Shield, Dumbbell, Clock, UserMinus } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import { teamApi } from '@/functions/axios/axiosFunctions';
@@ -48,6 +49,7 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
   const [clubToRemove, setClubToRemove] = useState<number | null>(null);
   const [showRemoveConfirm, setShowRemoveConfirm] = useState<number | null>(null);
   const [savingRole, setSavingRole] = useState<number | null>(null);
+  const [isScrolled, setIsScrolled] = useState<boolean>(false);
 
   // Filter clubs to show only those where user is owner or admin
   const availableClubs = useMemo(() => {
@@ -236,11 +238,33 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
     }
   };
 
+  // Track scroll state inside modal
+  useEffect(() => {
+    const scrollContainer = document.getElementById('edit-employee-modal-scroll');
+    if (!scrollContainer) return;
+
+    const handleScroll = () => {
+      setIsScrolled(scrollContainer.scrollTop > 0);
+    };
+
+    scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+    // Check initial scroll position
+    handleScroll();
+
+    return () => {
+      scrollContainer.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
   return (
-    <div className="fixed inset-0 z-50 bg-white overflow-y-auto">
-      <div className="min-h-full w-full max-w-md mx-auto flex flex-col">
-        {/* Header with mt-20 to avoid Telegram UI buttons */}
-        <div className="sticky top-0 bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200 mt-20">
+    <div id="edit-employee-modal-scroll" className="fixed inset-0 z-50 bg-white overflow-y-auto">
+      <div className="min-h-full w-full max-w-md mx-auto flex flex-col pt-23">
+        {/* Header */}
+        <div className={clsx(
+          "sticky top-0 bg-white z-10 flex items-center justify-between p-4 border-b border-gray-200",
+          "transition-[padding-top] duration-300 ease-out will-change-[padding-top]",
+          isScrolled ? "pt-23" : ""
+        )}>
           <h2 className="text-lg font-semibold text-gray-900">
             {t('management.employees.editTitle')}
           </h2>
