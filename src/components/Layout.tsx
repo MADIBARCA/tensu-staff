@@ -97,9 +97,9 @@ export const Layout: React.FC<LayoutProps> = ({
       {/* Header */}
       {title && (
         <header className={clsx(
-          "bg-white border-b border-gray-100 sticky top-0 z-20",
-          "transition-transform duration-300 ease-out will-change-transform",
-          isScrolled ? "translate-y-20" : "translate-y-0"
+          "sticky top-0 z-20 bg-white border-b border-gray-100 overflow-hidden",
+          "transition-[padding-top] duration-300 ease-out will-change-[padding-top]",
+          isScrolled ? "pt-20" : "pt-0"
         )}>
           <div className="px-4 py-4">
             <div className="flex items-center justify-between">
