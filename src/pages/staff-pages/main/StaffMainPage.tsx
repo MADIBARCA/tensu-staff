@@ -68,6 +68,9 @@ const transformLessonToTraining = (lesson: Lesson, clubName: string, sectionName
   const sectionId = lesson.group?.section_id || 0;
   const sectionName = sectionNameMap.get(sectionId) || '';
   
+  // Normalize notes: backend may return `notes` or legacy/aliased `note`
+  const normalizedNotes = (lesson as any).notes ?? (lesson as any).note ?? '';
+
   return {
     id: lesson.id,
     club_id: sectionId,
@@ -86,7 +89,7 @@ const transformLessonToTraining = (lesson: Lesson, clubName: string, sectionName
     current_participants: 0,
     status,
     training_type: lesson.created_from_template ? 'recurring' : 'single',
-    notes: lesson.notes,
+    notes: normalizedNotes,
     created_at: lesson.created_at,
     updated_at: lesson.updated_at,
   };
