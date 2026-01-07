@@ -410,11 +410,11 @@ export default function StaffMainPage() {
         planned_start_time: data.time || selectedTraining.time,
         actual_date: data.date || selectedTraining.date,
         actual_start_time: data.time || selectedTraining.time,
-        duration_minutes: selectedTraining.duration,
+        duration_minutes: data.duration ?? selectedTraining.duration,
         status: apiStatus,
         coach_id: data.coach_id || selectedTraining.coach_id,
-        location: selectedTraining.location,
-        notes: selectedTraining.notes || '',
+        location: data.location ?? selectedTraining.location,
+        notes: data.notes ?? selectedTraining.notes ?? '',
       }, initDataRaw);
 
       // Update local state
