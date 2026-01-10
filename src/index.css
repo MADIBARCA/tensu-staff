@@ -120,6 +120,21 @@ select,
   color: inherit;
 }
 
+.PhoneInput,
+.PhoneInputInput,
+.PhoneInputCountry,
+.PhoneInputCountrySelect {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.PhoneInputCountryIcon,
+.PhoneInputCountryIcon--border,
+.PhoneInputCountryIcon span {
+  background: transparent !important;
+}
+
 /* Hide number-input spinners in Chrome, Safari, Edge, Opera */
 input[type="number"].no-spinner::-webkit-outer-spin-button,
 input[type="number"].no-spinner::-webkit-inner-spin-button {
