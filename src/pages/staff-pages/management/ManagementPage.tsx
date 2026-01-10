@@ -40,6 +40,21 @@ export default function ManagementPage() {
     { id: 'pricing' as TabId, label: t('management.tabs.pricing'), icon: DollarSign },
   ];
 
+  // Show pricing tab only for users who are owners/admins of at least one club
+  const showPricing = Boolean(
+    currentUser && ((currentUser as any).role === 'owner' || (currentUser as any).role === 'admin')
+    || clubRoles.some((cr: any) => cr && (cr.role === 'owner' || cr.role === 'admin' || (cr.club && (cr.club.role === 'owner' || cr.club.role === 'admin'))))
+  );
+
+  const tabsToRender = tabs.filter(tab => tab.id !== 'pricing' || showPricing);
+
+  // If pricing tab is not allowed but currently active, switch to employees
+  useEffect(() => {
+    if (!showPricing && activeTab === 'pricing') {
+      setActiveTab('employees');
+    }
+  }, [showPricing, activeTab]);
+
   // Load data from API
   const loadData = useCallback(async () => {
     if (!initDataRaw) {
@@ -452,7 +467,7 @@ export default function ManagementPage() {
       <PageContainer>
         {/* Tabs */}
         <div className="flex border-b border-gray-200 mb-4 -mx-4 px-4">
-          {tabs.map(tab => (
+          {tabsToRender.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
