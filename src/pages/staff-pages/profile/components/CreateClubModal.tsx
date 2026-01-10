@@ -4,7 +4,7 @@ import { X, Plus, Clock, Loader2, Upload, Trash2, Image as ImageIcon } from 'luc
 import { TelegramIcon, InstagramIcon, WhatsAppIcon } from '@/components/SocialIcons';
 import { useI18n } from '@/i18n/i18n';
 import { PhoneInput } from '@/components/PhoneInput';
-import { isValidPhoneNumber } from 'libphonenumber-js';
+import { isValidPhoneNumber, parsePhoneNumberFromString } from 'libphonenumber-js';
 import type { CreateClubData } from '../types';
 import { cities, availableTags } from '../mockData';
 import { ImageCropModal } from '@/components/ImageCropModal';
@@ -131,15 +131,18 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
       }
     }
 
-    // Validate URLs if provided
-    if (formData.telegram_link && !formData.telegram_link.startsWith('https://t.me/')) {
-      newErrors.telegram_link = t('profile.createClub.errors.telegramInvalid');
+    // Validate social links if provided (allow usernames)
+    if (formData.telegram_link) {
+      const v = formData.telegram_link.trim();
+      if (v.startsWith('http') && !v.includes('t.me')) {
+        newErrors.telegram_link = t('profile.createClub.errors.telegramInvalid');
+      }
     }
-    
-    if (formData.instagram_link && 
-        !formData.instagram_link.startsWith('https://instagram.com/') && 
-        !formData.instagram_link.startsWith('https://www.instagram.com/')) {
-      newErrors.instagram_link = t('profile.createClub.errors.instagramInvalid');
+    if (formData.instagram_link) {
+      const v = formData.instagram_link.trim();
+      if (v.startsWith('http') && !v.includes('instagram.com')) {
+        newErrors.instagram_link = t('profile.createClub.errors.instagramInvalid');
+      }
     }
 
     setErrors(newErrors);
@@ -152,7 +155,57 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
     
     setLoading(true);
     try {
-      await onCreate(formData);
+      // Try to normalize phone to E.164 before sending (if possible)
+      let formattedPhone = formData.phone;
+      try {
+        if (formattedPhone.trim().startsWith('+')) {
+          const parsed = parsePhoneNumberFromString(formattedPhone.trim());
+          if (parsed) formattedPhone = parsed.format('E.164');
+        } else {
+          const parsed = parsePhoneNumberFromString(formattedPhone.trim(), 'KZ' as any);
+          if (parsed) formattedPhone = parsed.format('E.164');
+        }
+      } catch (err) {
+        // keep original
+      }
+
+      const normalizeTelegram = (val?: string) => {
+        if (!val) return undefined;
+        const v = val.trim();
+        if (!v) return undefined;
+        if (v.startsWith('http')) return v;
+        const nick = v.startsWith('@') ? v.slice(1) : v;
+        return `https://t.me/${nick}`;
+      };
+
+      const normalizeInstagram = (val?: string) => {
+        if (!val) return undefined;
+        const v = val.trim();
+        if (!v) return undefined;
+        if (v.startsWith('http')) return v;
+        const nick = v.startsWith('@') ? v.slice(1) : v;
+        return `https://instagram.com/${nick}`;
+      };
+
+      const normalizeWhatsApp = (val?: string) => {
+        if (!val) return undefined;
+        const v = val.trim();
+        if (!v) return undefined;
+        if (v.startsWith('http')) return v;
+        const digits = v.replace(/\D+/g, '');
+        if (!digits) return undefined;
+        return `https://wa.me/${digits}`;
+      };
+
+      const payload: CreateClubData = {
+        ...formData,
+        phone: formattedPhone,
+        telegram_link: normalizeTelegram(formData.telegram_link) || undefined,
+        instagram_link: normalizeInstagram(formData.instagram_link) || undefined,
+        whatsapp_link: normalizeWhatsApp(formData.whatsapp_link) || undefined,
+      };
+
+      await onCreate(payload);
     } catch (error) {
       // Error handling is done in the parent component
       console.error('Error creating club:', error);
@@ -706,7 +759,7 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
             <div className="flex items-center gap-2">
               <TelegramIcon size={18} className="text-blue-500 shrink-0" />
             <input
-              type="url"
+              type="text"
               value={formData.telegram_link}
                 onChange={(e) => {
                   setFormData({ ...formData, telegram_link: e.target.value });
@@ -716,7 +769,7 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
                 className={`flex-1 border rounded-lg p-2.5 text-sm text-gray-900 caret-black disabled:bg-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                 errors.telegram_link ? 'border-red-500' : 'border-gray-200'
               }`}
-                placeholder="https://t.me/your_channel"
+                placeholder="telegram_username (e.g. @yourname or yourname)"
             />
             </div>
             {errors.telegram_link && (
@@ -727,7 +780,7 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
             <div className="flex items-center gap-2">
               <InstagramIcon size={18} className="text-pink-500 shrink-0" />
             <input
-              type="url"
+              type="text"
               value={formData.instagram_link}
                 onChange={(e) => {
                   setFormData({ ...formData, instagram_link: e.target.value });
@@ -737,7 +790,7 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
                 className={`flex-1 border rounded-lg p-2.5 text-sm text-gray-900 caret-black disabled:bg-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                 errors.instagram_link ? 'border-red-500' : 'border-gray-200'
               }`}
-                placeholder="https://instagram.com/your_page"
+                placeholder="instagram_username (e.g. @yourpage or yourpage)"
             />
             </div>
             {errors.instagram_link && (
@@ -753,7 +806,7 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
               onChange={(e) => setFormData({ ...formData, whatsapp_link: e.target.value })}
               disabled={isDisabled}
                 className="flex-1 border border-gray-200 rounded-lg p-2.5 text-sm text-gray-900 caret-black disabled:bg-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="https://wa.me/77001234567"
+                placeholder="whatsapp phone (e.g. 77001234567 or +77001234567)"
             />
             </div>
           </div>
