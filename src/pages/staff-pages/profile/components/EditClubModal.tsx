@@ -7,7 +7,7 @@ import { clubsApi } from '@/functions/axios/axiosFunctions';
 import { useTelegram } from '@/hooks/useTelegram';
 import type { Club } from '../types';
 import type { UpdateClubRequest } from '@/functions/axios/requests';
-import { isValidPhoneNumber, parsePhoneNumber, AsYouType } from 'libphonenumber-js';
+import { isValidPhoneNumber, parsePhoneNumber, parsePhoneNumberFromString, AsYouType } from 'libphonenumber-js';
 import { ImageCropModal } from '@/components/ImageCropModal';
 import { uploadOptimizedBlob, processImageWithCrop, type ClubImageUploadResult } from '@/lib/storageUpload';
 import { optimizeImage } from '@/lib/imageOptimization';
@@ -32,7 +32,7 @@ export const EditClubModal: React.FC<EditClubModalProps> = ({
     description: club.description || '',
     city: club.city,
     address: club.address,
-    phone: club.phone,
+    phone: club.phone ? new AsYouType('KZ' as any).input(club.phone) : (club.phone || ''),
     logo_url: club.logo_url || '',
     cover_url: club.cover_url || '',
     telegram_link: club.telegram_link || '',
@@ -99,9 +99,12 @@ export const EditClubModal: React.FC<EditClubModalProps> = ({
     'crossfit', 'pilates', 'boxing', 'basketball', 'football', 'volleyball'
   ];
 
+  const DEFAULT_PHONE_COUNTRY = 'KZ';
+
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target.value;
-    const formatter = new AsYouType();
+    // Use a default country for formatting so local numbers validate better.
+    const formatter = new AsYouType(DEFAULT_PHONE_COUNTRY as any);
     const formatted = formatter.input(input);
     setFormData({ ...formData, phone: formatted });
     setErrors({ ...errors, phone: '' });
@@ -317,8 +320,24 @@ export const EditClubModal: React.FC<EditClubModalProps> = ({
 
     if (!formData.phone.trim()) {
       newErrors.phone = t('profile.createClub.errors.phoneRequired');
-    } else if (!isValidPhoneNumber(formData.phone)) {
-      newErrors.phone = t('profile.createClub.errors.phoneInvalid');
+    } else {
+      // Accept numbers with or without leading +. Try strict validation first,
+      // otherwise try validating using default country (fallback).
+      const phoneVal = formData.phone.trim();
+      let valid = false;
+      try {
+        if (phoneVal.startsWith('+')) {
+          valid = isValidPhoneNumber(phoneVal);
+        } else {
+          valid = isValidPhoneNumber(phoneVal, DEFAULT_PHONE_COUNTRY as any) || isValidPhoneNumber('+' + phoneVal);
+        }
+      } catch (err) {
+        valid = false;
+      }
+
+      if (!valid) {
+        newErrors.phone = t('profile.createClub.errors.phoneInvalid');
+      }
     }
 
     // Validate time format
@@ -330,12 +349,18 @@ export const EditClubModal: React.FC<EditClubModalProps> = ({
       newErrors.working_hours_end = t('profile.createClub.errors.invalidTimeFormat');
     }
 
-    // Validate social links if provided
-    if (formData.telegram_link && !formData.telegram_link.startsWith('https://t.me/')) {
-      newErrors.telegram_link = t('profile.createClub.errors.telegramInvalid');
+    // Validate social links if provided (allow usernames)
+    if (formData.telegram_link) {
+      const v = formData.telegram_link.trim();
+      if (v.startsWith('http') && !v.includes('t.me')) {
+        newErrors.telegram_link = t('profile.createClub.errors.telegramInvalid');
+      }
     }
-    if (formData.instagram_link && !formData.instagram_link.startsWith('https://instagram.com/') && !formData.instagram_link.startsWith('https://www.instagram.com/')) {
-      newErrors.instagram_link = t('profile.createClub.errors.instagramInvalid');
+    if (formData.instagram_link) {
+      const v = formData.instagram_link.trim();
+      if (v.startsWith('http') && !v.includes('instagram.com')) {
+        newErrors.instagram_link = t('profile.createClub.errors.instagramInvalid');
+      }
     }
 
     setErrors(newErrors);
@@ -350,16 +375,51 @@ export const EditClubModal: React.FC<EditClubModalProps> = ({
     setIsSubmitting(true);
 
     try {
-      // Format phone number
+      // Format phone number to E.164 for backend. Try parsing with explicit country fallback.
       let formattedPhone = formData.phone;
       try {
-        const parsed = parsePhoneNumber(formData.phone);
+        let parsed;
+        if (formattedPhone.trim().startsWith('+')) {
+          parsed = parsePhoneNumberFromString(formattedPhone.trim());
+        } else {
+          parsed = parsePhoneNumberFromString(formattedPhone.trim(), DEFAULT_PHONE_COUNTRY as any);
+        }
         if (parsed) {
           formattedPhone = parsed.format('E.164');
         }
-      } catch {
-        // Keep original format if parsing fails
+      } catch (e) {
+        // keep original if parsing fails
       }
+
+      // Normalize social inputs: accept username-like values and build full URLs
+      const normalizeTelegram = (val?: string) => {
+        if (!val) return undefined;
+        const v = val.trim();
+        if (!v) return undefined;
+        if (v.startsWith('http')) return v;
+        const nick = v.startsWith('@') ? v.slice(1) : v;
+        return `https://t.me/${nick}`;
+      };
+
+      const normalizeInstagram = (val?: string) => {
+        if (!val) return undefined;
+        const v = val.trim();
+        if (!v) return undefined;
+        if (v.startsWith('http')) return v;
+        const nick = v.startsWith('@') ? v.slice(1) : v;
+        return `https://instagram.com/${nick}`;
+      };
+
+      const normalizeWhatsApp = (val?: string) => {
+        if (!val) return undefined;
+        const v = val.trim();
+        if (!v) return undefined;
+        if (v.startsWith('http')) return v;
+        // remove plus and non-digits
+        const digits = v.replace(/\D+/g, '');
+        if (!digits) return undefined;
+        return `https://wa.me/${digits}`;
+      };
 
       const updateData: UpdateClubRequest = {
         name: formData.name.trim(),
@@ -369,9 +429,9 @@ export const EditClubModal: React.FC<EditClubModalProps> = ({
         phone: formattedPhone,
         logo_url: formData.logo_url || undefined,
         cover_url: formData.cover_url || undefined,
-        telegram_url: formData.telegram_link || undefined,
-        instagram_url: formData.instagram_link || undefined,
-        whatsapp_url: formData.whatsapp_link || undefined,
+        telegram_url: normalizeTelegram(formData.telegram_link),
+        instagram_url: normalizeInstagram(formData.instagram_link),
+        whatsapp_url: normalizeWhatsApp(formData.whatsapp_link),
         working_hours_start: formData.working_hours_start,
         working_hours_end: formData.working_hours_end,
         tags: formData.tags,
@@ -737,13 +797,13 @@ export const EditClubModal: React.FC<EditClubModalProps> = ({
             <div className="flex items-center gap-2">
               <TelegramIcon size={18} className="text-blue-500 shrink-0" />
               <input
-                type="url"
+                type="text"
                 value={formData.telegram_link}
                 onChange={(e) => {
                   setFormData({ ...formData, telegram_link: e.target.value });
                   setErrors({ ...errors, telegram_link: '' });
                 }}
-                placeholder="https://t.me/your_channel"
+                placeholder="telegram_username (e.g. @yourname or yourname)"
                 className="flex-1 border border-gray-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent caret-black"
                 disabled={isSubmitting}
               />
@@ -754,13 +814,13 @@ export const EditClubModal: React.FC<EditClubModalProps> = ({
             <div className="flex items-center gap-2">
               <InstagramIcon size={18} className="text-pink-500 shrink-0" />
               <input
-                type="url"
+                type="text"
                 value={formData.instagram_link}
                 onChange={(e) => {
                   setFormData({ ...formData, instagram_link: e.target.value });
                   setErrors({ ...errors, instagram_link: '' });
                 }}
-                placeholder="https://instagram.com/your_page"
+                placeholder="instagram_username (e.g. @yourpage or yourpage)"
                 className="flex-1 border border-gray-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent caret-black"
                 disabled={isSubmitting}
               />
@@ -771,10 +831,10 @@ export const EditClubModal: React.FC<EditClubModalProps> = ({
             <div className="flex items-center gap-2">
               <WhatsAppIcon size={18} className="text-green-500 shrink-0" />
               <input
-                type="url"
+                type="text"
                 value={formData.whatsapp_link}
                 onChange={(e) => setFormData({ ...formData, whatsapp_link: e.target.value })}
-                placeholder="https://wa.me/77001234567"
+                placeholder="whatsapp phone (e.g. 77001234567 or +77001234567)"
                 className="flex-1 border border-gray-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent caret-black"
                 disabled={isSubmitting}
               />
