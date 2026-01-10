@@ -7,7 +7,7 @@ import { clubsApi } from '@/functions/axios/axiosFunctions';
 import { useTelegram } from '@/hooks/useTelegram';
 import type { Club } from '../types';
 import type { UpdateClubRequest } from '@/functions/axios/requests';
-import { isValidPhoneNumber, parsePhoneNumber, parsePhoneNumberFromString, AsYouType } from 'libphonenumber-js';
+import { isValidPhoneNumber, parsePhoneNumberFromString, AsYouType } from 'libphonenumber-js';
 import { ImageCropModal } from '@/components/ImageCropModal';
 import { uploadOptimizedBlob, processImageWithCrop, type ClubImageUploadResult } from '@/lib/storageUpload';
 import { optimizeImage } from '@/lib/imageOptimization';
