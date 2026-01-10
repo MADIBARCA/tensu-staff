@@ -80,6 +80,46 @@ select,
   opacity: 0.6;
 }
 
+/* Весь контейнер */
+.PhoneInput {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Сам input */
+.PhoneInputInput {
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Контейнер страны */
+.PhoneInputCountry {
+  border: none !important;
+  background: transparent !important;
+}
+
+/* ❗ ВАЖНО: бордер вокруг флага */
+.PhoneInputCountryIcon--border {
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* select (выпадающий список стран) */
+.PhoneInputCountrySelect {
+  border: none !important;
+  background: transparent !important;
+  outline: none !important;
+}
+
+/* стрелка справа */
+.PhoneInputCountrySelectArrow {
+  border: none !important;
+  color: inherit;
+}
+
 /* Hide number-input spinners in Chrome, Safari, Edge, Opera */
 input[type="number"].no-spinner::-webkit-outer-spin-button,
 input[type="number"].no-spinner::-webkit-inner-spin-button {
