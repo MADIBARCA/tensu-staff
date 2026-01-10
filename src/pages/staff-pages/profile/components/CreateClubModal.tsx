@@ -769,7 +769,7 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
                 className={`flex-1 border rounded-lg p-2.5 text-sm text-gray-900 caret-black disabled:bg-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                 errors.telegram_link ? 'border-red-500' : 'border-gray-200'
               }`}
-                placeholder="telegram_username (e.g. @yourname or yourname)"
+                placeholder={t('profile.createClub.placeholders.telegram')}
             />
             </div>
             {errors.telegram_link && (
@@ -790,7 +790,7 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
                 className={`flex-1 border rounded-lg p-2.5 text-sm text-gray-900 caret-black disabled:bg-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                 errors.instagram_link ? 'border-red-500' : 'border-gray-200'
               }`}
-                placeholder="instagram_username (e.g. @yourpage or yourpage)"
+                placeholder={t('profile.createClub.placeholders.instagram')}
             />
             </div>
             {errors.instagram_link && (
@@ -806,7 +806,7 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
               onChange={(e) => setFormData({ ...formData, whatsapp_link: e.target.value })}
               disabled={isDisabled}
                 className="flex-1 border border-gray-200 rounded-lg p-2.5 text-sm text-gray-900 caret-black disabled:bg-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="whatsapp phone (e.g. 77001234567 or +77001234567)"
+                placeholder={t('profile.createClub.placeholders.whatsapp')}
             />
             </div>
           </div>

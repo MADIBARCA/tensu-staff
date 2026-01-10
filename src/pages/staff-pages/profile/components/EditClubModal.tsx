@@ -803,7 +803,7 @@ export const EditClubModal: React.FC<EditClubModalProps> = ({
                   setFormData({ ...formData, telegram_link: e.target.value });
                   setErrors({ ...errors, telegram_link: '' });
                 }}
-                placeholder="telegram_username (e.g. @yourname or yourname)"
+                placeholder={t('profile.createClub.placeholders.telegram')}
                 className="flex-1 border border-gray-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent caret-black"
                 disabled={isSubmitting}
               />
@@ -820,7 +820,7 @@ export const EditClubModal: React.FC<EditClubModalProps> = ({
                   setFormData({ ...formData, instagram_link: e.target.value });
                   setErrors({ ...errors, instagram_link: '' });
                 }}
-                placeholder="instagram_username (e.g. @yourpage or yourpage)"
+                placeholder={t('profile.createClub.placeholders.instagram')}
                 className="flex-1 border border-gray-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent caret-black"
                 disabled={isSubmitting}
               />
@@ -834,7 +834,7 @@ export const EditClubModal: React.FC<EditClubModalProps> = ({
                 type="text"
                 value={formData.whatsapp_link}
                 onChange={(e) => setFormData({ ...formData, whatsapp_link: e.target.value })}
-                placeholder="whatsapp phone (e.g. 77001234567 or +77001234567)"
+                placeholder={t('profile.createClub.placeholders.whatsapp')}
                 className="flex-1 border border-gray-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent caret-black"
                 disabled={isSubmitting}
               />
