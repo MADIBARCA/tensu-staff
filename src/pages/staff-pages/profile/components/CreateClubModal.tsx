@@ -515,43 +515,32 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
 
           {/* Working Hours */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              <div className="flex items-center gap-2">
-                <Clock size={16} />
-                {t('profile.createClub.workingHours')}
-              </div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              <Clock size={14} className="inline mr-1" />
+              {t('profile.createClub.workingHours')}
             </label>
-            <div className="flex items-center gap-3">
-              <div className="flex-1">
-                <input
-                  type="time"
-                  value={formData.working_hours_start}
-                  onChange={(e) => setFormData({ ...formData, working_hours_start: e.target.value })}
-                  disabled={isDisabled}
-                  className={`w-full border rounded-lg p-3 text-gray-900 ${
-                    errors.working_hours_start ? 'border-red-500' : 'border-gray-200'
-                  } disabled:bg-gray-100`}
-                />
-                {errors.working_hours_start && (
-                  <p className="text-red-500 text-xs mt-1">{errors.working_hours_start}</p>
-                )}
-              </div>
-              <span className="text-gray-500">—</span>
-              <div className="flex-1">
-                <input
-                  type="time"
-                  value={formData.working_hours_end}
-                  onChange={(e) => setFormData({ ...formData, working_hours_end: e.target.value })}
-                  disabled={isDisabled}
-                  className={`w-full border rounded-lg p-3 text-gray-900 ${
-                    errors.working_hours_end ? 'border-red-500' : 'border-gray-200'
-                  } disabled:bg-gray-100`}
-                />
-                {errors.working_hours_end && (
-                  <p className="text-red-500 text-xs mt-1">{errors.working_hours_end}</p>
-                )}
-              </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="time"
+                value={formData.working_hours_start}
+                onChange={(e) => setFormData({ ...formData, working_hours_start: e.target.value })}
+                disabled={isDisabled}
+                className="flex-1 border border-gray-200 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent caret-black"
+              />
+              <span className="text-gray-400">—</span>
+              <input
+                type="time"
+                value={formData.working_hours_end}
+                onChange={(e) => setFormData({ ...formData, working_hours_end: e.target.value })}
+                disabled={isDisabled}
+                className="flex-1 border border-gray-200 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent caret-black"
+              />
             </div>
+            {(errors.working_hours_start || errors.working_hours_end) && (
+              <p className="text-red-500 text-xs mt-1">
+                {errors.working_hours_start || errors.working_hours_end}
+              </p>
+            )}
           </div>
 
           {/* Logo Upload */}
