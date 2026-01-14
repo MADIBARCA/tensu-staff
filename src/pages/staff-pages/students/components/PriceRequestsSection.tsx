@@ -11,8 +11,6 @@ import {
   User,
   Phone,
   MessageSquare,
-  Calendar,
-  AlertCircle,
   CheckCircle,
   XCircle,
   Percent,
