@@ -52,7 +52,9 @@ import type {
   DashboardSummaryResponse,
   GetSectionsLimitCheckResponse,
   GetSectionsStatsResponse,
-  CanCreateSectionResponse
+  CanCreateSectionResponse,
+  PriceRequestListResponse,
+  PriceRequestActionResponse,
 } from './responses';
 
 // Staff API
@@ -578,4 +580,32 @@ export const notificationsApi = {
 
   delete: (notificationId: number, token: string) =>
     axiosRequest<{ status: string; message: string }>(`/staff/notifications/${notificationId}`, 'DELETE', token),
+};
+
+// Price Requests API
+export const priceRequestsApi = {
+  getList: (params: { page?: number; size?: number; club_id?: number; status?: string }, token: string) => {
+    const searchParams = new URLSearchParams();
+    if (params.page !== undefined) searchParams.append('page', params.page.toString());
+    if (params.size !== undefined) searchParams.append('size', params.size.toString());
+    if (params.club_id !== undefined) searchParams.append('club_id', params.club_id.toString());
+    if (params.status !== undefined) searchParams.append('status', params.status);
+    
+    const queryString = searchParams.toString();
+    const url = queryString ? `${ENDPOINTS.PRICE_REQUESTS.BASE}?${queryString}` : ENDPOINTS.PRICE_REQUESTS.BASE;
+    return axiosRequest<PriceRequestListResponse>(url, 'GET', token);
+  },
+
+  getPendingCount: (clubId?: number, token?: string) => {
+    const url = clubId 
+      ? `${ENDPOINTS.PRICE_REQUESTS.PENDING_COUNT}?club_id=${clubId}` 
+      : ENDPOINTS.PRICE_REQUESTS.PENDING_COUNT;
+    return axiosRequest<{ count: number }>(url, 'GET', token || '');
+  },
+
+  approve: (requestId: number, data: { approved_price: number; response_message?: string; valid_until?: string }, token: string) =>
+    axiosRequest<PriceRequestActionResponse>(ENDPOINTS.PRICE_REQUESTS.APPROVE(requestId), 'POST', token, data),
+
+  decline: (requestId: number, data: { response_message?: string }, token: string) =>
+    axiosRequest<PriceRequestActionResponse>(ENDPOINTS.PRICE_REQUESTS.DECLINE(requestId), 'POST', token, data),
 };

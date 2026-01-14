@@ -1,15 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Layout, PageContainer } from '@/components/Layout';
 import { useI18n } from '@/i18n/i18n';
-import { Search, Filter, X, Loader2, Users } from 'lucide-react';
+import { Search, Filter, X, Loader2, Users, Tag } from 'lucide-react';
 import { StudentCard } from './components/StudentCard';
 import { StudentFiltersModal } from './components/StudentFiltersModal';
 import { StudentDetailsModal } from './components/StudentDetailsModal';
 import { ExtendMembershipModal } from './components/ExtendMembershipModal';
 import { FreezeMembershipModal } from './components/FreezeMembershipModal';
 import { SetIndividualPriceModal, type IndividualPriceData } from './components/SetIndividualPriceModal';
+import { PriceRequestsSection } from './components/PriceRequestsSection';
 import { useTelegram } from '@/hooks/useTelegram';
-import { staffStudentsApi, teamApi, groupsApi, clubsApi } from '@/functions/axios/axiosFunctions';
+import { staffStudentsApi, teamApi, groupsApi, clubsApi, priceRequestsApi } from '@/functions/axios/axiosFunctions';
 import type { Student, StudentFilters, ExtendMembershipData, FreezeMembershipData, Trainer, Group, Club } from './types';
 
 export default function StudentsPage() {
@@ -35,6 +36,8 @@ export default function StudentsPage() {
   const [showExtendModal, setShowExtendModal] = useState(false);
   const [showFreezeModal, setShowFreezeModal] = useState(false);
   const [showPriceModal, setShowPriceModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<'students' | 'priceRequests'>('students');
+  const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
 
   // Load data from API
   const loadData = useCallback(async () => {
@@ -138,6 +141,20 @@ export default function StudentsPage() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Load pending requests count
+  useEffect(() => {
+    const loadPendingCount = async () => {
+      if (!initDataRaw) return;
+      try {
+        const response = await priceRequestsApi.getPendingCount(undefined, initDataRaw);
+        setPendingRequestsCount(response.data.count || 0);
+      } catch (error) {
+        console.error('Error loading pending requests count:', error);
+      }
+    };
+    loadPendingCount();
+  }, [initDataRaw]);
 
   // Debounced search
   const [debouncedSearch, setDebouncedSearch] = useState(filters.search);
@@ -338,81 +355,118 @@ export default function StudentsPage() {
   return (
     <Layout title={t('students.title')}>
       <PageContainer>
-        {/* Header with count */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Users size={20} className="text-blue-500" />
-            <span className="text-sm text-gray-600">
-              {t('students.totalCount', { count: totalStudents })}
-            </span>
-          </div>
+        {/* Tabs */}
+        <div className="flex gap-2 mb-4 border-b border-gray-200 pb-3">
+          <button
+            onClick={() => setActiveTab('students')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+              activeTab === 'students'
+                ? 'bg-blue-100 text-blue-700'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <Users size={18} />
+            {t('students.tabs.students')}
+          </button>
+          <button
+            onClick={() => setActiveTab('priceRequests')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors relative ${
+              activeTab === 'priceRequests'
+                ? 'bg-violet-100 text-violet-700'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <Tag size={18} />
+            {t('students.tabs.priceRequests')}
+            {pendingRequestsCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[20px] h-5 bg-red-500 text-white text-xs font-semibold rounded-full flex items-center justify-center px-1">
+                {pendingRequestsCount}
+              </span>
+            )}
+          </button>
         </div>
 
-        {/* Search Bar */}
-        <div className="relative mb-4">
-          <Search
-            size={18}
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-          />
-          <input
-            type="text"
-            value={debouncedSearch}
-            onChange={(e) => setDebouncedSearch(e.target.value)}
-            placeholder={t('students.search.placeholder')}
-            className="w-full pl-10 pr-10 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          {debouncedSearch && (
-            <button
-              onClick={handleClearSearch}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            >
-              <X size={18} />
-            </button>
-          )}
-        </div>
+        {activeTab === 'students' ? (
+          <>
+            {/* Header with count */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Users size={20} className="text-blue-500" />
+                <span className="text-sm text-gray-600">
+                  {t('students.totalCount', { count: totalStudents })}
+                </span>
+              </div>
+            </div>
 
-        {/* Filter Button */}
-        <button
-          onClick={() => setShowFiltersModal(true)}
-          className={`w-full mb-4 flex items-center justify-center gap-2 px-4 py-2 border rounded-lg transition-colors ${
-            hasActiveFilters
-              ? 'border-blue-500 bg-blue-50 text-blue-600'
-              : 'border-gray-200 text-gray-700 hover:bg-gray-50'
-          }`}
-        >
-          <Filter size={18} />
-          {t('students.filter.button')}
-          {hasActiveFilters && (
-            <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">
-              {filters.coachIds.length + filters.groupIds.length + (filters.status !== 'all' ? 1 : 0) + (filters.clubId ? 1 : 0)}
-            </span>
-          )}
-        </button>
-
-        {/* Students List */}
-        {students.length === 0 ? (
-          <div className="text-center py-8">
-            <Users size={48} className="mx-auto mb-4 text-gray-300" />
-            <p className="text-gray-600 mb-2">{t('students.empty')}</p>
-            <p className="text-sm text-gray-400">{t('students.emptyHint')}</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {students.map((student) => (
-              <StudentCard
-                key={student.id}
-                student={student}
-                onClick={() => handleStudentClick(student)}
+            {/* Search Bar */}
+            <div className="relative mb-4">
+              <Search
+                size={18}
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
               />
-            ))}
-          </div>
-        )}
+              <input
+                type="text"
+                value={debouncedSearch}
+                onChange={(e) => setDebouncedSearch(e.target.value)}
+                placeholder={t('students.search.placeholder')}
+                className="w-full pl-10 pr-10 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              {debouncedSearch && (
+                <button
+                  onClick={handleClearSearch}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X size={18} />
+                </button>
+              )}
+            </div>
 
-        {/* Results count */}
-        {students.length > 0 && (
-          <div className="mt-4 text-center text-sm text-gray-500">
-            {t('students.count', { count: students.length })}
-          </div>
+            {/* Filter Button */}
+            <button
+              onClick={() => setShowFiltersModal(true)}
+              className={`w-full mb-4 flex items-center justify-center gap-2 px-4 py-2 border rounded-lg transition-colors ${
+                hasActiveFilters
+                  ? 'border-blue-500 bg-blue-50 text-blue-600'
+                  : 'border-gray-200 text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <Filter size={18} />
+              {t('students.filter.button')}
+              {hasActiveFilters && (
+                <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">
+                  {filters.coachIds.length + filters.groupIds.length + (filters.status !== 'all' ? 1 : 0) + (filters.clubId ? 1 : 0)}
+                </span>
+              )}
+            </button>
+
+            {/* Students List */}
+            {students.length === 0 ? (
+              <div className="text-center py-8">
+                <Users size={48} className="mx-auto mb-4 text-gray-300" />
+                <p className="text-gray-600 mb-2">{t('students.empty')}</p>
+                <p className="text-sm text-gray-400">{t('students.emptyHint')}</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {students.map((student) => (
+                  <StudentCard
+                    key={student.id}
+                    student={student}
+                    onClick={() => handleStudentClick(student)}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Results count */}
+            {students.length > 0 && (
+              <div className="mt-4 text-center text-sm text-gray-500">
+                {t('students.count', { count: students.length })}
+              </div>
+            )}
+          </>
+        ) : (
+          <PriceRequestsSection />
         )}
 
         {/* Modals */}

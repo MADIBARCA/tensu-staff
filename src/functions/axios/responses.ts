@@ -728,3 +728,44 @@ export interface DashboardSummaryResponse {
   period_start: string;
   period_end: string;
 }
+
+// Price Request types
+export type PriceRequestStatus = 'pending' | 'approved' | 'declined' | 'expired';
+
+export interface PriceRequestResponse {
+  id: number;
+  student_id: number;
+  student_telegram_id: number;
+  student_name: string;
+  student_phone: string | null;
+  club_id: number;
+  club_name: string;
+  tariff_id: number;
+  tariff_name: string;
+  standard_price: number;
+  reason: string;
+  requested_price: number | null;
+  message: string | null;
+  status: PriceRequestStatus;
+  response_message: string | null;
+  approved_price: number | null;
+  reviewed_by_name: string | null;
+  created_at: string;
+  reviewed_at: string | null;
+}
+
+export interface PriceRequestListResponse {
+  requests: PriceRequestResponse[];
+  total: number;
+  page: number;
+  size: number;
+  pages: number;
+}
+
+export interface PriceRequestActionResponse {
+  message: string;
+  request_id: number;
+  status: PriceRequestStatus;
+  approved_price?: number;
+  price_override_id?: number;
+}

@@ -122,5 +122,12 @@ export const ENDPOINTS = {
   STAFF_ANALYTICS: {
     CLUB: (clubId: string | number) => `/staff/analytics/clubs/${clubId}`,
     DASHBOARD: '/staff/analytics/dashboard',
-  }  
+  },
+
+  PRICE_REQUESTS: {
+    BASE: '/staff/price-requests/',
+    PENDING_COUNT: '/staff/price-requests/pending-count',
+    APPROVE: (requestId: string | number) => `/staff/price-requests/${requestId}/approve`,
+    DECLINE: (requestId: string | number) => `/staff/price-requests/${requestId}/decline`,
+  },
 } as const;
