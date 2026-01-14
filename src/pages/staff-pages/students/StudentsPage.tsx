@@ -7,6 +7,7 @@ import { StudentFiltersModal } from './components/StudentFiltersModal';
 import { StudentDetailsModal } from './components/StudentDetailsModal';
 import { ExtendMembershipModal } from './components/ExtendMembershipModal';
 import { FreezeMembershipModal } from './components/FreezeMembershipModal';
+import { SetIndividualPriceModal, type IndividualPriceData } from './components/SetIndividualPriceModal';
 import { useTelegram } from '@/hooks/useTelegram';
 import { staffStudentsApi, teamApi, groupsApi, clubsApi } from '@/functions/axios/axiosFunctions';
 import type { Student, StudentFilters, ExtendMembershipData, FreezeMembershipData, Trainer, Group, Club } from './types';
@@ -33,6 +34,7 @@ export default function StudentsPage() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showExtendModal, setShowExtendModal] = useState(false);
   const [showFreezeModal, setShowFreezeModal] = useState(false);
+  const [showPriceModal, setShowPriceModal] = useState(false);
 
   // Load data from API
   const loadData = useCallback(async () => {
@@ -164,13 +166,20 @@ export default function StudentsPage() {
     if (!selectedStudent || !initDataRaw) return;
 
     try {
-      const response = await staffStudentsApi.extend({
+      // Use extendWithCustomPrice if custom price or payment status is provided
+      const response = await staffStudentsApi.extendWithCustomPrice({
         enrollment_id: data.enrollment_id,
         tariff_id: data.tariff_id,
         days: data.days,
+        custom_price: data.custom_price,
+        payment_status: data.payment_status || 'paid',
+        note: data.note,
       }, initDataRaw);
 
       if (response.data) {
+        // Determine the actual price charged
+        const finalPrice = data.custom_price ?? data.price ?? selectedStudent.membership?.price ?? 0;
+
         // Update student in list
         setStudents(prevStudents =>
           prevStudents.map(student => {
@@ -182,7 +191,7 @@ export default function StudentsPage() {
                   end_date: response.data!.new_end_date,
                   status: 'active',
                   tariff_name: data.tariff_name,
-                  price: data.price || student.membership.price,
+                  price: finalPrice,
                 },
               };
             }
@@ -200,7 +209,7 @@ export default function StudentsPage() {
               end_date: response.data!.new_end_date,
               status: 'active',
               tariff_name: data.tariff_name,
-              price: data.price || prev.membership.price,
+              price: finalPrice,
             },
           };
         });
@@ -279,6 +288,31 @@ export default function StudentsPage() {
     
     setShowDetailsModal(false);
     setSelectedStudent(null);
+  };
+
+  const handleSetIndividualPrice = async (data: IndividualPriceData) => {
+    if (!selectedStudent || !initDataRaw) return;
+
+    try {
+      const response = await staffStudentsApi.setIndividualPrice(
+        data.student_id,
+        {
+          tariff_id: data.tariff_id,
+          custom_price: data.custom_price,
+          reason: data.reason,
+          valid_until: data.valid_until,
+        },
+        initDataRaw
+      );
+      
+      if (response.data) {
+        setShowPriceModal(false);
+        window.Telegram?.WebApp?.showAlert(t('students.individualPrice.success'));
+      }
+    } catch (error) {
+      console.error('Error setting individual price:', error);
+      window.Telegram?.WebApp?.showAlert(t('students.individualPrice.error'));
+    }
   };
 
   const handleApplyFilters = (newFilters: StudentFilters) => {
@@ -409,6 +443,10 @@ export default function StudentsPage() {
               setShowFreezeModal(true);
             }}
             onMarkAttendance={handleMarkAttendance}
+            onSetIndividualPrice={() => {
+              setShowDetailsModal(false);
+              setShowPriceModal(true);
+            }}
           />
         )}
 
@@ -431,6 +469,17 @@ export default function StudentsPage() {
               setShowDetailsModal(true);
             }}
             onFreeze={handleFreezeMembership}
+          />
+        )}
+
+        {showPriceModal && selectedStudent && (
+          <SetIndividualPriceModal
+            student={selectedStudent}
+            onClose={() => {
+              setShowPriceModal(false);
+              setShowDetailsModal(true);
+            }}
+            onSave={handleSetIndividualPrice}
           />
         )}
       </PageContainer>

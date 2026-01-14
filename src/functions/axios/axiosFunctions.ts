@@ -491,6 +491,57 @@ export const staffStudentsApi = {
 
   getPaymentStats: (studentId: string | number, token: string) =>
     axiosRequest<StudentPaymentStatsResponse>(ENDPOINTS.STAFF_STUDENTS.PAYMENTS_STATS(studentId), 'GET', token),
+
+  // Individual pricing
+  setIndividualPrice: (studentId: string | number, data: {
+    tariff_id: number;
+    custom_price: number;
+    reason: string;
+    valid_until?: string;
+  }, token: string) =>
+    axiosRequest<{ 
+      message: string; 
+      individual_price_id: number;
+      student_id: number;
+      tariff_id: number;
+      custom_price: number;
+      reason: string;
+      valid_until?: string;
+    }>(ENDPOINTS.STAFF_STUDENTS.SET_INDIVIDUAL_PRICE(studentId), 'POST', token, data),
+
+  getIndividualPrices: (studentId: string | number, token: string) =>
+    axiosRequest<{
+      individual_prices: Array<{
+        id: number;
+        tariff_id: number;
+        tariff_name: string;
+        standard_price: number;
+        custom_price: number;
+        reason: string;
+        valid_until?: string;
+        created_at: string;
+        created_by_name: string;
+      }>;
+    }>(ENDPOINTS.STAFF_STUDENTS.GET_INDIVIDUAL_PRICES(studentId), 'GET', token),
+
+  deleteIndividualPrice: (studentId: string | number, priceId: string | number, token: string) =>
+    axiosRequest<{ message: string }>(ENDPOINTS.STAFF_STUDENTS.DELETE_INDIVIDUAL_PRICE(studentId, priceId), 'DELETE', token),
+
+  // Extend membership with custom price
+  extendWithCustomPrice: (data: {
+    enrollment_id: number;
+    tariff_id: number;
+    days: number;
+    custom_price?: number;
+    payment_status: 'paid' | 'pending' | 'free';
+    note?: string;
+  }, token: string) =>
+    axiosRequest<{ 
+      message: string; 
+      new_end_date: string;
+      payment_id?: number;
+      amount_charged: number;
+    }>(ENDPOINTS.STAFF_STUDENTS.EXTEND, 'POST', token, data),
 };
 
 // Staff Analytics API

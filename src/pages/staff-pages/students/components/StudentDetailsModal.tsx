@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Phone, MessageCircle, ChevronDown, ChevronUp, Calendar, CreditCard, CheckCircle, Loader2 } from 'lucide-react';
+import { X, Phone, MessageCircle, ChevronDown, ChevronUp, Calendar, CreditCard, CheckCircle, Loader2, Tag, Snowflake } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import type { Student, AttendanceRecord, PaymentRecord } from '../types';
 import { staffStudentsApi } from '@/functions/axios/axiosFunctions';
@@ -10,6 +10,7 @@ interface StudentDetailsModalProps {
   onExtend: () => void;
   onFreeze: () => void;
   onMarkAttendance: () => void;
+  onSetIndividualPrice?: () => void;
 }
 
 export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
@@ -18,6 +19,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
   onExtend,
   onFreeze,
   onMarkAttendance,
+  onSetIndividualPrice,
 }) => {
   const { t } = useI18n();
   const [showAttendance, setShowAttendance] = useState(false);
@@ -410,29 +412,44 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
         </div>
 
         {/* Actions */}
-        <div className="p-4 border-t border-gray-200 space-y-2">
-          <button
-            onClick={onExtend}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-          >
-            <Calendar size={18} />
-            {t('students.action.extend')}
-          </button>
-          <div className="flex gap-2">
+        <div className="p-4 border-t border-gray-200 space-y-2 pb-8">
+          {/* Primary Actions */}
+          <div className="grid grid-cols-2 gap-2">
             <button
-              onClick={onFreeze}
-              disabled={!canFreeze}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={onExtend}
+              className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg shadow-blue-500/25 font-medium"
             >
-              {t('students.action.freeze')}
+              <Calendar size={18} />
+              {t('students.action.extend')}
             </button>
             <button
               onClick={onMarkAttendance}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+              className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all shadow-lg shadow-green-500/25 font-medium"
             >
               <CheckCircle size={18} />
               {t('students.action.markAttendance')}
             </button>
+          </div>
+          
+          {/* Secondary Actions */}
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={onFreeze}
+              disabled={!canFreeze}
+              className="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+            >
+              <Snowflake size={16} />
+              {t('students.action.freeze')}
+            </button>
+            {onSetIndividualPrice && (
+              <button
+                onClick={onSetIndividualPrice}
+                className="flex items-center justify-center gap-2 px-4 py-2.5 border border-purple-200 text-purple-700 bg-purple-50 rounded-xl hover:bg-purple-100 transition-colors font-medium"
+              >
+                <Tag size={16} />
+                {t('students.action.setPrice')}
+              </button>
+            )}
           </div>
         </div>
       </div>

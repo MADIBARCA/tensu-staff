@@ -93,6 +93,9 @@ export interface ExtendMembershipData {
   days: number;
   tariff_name?: string;
   price?: number;
+  custom_price?: number;
+  payment_status?: 'paid' | 'pending' | 'free';
+  note?: string;
 }
 
 export interface FreezeMembershipData {

@@ -113,6 +113,10 @@ export const ENDPOINTS = {
     ATTENDANCE_STATS: (studentId: string | number) => `/staff/students/${studentId}/attendance/stats`,
     PAYMENTS: (studentId: string | number) => `/staff/students/${studentId}/payments`,
     PAYMENTS_STATS: (studentId: string | number) => `/staff/students/${studentId}/payments/stats`,
+    // Individual pricing
+    SET_INDIVIDUAL_PRICE: (studentId: string | number) => `/staff/students/${studentId}/individual-price`,
+    GET_INDIVIDUAL_PRICES: (studentId: string | number) => `/staff/students/${studentId}/individual-prices`,
+    DELETE_INDIVIDUAL_PRICE: (studentId: string | number, priceId: string | number) => `/staff/students/${studentId}/individual-price/${priceId}`,
   },
 
   STAFF_ANALYTICS: {
