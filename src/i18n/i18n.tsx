@@ -740,6 +740,9 @@ const RU: Dict = {
   'management.sections.groupsAndLessonsCreated': 'Группы и занятия успешно созданы',
   'management.sections.updatedWithLessons': 'Секция обновлена, занятия созданы',
   'management.sections.generatingLessons': 'Создаём занятия...',
+  'management.sections.startTime': 'Начало',
+  'management.sections.endTime': 'Конец',
+  'management.sections.errors.periodTooLong': 'Период не может превышать 6 месяцев (180 дней)',
   // Pricing
   'management.pricing.count': 'тарифов',
   'management.pricing.notFound': 'Тарифы не найдены',
@@ -1589,6 +1592,9 @@ const KK: Dict = {
   'management.sections.groupsAndLessonsCreated': 'Топтар мен сабақтар сәтті құрылды',
   'management.sections.updatedWithLessons': 'Бөлім жаңартылды, сабақтар құрылды',
   'management.sections.generatingLessons': 'Сабақтар құрылуда...',
+  'management.sections.startTime': 'Басталуы',
+  'management.sections.endTime': 'Аяқталуы',
+  'management.sections.errors.periodTooLong': 'Кезең 6 айдан (180 күн) аспауы керек',
   // Pricing
   'management.pricing.count': 'тариф',
   'management.pricing.notFound': 'Тарифтер табылмады',
@@ -2312,6 +2318,9 @@ const EN: Dict = {
   'management.sections.groupsAndLessonsCreated': 'Groups and lessons created successfully',
   'management.sections.updatedWithLessons': 'Section updated, lessons created',
   'management.sections.generatingLessons': 'Creating lessons...',
+  'management.sections.startTime': 'Start',
+  'management.sections.endTime': 'End',
+  'management.sections.errors.periodTooLong': 'Period cannot exceed 6 months (180 days)',
   
   // Pricing
   'management.pricing.searchPlaceholder': 'Search by tariff name',

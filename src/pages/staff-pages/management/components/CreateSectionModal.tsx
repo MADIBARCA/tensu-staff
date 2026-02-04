@@ -401,6 +401,15 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
     }
   };
 
+  // Check if any group has period > 180 days
+  const hasInvalidPeriod = groups.some(grp => {
+    if (!grp.valid_from || !grp.valid_until) return false;
+    const startDate = new Date(grp.valid_from);
+    const endDate = new Date(grp.valid_until);
+    const diffDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    return diffDays > 180;
+  });
+
   const handleFinish = () => {
     if (!sectionCreated) {
       handleCreateSection();
@@ -631,7 +640,7 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
                             type="date"
                             value={group.valid_from}
                             onChange={(e) => updateGroup(gIdx, 'valid_from', e.target.value)}
-                            className="w-full text-sm border border-gray-200 rounded-lg p-2 bg-white"
+                            className="w-full min-w-0 text-sm border border-gray-200 rounded-lg p-2 bg-white box-border"
                           />
                         </div>
                         <div>
@@ -643,27 +652,37 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
                             value={group.valid_until}
                             onChange={(e) => updateGroup(gIdx, 'valid_until', e.target.value)}
                             min={group.valid_from}
-                            className="w-full text-sm border border-gray-200 rounded-lg p-2 bg-white"
+                            className="w-full min-w-0 text-sm border border-gray-200 rounded-lg p-2 bg-white box-border"
                           />
                         </div>
                       </div>
+                      {/* Period validation warning */}
+                      {group.valid_from && group.valid_until && (() => {
+                        const startDate = new Date(group.valid_from);
+                        const endDate = new Date(group.valid_until);
+                        const diffDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+                        if (diffDays > 180) {
+                          return (
+                            <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
+                              <p className="text-xs text-red-600 flex items-center gap-1">
+                                <AlertCircle size={12} />
+                                {t('management.sections.errors.periodTooLong') || 'Период не может превышать 6 месяцев (180 дней)'}
+                              </p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
                     
                     {/* Weekly Schedule */}
-                    <div className="flex items-center justify-between mb-2">
+                    <div className="mb-2">
                       <span className="text-xs text-gray-600">{t('management.sections.schedules')}</span>
-                      <button
-                        type="button"
-                        onClick={() => addScheduleRow(gIdx)}
-                        className="text-xs text-blue-500 hover:text-blue-600"
-                      >
-                        + {t('management.sections.addSchedule')}
-                      </button>
                     </div>
 
                     {group.schedule.length === 0 && (
                       <p className="text-xs text-gray-400 text-center py-2">
-                        {t('management.sections.noScheduleYet') || 'Нажмите "+ Добавить расписание"'}
+                        {t('management.sections.noScheduleYet') || 'Добавьте занятия в расписание'}
                       </p>
                     )}
 
@@ -698,26 +717,40 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
                         {/* Time Selection */}
                         <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <label className="block text-xs text-gray-500 mb-1">Начало</label>
+                            <label className="block text-xs text-gray-500 mb-1">{t('management.sections.startTime') || 'Начало'}</label>
                             <input
                               type="time"
                               value={row.start}
                               onChange={(e) => updateScheduleRow(gIdx, rowIdx, 'start', e.target.value)}
-                              className="w-full text-sm border border-gray-200 rounded-lg p-2"
+                              className="w-full min-w-0 text-sm border border-gray-200 rounded-lg p-2 box-border"
                             />
                             </div>
                           <div>
-                            <label className="block text-xs text-gray-500 mb-1">Конец</label>
+                            <label className="block text-xs text-gray-500 mb-1">{t('management.sections.endTime') || 'Конец'}</label>
                             <input
                               type="time"
                               value={row.end}
                               onChange={(e) => updateScheduleRow(gIdx, rowIdx, 'end', e.target.value)}
-                              className="w-full text-sm border border-gray-200 rounded-lg p-2"
+                              className="w-full min-w-0 text-sm border border-gray-200 rounded-lg p-2 box-border"
                             />
                           </div>
                         </div>
                       </div>
                     ))}
+
+                    {/* Add Schedule Button - at the bottom */}
+                    <button
+                      type="button"
+                      onClick={() => addScheduleRow(gIdx)}
+                      className="w-full mt-2 p-3 border-2 border-dashed border-gray-300 rounded-lg 
+                                 text-gray-500 hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50
+                                 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Plus size={18} />
+                      <span className="text-sm font-medium">
+                        {t('management.sections.addSchedule')}
+                      </span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -735,7 +768,7 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
           </button>
           <button
             onClick={handleFinish}
-            disabled={loading || checkingLimits || (!sectionCreated && (!sectionData.name || !sectionData.club_id || sectionData.coach_ids.length === 0 || canCreateInClub === false))}
+            disabled={loading || checkingLimits || hasInvalidPeriod || (!sectionCreated && (!sectionData.name || !sectionData.club_id || sectionData.coach_ids.length === 0 || canCreateInClub === false))}
             className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
           >
             {loading ? (
