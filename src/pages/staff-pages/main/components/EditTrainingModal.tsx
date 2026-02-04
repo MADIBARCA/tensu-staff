@@ -10,8 +10,8 @@ interface EditTrainingModalProps {
   clubRoles: ClubWithRole[];
   currentUser: CreateStaffResponse | null;
   onClose: () => void;
-  onSave: (data: UpdateTrainingData, changeType?: 'single' | 'series') => void;
-  onCancel: (changeType?: 'single' | 'series') => void;
+  onSave: (data: UpdateTrainingData) => void;
+  onCancel: () => void;
 }
 
 export const EditTrainingModal: React.FC<EditTrainingModalProps> = ({
@@ -164,23 +164,23 @@ export const EditTrainingModal: React.FC<EditTrainingModalProps> = ({
     onSave(dataToSave);
   };
 
-  const handleSaveWithType = (changeType: 'single' | 'series') => {
+  const handleSaveWithType = (_changeType: 'single' | 'series') => {
     setShowSeriesDialog(false);
     const dataToSave: UpdateTrainingData = {
       ...formData,
       coach_id: coachIds[0],
       coach_ids: coachIds,
     };
-    onSave(dataToSave, changeType);
+    onSave(dataToSave);
   };
 
   const handleCancelTraining = () => {
     setShowCancelDialog(true);
   };
 
-  const handleCancelWithType = (changeType: 'single' | 'series') => {
+  const handleCancelWithType = (_changeType: 'single' | 'series') => {
     setShowCancelDialog(false);
-    onCancel(changeType);
+    onCancel();
   };
 
   const getStatusColor = (status: string) => {

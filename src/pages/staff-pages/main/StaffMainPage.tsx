@@ -449,8 +449,7 @@ export default function StaffMainPage() {
   };
 
   const handleUpdateTraining = async (
-    data: UpdateTrainingData,
-    changeType?: 'single' | 'series'
+    data: UpdateTrainingData
   ) => {
     if (!selectedTraining || !initDataRaw) {
       // Local update as fallback
@@ -485,88 +484,34 @@ export default function StaffMainPage() {
         notes: data.notes ?? selectedTraining.notes ?? '',
       }, initDataRaw);
 
-      // Update local state
-      setTrainings((prevTrainings) =>
-        prevTrainings.map((training) => {
-          if (training.id === selectedTraining.id) {
-            const updated = {
-              ...training,
-              ...data,
-              updated_at: new Date().toISOString(),
-            };
-
-            if (changeType === 'single' && training.training_type === 'recurring') {
-              updated.training_type = 'single';
-            }
-            return updated;
-          }
-
-          if (
-            changeType === 'series' &&
-            training.training_type === 'recurring' &&
-            training.section_id === selectedTraining.section_id &&
-            training.time === selectedTraining.time
-          ) {
-            return {
-              ...training,
-              ...data,
-              updated_at: new Date().toISOString(),
-            };
-          }
-
-          return training;
-        })
-      );
+      // Reload data from server to get actual effective_date and effective_start_time
+      await loadData();
+      
+      // Show success message
+      window.Telegram?.WebApp?.showAlert('Тренировка обновлена');
     } catch (error) {
       console.error('Error updating training:', error);
+      window.Telegram?.WebApp?.showAlert('Ошибка при обновлении тренировки');
     }
 
     setShowEditModal(false);
     setSelectedTraining(null);
   };
 
-  const handleCancelTraining = async (changeType?: 'single' | 'series') => {
+  const handleCancelTraining = async () => {
     if (!selectedTraining) return;
 
     if (initDataRaw) {
       try {
         await scheduleApi.cancelLesson(selectedTraining.id, { reason: 'Cancelled by coach' }, initDataRaw);
+        // Reload data from server
+        await loadData();
+        window.Telegram?.WebApp?.showAlert('Тренировка отменена');
       } catch (error) {
         console.error('Error cancelling training:', error);
+        window.Telegram?.WebApp?.showAlert('Ошибка при отмене тренировки');
       }
     }
-
-    setTrainings((prevTrainings) =>
-      prevTrainings.map((training) => {
-        if (training.id === selectedTraining.id) {
-          const updated = {
-            ...training,
-            status: 'cancelled' as const,
-            updated_at: new Date().toISOString(),
-          };
-
-          if (changeType === 'single' && training.training_type === 'recurring') {
-            updated.training_type = 'single';
-          }
-          return updated;
-        }
-
-        if (
-          changeType === 'series' &&
-          training.training_type === 'recurring' &&
-          training.section_id === selectedTraining.section_id &&
-          training.time === selectedTraining.time
-        ) {
-          return {
-            ...training,
-            status: 'cancelled' as const,
-            updated_at: new Date().toISOString(),
-          };
-        }
-
-        return training;
-      })
-    );
 
     setShowEditModal(false);
     setSelectedTraining(null);
