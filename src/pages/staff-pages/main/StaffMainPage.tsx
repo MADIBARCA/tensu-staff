@@ -188,7 +188,12 @@ export default function StaffMainPage() {
       const startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
       const endDate = new Date(today.getFullYear(), today.getMonth() + 3, 0);
       
-      const formatDate = (d: Date) => d.toISOString().split('T')[0];
+      const formatDate = (d: Date) => {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
       
       const lessonsResponse = await scheduleApi.getLessons({
         page: 1,
