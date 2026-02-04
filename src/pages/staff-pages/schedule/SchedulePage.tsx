@@ -9,7 +9,7 @@ import { NoMembershipModal } from './components/NoMembershipModal';
 import { ParticipantsModal } from './components/ParticipantsModal';
 import { useTelegram } from '@/hooks/useTelegram';
 import { clubsApi, teamApi, scheduleApi, staffApi } from '@/functions/axios/axiosFunctions';
-import type { ClubWithRole, CreateStaffResponse } from '@/functions/axios/responses';
+import type { ClubWithRole, CreateStaffResponse, Lesson } from '@/functions/axios/responses';
 
 export interface Training {
   id: number;
@@ -120,7 +120,7 @@ export default function SchedulePage() {
     return `${parts[0]}:${parts[1]}`;
   };
 
-  // Load lessons for a specific month
+  // Load lessons for a specific month with optimized filtering
   const loadLessonsForMonth = useCallback(async (targetMonth: Date) => {
     if (!initDataRaw) return;
 
@@ -136,42 +136,109 @@ export default function SchedulePage() {
       const endDate = new Date(year, month + 2, 0);
 
       const clubNameMap = new Map(loadedClubsRef.current.map(c => [c.id, c.name]));
-
-      // Use getLessons API with date range
-      const lessonsResponse = await scheduleApi.getLessons({
-        page: 1,
-        size: 50,
-        date_from: formatDate(startDate),
-        date_to: formatDate(endDate),
-      }, initDataRaw);
-
-      if (lessonsResponse.data?.lessons) {
-        const allTrainings: Training[] = lessonsResponse.data.lessons
-          .filter(lesson => {
-            const clubId = lesson.group?.section?.club_id || 0;
-            return canUserSeeLessonForClub(clubId, lesson.coach_id);
-          })
-          .map(lesson => ({
-            id: lesson.id,
-            section_name: lesson.group?.section?.name || lesson.group?.name || '',
-            group_name: lesson.group?.name,
-            coach_name: `${lesson.coach?.first_name || ''} ${lesson.coach?.last_name || ''}`.trim(),
-            coach_id: lesson.coach_id,
-            club_id: lesson.group?.section?.club_id || 0,
-            club_name: clubNameMap.get(lesson.group?.section?.club_id || 0) || 'Клуб',
-            date: lesson.effective_date || lesson.planned_date,
-            time: formatTime(lesson.effective_start_time || lesson.planned_start_time),
-            location: lesson.location || '',
-            max_participants: lesson.group?.capacity || 15,
-            current_participants: 0,
-            participants: [],
-            notes: lesson.notes,
-            is_booked: false,
-            is_in_waitlist: false,
-          }));
-
-        setTrainings(allTrainings);
+      const roles = clubRolesRef.current;
+      const user = currentUserRef.current;
+      
+      // Determine optimal filtering strategy
+      const ownerAdminClubIds = roles
+        .filter(cr => cr.role === 'owner' || cr.role === 'admin')
+        .map(cr => cr.club.id);
+      const isOnlyCoach = roles.every(cr => cr.role === 'coach');
+      
+      let allLessons: Lesson[] = [];
+      
+      if (isOnlyCoach && user) {
+        // If user is only a coach in all clubs, filter by coach_id on backend
+        const lessonsResponse = await scheduleApi.getLessons({
+          page: 1,
+          size: 100,
+          date_from: formatDate(startDate),
+          date_to: formatDate(endDate),
+          coach_id: user.id,
+        }, initDataRaw);
+        allLessons = lessonsResponse.data?.lessons || [];
+      } else if (ownerAdminClubIds.length > 0) {
+        // If owner/admin, make parallel requests for each club
+        const requests = ownerAdminClubIds.map(clubId =>
+          scheduleApi.getLessons({
+            page: 1,
+            size: 100,
+            date_from: formatDate(startDate),
+            date_to: formatDate(endDate),
+            club_id: clubId,
+          }, initDataRaw)
+        );
+        
+        // Also get coach lessons if user is coach in some clubs
+        const coachClubIds = roles
+          .filter(cr => cr.role === 'coach')
+          .map(cr => cr.club.id);
+        
+        if (coachClubIds.length > 0 && user) {
+          requests.push(
+            scheduleApi.getLessons({
+              page: 1,
+              size: 100,
+              date_from: formatDate(startDate),
+              date_to: formatDate(endDate),
+              coach_id: user.id,
+            }, initDataRaw)
+          );
+        }
+        
+        const results = await Promise.all(requests);
+        
+        // Merge and deduplicate lessons
+        const seenIds = new Set<number>();
+        results.forEach(res => {
+          (res.data?.lessons || []).forEach(lesson => {
+            if (!seenIds.has(lesson.id)) {
+              seenIds.add(lesson.id);
+              allLessons.push(lesson);
+            }
+          });
+        });
+      } else {
+        // Fallback: single request (old behavior)
+        const lessonsResponse = await scheduleApi.getLessons({
+          page: 1,
+          size: 100,
+          date_from: formatDate(startDate),
+          date_to: formatDate(endDate),
+        }, initDataRaw);
+        allLessons = (lessonsResponse.data?.lessons || []).filter(lesson => {
+          const clubId = lesson.group?.section?.club_id || 0;
+          return canUserSeeLessonForClub(clubId, lesson.coach_id);
+        });
       }
+
+      const allTrainings: Training[] = allLessons.map(lesson => ({
+        id: lesson.id,
+        section_name: lesson.group?.section?.name || lesson.group?.name || '',
+        group_name: lesson.group?.name,
+        coach_name: `${lesson.coach?.first_name || ''} ${lesson.coach?.last_name || ''}`.trim(),
+        coach_id: lesson.coach_id,
+        club_id: lesson.group?.section?.club_id || 0,
+        club_name: clubNameMap.get(lesson.group?.section?.club_id || 0) || 'Клуб',
+        date: lesson.effective_date || lesson.planned_date,
+        time: formatTime(lesson.effective_start_time || lesson.planned_start_time),
+        location: lesson.location || '',
+        max_participants: lesson.group?.capacity || 15,
+        current_participants: 0,
+        participants: [],
+        notes: lesson.notes,
+        is_booked: false,
+        is_in_waitlist: false,
+      }));
+
+      // Debug: Log loaded lessons for calendar
+      console.log('[loadLessonsForMonth] Target month:', targetMonth.toISOString(), 'Loaded trainings:', allTrainings.map(t => ({
+        id: t.id,
+        date: t.date,
+        section: t.section_name,
+      })));
+
+      setTrainings(allTrainings);
     } catch (err) {
       console.error('Failed to load lessons for month:', err);
     } finally {
@@ -229,21 +296,81 @@ export default function SchedulePage() {
         setCoaches(loadedCoaches);
       }
 
-      // Load lessons for current month (3 months range)
+      // Load lessons for current month (3 months range) with optimized filtering
       const today = new Date();
       const startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
       const endDate = new Date(today.getFullYear(), today.getMonth() + 3, 0);
 
-        const clubNameMap = new Map(loadedClubs.map(c => [c.id, c.name]));
-
-      const lessonsResponse = await scheduleApi.getLessons({
-        page: 1,
-        size: 50,
-        date_from: formatDate(startDate),
-        date_to: formatDate(endDate),
-      }, initDataRaw);
-
-      if (lessonsResponse.data?.lessons) {
+      const clubNameMap = new Map(loadedClubs.map(c => [c.id, c.name]));
+      
+      // Determine optimal filtering strategy based on user roles
+      const ownerAdminClubIds = loadedClubRoles
+        .filter(cr => cr.role === 'owner' || cr.role === 'admin')
+        .map(cr => cr.club.id);
+      const isOnlyCoach = loadedClubRoles.every(cr => cr.role === 'coach');
+      
+      let allLessons: Lesson[] = [];
+      
+      if (isOnlyCoach && userResponse.data) {
+        // If user is only a coach in all clubs, filter by coach_id on backend
+        const lessonsResponse = await scheduleApi.getLessons({
+          page: 1,
+          size: 100,
+          date_from: formatDate(startDate),
+          date_to: formatDate(endDate),
+          coach_id: userResponse.data.id,
+        }, initDataRaw);
+        allLessons = lessonsResponse.data?.lessons || [];
+      } else if (ownerAdminClubIds.length > 0) {
+        // If owner/admin, make parallel requests for each club
+        const requests = ownerAdminClubIds.map(clubId =>
+          scheduleApi.getLessons({
+            page: 1,
+            size: 100,
+            date_from: formatDate(startDate),
+            date_to: formatDate(endDate),
+            club_id: clubId,
+          }, initDataRaw)
+        );
+        
+        // Also get coach lessons if user is coach in some clubs
+        const coachClubIds = loadedClubRoles
+          .filter(cr => cr.role === 'coach')
+          .map(cr => cr.club.id);
+        
+        if (coachClubIds.length > 0 && userResponse.data) {
+          requests.push(
+            scheduleApi.getLessons({
+              page: 1,
+              size: 100,
+              date_from: formatDate(startDate),
+              date_to: formatDate(endDate),
+              coach_id: userResponse.data.id,
+            }, initDataRaw)
+          );
+        }
+        
+        const results = await Promise.all(requests);
+        
+        // Merge and deduplicate lessons
+        const seenIds = new Set<number>();
+        results.forEach(res => {
+          (res.data?.lessons || []).forEach(lesson => {
+            if (!seenIds.has(lesson.id)) {
+              seenIds.add(lesson.id);
+              allLessons.push(lesson);
+            }
+          });
+        });
+      } else {
+        // Fallback: single request with frontend filtering
+        const lessonsResponse = await scheduleApi.getLessons({
+          page: 1,
+          size: 100,
+          date_from: formatDate(startDate),
+          date_to: formatDate(endDate),
+        }, initDataRaw);
+        
         // Helper to check if user can see a lesson
         const canSeeLessonLocal = (clubId: number, coachId: number): boolean => {
           const user = userResponse.data;
@@ -262,33 +389,40 @@ export default function SchedulePage() {
           
           return false;
         };
-
-        const allTrainings: Training[] = lessonsResponse.data.lessons
-          .filter(lesson => {
-            const clubId = lesson.group?.section?.club_id || 0;
-            return canSeeLessonLocal(clubId, lesson.coach_id);
-          })
-          .map(lesson => ({
-              id: lesson.id,
-            section_name: lesson.group?.section?.name || lesson.group?.name || '',
-              group_name: lesson.group?.name,
-              coach_name: `${lesson.coach?.first_name || ''} ${lesson.coach?.last_name || ''}`.trim(),
-              coach_id: lesson.coach_id,
-            club_id: lesson.group?.section?.club_id || 0,
-            club_name: clubNameMap.get(lesson.group?.section?.club_id || 0) || 'Клуб',
-            date: lesson.effective_date || lesson.planned_date,
-            time: formatTime(lesson.effective_start_time || lesson.planned_start_time),
-              location: lesson.location || '',
-            max_participants: lesson.group?.capacity || 15,
-              current_participants: 0,
-              participants: [],
-              notes: lesson.notes,
-              is_booked: false,
-              is_in_waitlist: false,
-          }));
         
-        setTrainings(allTrainings);
+        allLessons = (lessonsResponse.data?.lessons || []).filter(lesson => {
+          const clubId = lesson.group?.section?.club_id || 0;
+          return canSeeLessonLocal(clubId, lesson.coach_id);
+        });
       }
+
+      const allTrainings: Training[] = allLessons.map(lesson => ({
+        id: lesson.id,
+        section_name: lesson.group?.section?.name || lesson.group?.name || '',
+        group_name: lesson.group?.name,
+        coach_name: `${lesson.coach?.first_name || ''} ${lesson.coach?.last_name || ''}`.trim(),
+        coach_id: lesson.coach_id,
+        club_id: lesson.group?.section?.club_id || 0,
+        club_name: clubNameMap.get(lesson.group?.section?.club_id || 0) || 'Клуб',
+        date: lesson.effective_date || lesson.planned_date,
+        time: formatTime(lesson.effective_start_time || lesson.planned_start_time),
+        location: lesson.location || '',
+        max_participants: lesson.group?.capacity || 15,
+        current_participants: 0,
+        participants: [],
+        notes: lesson.notes,
+        is_booked: false,
+        is_in_waitlist: false,
+      }));
+      
+      // Debug: Log lessons to check dates
+      console.log('[SchedulePage] Loaded trainings:', allTrainings.map(t => ({
+        id: t.id,
+        date: t.date,
+        section: t.section_name,
+      })));
+      
+      setTrainings(allTrainings);
       
       setHasActiveMembership(true);
     } catch (err) {

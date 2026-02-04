@@ -183,7 +183,7 @@ export default function StaffMainPage() {
         setCoaches(transformedCoaches);
       }
 
-      // Load schedule for 3 months (current + 2 months ahead)
+      // Load schedule for 3 months (current + 2 months ahead) with optimized filtering
       const today = new Date();
       const startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
       const endDate = new Date(today.getFullYear(), today.getMonth() + 3, 0);
@@ -195,36 +195,93 @@ export default function StaffMainPage() {
         return `${year}-${month}-${day}`;
       };
       
-      const lessonsResponse = await scheduleApi.getLessons({
-        page: 1,
-        size: 50,
-        date_from: formatDate(startDate),
-        date_to: formatDate(endDate),
-      }, initDataRaw);
+      const clubNameMap = new Map(loadedClubs.map(c => [c.id, c.name]));
+      // Create section name map from sections response data
+      const sectionNameMap = new Map(
+        (sectionsResponse.data || []).map(s => [s.id, s.name] as [number, string])
+      );
       
-      if (lessonsResponse.data?.lessons) {
-        const allLessons: Training[] = [];
-        const clubNameMap = new Map(loadedClubs.map(c => [c.id, c.name]));
-        // Create section name map from sections response data
-        const sectionNameMap = new Map(
-          (sectionsResponse.data || []).map(s => [s.id, s.name] as [number, string])
+      // Determine optimal filtering strategy based on user roles
+      const loadedClubRoles = clubsResponse.data?.clubs || [];
+      const ownerAdminClubIds = loadedClubRoles
+        .filter(cr => cr.role === 'owner' || cr.role === 'admin')
+        .map(cr => cr.club.id);
+      const isOnlyCoach = loadedClubRoles.every(cr => cr.role === 'coach');
+      
+      let allApiLessons: Lesson[] = [];
+      
+      if (isOnlyCoach && userResponse.data) {
+        // If user is only a coach in all clubs, filter by coach_id on backend
+        const lessonsResponse = await scheduleApi.getLessons({
+          page: 1,
+          size: 100,
+          date_from: formatDate(startDate),
+          date_to: formatDate(endDate),
+          coach_id: userResponse.data.id,
+        }, initDataRaw);
+        allApiLessons = lessonsResponse.data?.lessons || [];
+      } else if (ownerAdminClubIds.length > 0) {
+        // If owner/admin, make parallel requests for each club
+        const requests = ownerAdminClubIds.map(clubId =>
+          scheduleApi.getLessons({
+            page: 1,
+            size: 100,
+            date_from: formatDate(startDate),
+            date_to: formatDate(endDate),
+            club_id: clubId,
+          }, initDataRaw)
         );
+        
+        // Also get coach lessons if user is coach in some clubs
+        const coachClubIds = loadedClubRoles
+          .filter(cr => cr.role === 'coach')
+          .map(cr => cr.club.id);
+        
+        if (coachClubIds.length > 0 && userResponse.data) {
+          requests.push(
+            scheduleApi.getLessons({
+              page: 1,
+              size: 100,
+              date_from: formatDate(startDate),
+              date_to: formatDate(endDate),
+              coach_id: userResponse.data.id,
+            }, initDataRaw)
+          );
+        }
+        
+        const results = await Promise.all(requests);
+        
+        // Merge and deduplicate lessons
+        const seenIds = new Set<number>();
+        results.forEach(res => {
+          (res.data?.lessons || []).forEach(lesson => {
+            if (!seenIds.has(lesson.id)) {
+              seenIds.add(lesson.id);
+              allApiLessons.push(lesson);
+            }
+          });
+        });
+      } else {
+        // Fallback: single request with frontend filtering
+        const lessonsResponse = await scheduleApi.getLessons({
+          page: 1,
+          size: 100,
+          date_from: formatDate(startDate),
+          date_to: formatDate(endDate),
+        }, initDataRaw);
         
         // Helper to check if user can see a lesson based on their role
         const canSeeLessonLocal = (clubId: number, coachId: number): boolean => {
           const user = userResponse.data;
           if (!user) return false;
           
-          // Find user's role in this club from loaded club roles
-          const clubRole = (clubsResponse.data?.clubs || []).find(cr => cr.club.id === clubId);
+          const clubRole = loadedClubRoles.find(cr => cr.club.id === clubId);
           if (!clubRole) return false;
           
-          // Owner or admin can see all lessons in the club
           if (clubRole.role === 'owner' || clubRole.role === 'admin') {
             return true;
           }
           
-          // Coach can only see their own lessons
           if (clubRole.role === 'coach') {
             return coachId === user.id;
           }
@@ -232,21 +289,24 @@ export default function StaffMainPage() {
           return false;
         };
         
-        lessonsResponse.data.lessons.forEach(lesson => {
-          // Get club name from group's section
+        allApiLessons = (lessonsResponse.data?.lessons || []).filter(lesson => {
           const sectionId = lesson.group?.section_id;
           const section = (sectionsResponse.data || []).find(s => s.id === sectionId);
           const clubId = section?.club_id || 0;
-          
-          // Filter lessons based on user's role
-          if (canSeeLessonLocal(clubId, lesson.coach_id)) {
-            const clubName = clubNameMap.get(clubId) || 'Клуб';
-            allLessons.push(transformLessonToTraining(lesson, clubName, sectionNameMap));
-          }
+          return canSeeLessonLocal(clubId, lesson.coach_id);
         });
-        
-        setTrainings(allLessons);
       }
+      
+      // Transform lessons to Training format
+      const allLessons: Training[] = allApiLessons.map(lesson => {
+        const sectionId = lesson.group?.section_id;
+        const section = (sectionsResponse.data || []).find(s => s.id === sectionId);
+        const clubId = section?.club_id || 0;
+        const clubName = clubNameMap.get(clubId) || 'Клуб';
+        return transformLessonToTraining(lesson, clubName, sectionNameMap);
+      });
+      
+      setTrainings(allLessons);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {

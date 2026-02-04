@@ -743,6 +743,8 @@ const RU: Dict = {
   'management.sections.startTime': 'Начало',
   'management.sections.endTime': 'Конец',
   'management.sections.errors.periodTooLong': 'Период не может превышать 6 месяцев (180 дней)',
+  'management.sections.errors.durationTooShort': 'Длительность занятия должна быть минимум 30 минут',
+  'management.sections.errors.durationTooLong': 'Длительность занятия не может превышать 5 часов (300 минут)',
   // Pricing
   'management.pricing.count': 'тарифов',
   'management.pricing.notFound': 'Тарифы не найдены',
@@ -1595,6 +1597,8 @@ const KK: Dict = {
   'management.sections.startTime': 'Басталуы',
   'management.sections.endTime': 'Аяқталуы',
   'management.sections.errors.periodTooLong': 'Кезең 6 айдан (180 күн) аспауы керек',
+  'management.sections.errors.durationTooShort': 'Сабақ ұзақтығы кемінде 30 минут болуы керек',
+  'management.sections.errors.durationTooLong': 'Сабақ ұзақтығы 5 сағаттан (300 минут) аспауы керек',
   // Pricing
   'management.pricing.count': 'тариф',
   'management.pricing.notFound': 'Тарифтер табылмады',
@@ -2321,6 +2325,8 @@ const EN: Dict = {
   'management.sections.startTime': 'Start',
   'management.sections.endTime': 'End',
   'management.sections.errors.periodTooLong': 'Period cannot exceed 6 months (180 days)',
+  'management.sections.errors.durationTooShort': 'Lesson duration must be at least 30 minutes',
+  'management.sections.errors.durationTooLong': 'Lesson duration cannot exceed 5 hours (300 minutes)',
   
   // Pricing
   'management.pricing.searchPlaceholder': 'Search by tariff name',

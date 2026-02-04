@@ -194,15 +194,37 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
     setErrors({ ...errors, coaches: '' });
   };
 
+  // Calculate duration in minutes from start and end time
+  const calculateDuration = (start: string, end: string): number => {
+    if (!start || !end) return 60;
+    const duration = (Date.parse(`1970-01-01T${end}`) - Date.parse(`1970-01-01T${start}`)) / 60000;
+    return duration > 0 ? duration : 60;
+  };
+
+  // Get duration error message for a specific schedule row
+  const getDurationError = (start: string, end: string): string | null => {
+    if (!start || !end) return null;
+    const duration = calculateDuration(start, end);
+    if (duration < 30) return t('management.sections.errors.durationTooShort') || 'Минимум 30 минут';
+    if (duration > 300) return t('management.sections.errors.durationTooLong') || 'Максимум 5 часов';
+    return null;
+  };
+
+  // Check if any schedule has invalid duration
+  const hasInvalidDuration = groups.some(grp => 
+    grp.schedule.some(row => getDurationError(row.start, row.end) !== null)
+  );
+
   // Build schedule entry for API
   const buildScheduleEntry = (rows: ScheduleRow[], validFrom: string, validUntil: string) => {
     const pattern: Record<string, { time: string; duration: number }[]> = {};
     rows.forEach(({ day, start, end }) => {
       const engDay = dayMap[day] || day.toLowerCase();
-      const duration =
-        (Date.parse(`1970-01-01T${end}`) - Date.parse(`1970-01-01T${start}`)) / 60000;
+      const duration = calculateDuration(start, end);
+      // Clamp duration to valid range
+      const clampedDuration = Math.min(300, Math.max(30, duration));
       if (!pattern[engDay]) pattern[engDay] = [];
-      pattern[engDay].push({ time: start, duration: duration > 0 ? duration : 60 });
+      pattern[engDay].push({ time: start, duration: clampedDuration });
     });
     return {
       weekly_pattern: pattern,
@@ -722,7 +744,7 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
                               type="time"
                               value={row.start}
                               onChange={(e) => updateScheduleRow(gIdx, rowIdx, 'start', e.target.value)}
-                              className="w-full min-w-0 text-sm border border-gray-200 rounded-lg p-2 box-border"
+                              className={`w-full min-w-0 text-sm border rounded-lg p-2 box-border ${getDurationError(row.start, row.end) ? 'border-red-300' : 'border-gray-200'}`}
                             />
                             </div>
                           <div>
@@ -731,10 +753,22 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
                               type="time"
                               value={row.end}
                               onChange={(e) => updateScheduleRow(gIdx, rowIdx, 'end', e.target.value)}
-                              className="w-full min-w-0 text-sm border border-gray-200 rounded-lg p-2 box-border"
+                              className={`w-full min-w-0 text-sm border rounded-lg p-2 box-border ${getDurationError(row.start, row.end) ? 'border-red-300' : 'border-gray-200'}`}
                             />
                           </div>
                         </div>
+                        {/* Duration validation error */}
+                        {getDurationError(row.start, row.end) && (
+                          <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                            <AlertCircle size={12} />
+                            {getDurationError(row.start, row.end)}
+                            {row.start && row.end && (
+                              <span className="text-gray-400 ml-1">
+                                ({calculateDuration(row.start, row.end)} мин)
+                              </span>
+                            )}
+                          </p>
+                        )}
                       </div>
                     ))}
 
@@ -768,7 +802,7 @@ export const CreateSectionModal: React.FC<CreateSectionModalProps> = ({
           </button>
           <button
             onClick={handleFinish}
-            disabled={loading || checkingLimits || hasInvalidPeriod || (!sectionCreated && (!sectionData.name || !sectionData.club_id || sectionData.coach_ids.length === 0 || canCreateInClub === false))}
+            disabled={loading || checkingLimits || hasInvalidPeriod || hasInvalidDuration || (!sectionCreated && (!sectionData.name || !sectionData.club_id || sectionData.coach_ids.length === 0 || canCreateInClub === false))}
             className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
           >
             {loading ? (
