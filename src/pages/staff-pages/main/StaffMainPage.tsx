@@ -56,13 +56,54 @@ const formatTimeString = (time: string): string => {
   return `${parts[0]}:${parts[1]}`;
 };
 
+// Helper to get duration from group's schedule template based on day and time
+const getDurationFromGroupSchedule = (
+  groupSchedule: { weekly_pattern?: Record<string, Array<{ time: string; duration: number }>> } | undefined,
+  lessonDate: string,
+  lessonTime: string,
+  fallbackDuration: number
+): number => {
+  if (!groupSchedule?.weekly_pattern) return fallbackDuration;
+  
+  // Get day of week from lesson date
+  const date = new Date(lessonDate);
+  const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  const dayName = dayNames[date.getDay()];
+  
+  const daySchedule = groupSchedule.weekly_pattern[dayName];
+  if (!daySchedule || daySchedule.length === 0) return fallbackDuration;
+  
+  // Find matching time slot (compare HH:mm)
+  const lessonTimeFormatted = formatTimeString(lessonTime);
+  const matchingSlot = daySchedule.find(slot => {
+    const slotTime = formatTimeString(slot.time);
+    return slotTime === lessonTimeFormatted;
+  });
+  
+  return matchingSlot?.duration || fallbackDuration;
+};
+
 // Helper function to transform API Lesson to Training
-const transformLessonToTraining = (lesson: Lesson, clubName: string, sectionNameMap: Map<number, string>): Training => {
+const transformLessonToTraining = (
+  lesson: Lesson, 
+  clubName: string, 
+  sectionNameMap: Map<number, string>,
+  groupScheduleMap?: Map<number, { weekly_pattern?: Record<string, Array<{ time: string; duration: number }>> }>
+): Training => {
+  // Get duration from group's schedule template if available (more up-to-date than lesson's stored duration)
+  const groupSchedule = groupScheduleMap?.get(lesson.group_id);
+  const duration = getDurationFromGroupSchedule(
+    groupSchedule,
+    lesson.effective_date,
+    lesson.effective_start_time,
+    lesson.duration_minutes
+  );
+  
   const status = mapApiStatusToTrainingStatus(
     lesson.status,
     lesson.effective_date,
     lesson.effective_start_time,
-    lesson.duration_minutes
+    duration
   );
   
   const sectionId = lesson.group?.section_id || 0;
@@ -83,7 +124,7 @@ const transformLessonToTraining = (lesson: Lesson, clubName: string, sectionName
     coach_name: `${lesson.coach?.first_name || ''} ${lesson.coach?.last_name || ''}`.trim(),
     date: lesson.effective_date,
     time: formatTimeString(lesson.effective_start_time),
-    duration: lesson.duration_minutes,
+    duration: duration,
     location: lesson.location || '',
     max_participants: undefined,
     current_participants: 0,
@@ -159,14 +200,22 @@ export default function StaffMainPage() {
         setSections(transformedSections);
       }
 
-      // Load groups
+      // Load groups with schedule data
       const groupsResponse = await groupsApi.getMy(initDataRaw);
+      // Create a map of group_id to schedule for duration lookup
+      const groupScheduleMap = new Map<number, { weekly_pattern?: Record<string, Array<{ time: string; duration: number }>> }>();
       if (groupsResponse.data) {
-        const transformedGroups: Group[] = groupsResponse.data.map(g => ({
-          id: g.id,
-          name: g.name,
-          section_id: g.section_id,
-        }));
+        const transformedGroups: Group[] = groupsResponse.data.map(g => {
+          // Store schedule for each group
+          if (g.schedule && typeof g.schedule === 'object' && 'weekly_pattern' in g.schedule) {
+            groupScheduleMap.set(g.id, g.schedule as { weekly_pattern?: Record<string, Array<{ time: string; duration: number }>> });
+          }
+          return {
+            id: g.id,
+            name: g.name,
+            section_id: g.section_id,
+          };
+        });
         setGroups(transformedGroups);
       }
 
@@ -297,25 +346,29 @@ export default function StaffMainPage() {
         });
       }
       
-      // Transform lessons to Training format
+      // Transform lessons to Training format (using group schedule for up-to-date duration)
       const allLessons: Training[] = allApiLessons.map(lesson => {
         const sectionId = lesson.group?.section_id;
         const section = (sectionsResponse.data || []).find(s => s.id === sectionId);
         const clubId = section?.club_id || 0;
         const clubName = clubNameMap.get(clubId) || 'Клуб';
-        return transformLessonToTraining(lesson, clubName, sectionNameMap);
+        return transformLessonToTraining(lesson, clubName, sectionNameMap, groupScheduleMap);
       });
       
-      // Debug: Log lesson times from API
+      // Debug: Log lesson times and durations from API
       console.log('[StaffMainPage] Lessons from API:', allApiLessons.map(l => ({
         id: l.id,
+        group_id: l.group_id,
         planned_start_time: l.planned_start_time,
         actual_start_time: l.actual_start_time,
         effective_start_time: l.effective_start_time,
+        duration_minutes: l.duration_minutes,
       })));
+      console.log('[StaffMainPage] Group schedules:', Array.from(groupScheduleMap.entries()));
       console.log('[StaffMainPage] Trainings after transform:', allLessons.map(t => ({
         id: t.id,
         time: t.time,
+        duration: t.duration,
         section: t.section_name,
       })));
       
