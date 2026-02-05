@@ -306,6 +306,19 @@ export default function StaffMainPage() {
         return transformLessonToTraining(lesson, clubName, sectionNameMap);
       });
       
+      // Debug: Log lesson times from API
+      console.log('[StaffMainPage] Lessons from API:', allApiLessons.map(l => ({
+        id: l.id,
+        planned_start_time: l.planned_start_time,
+        actual_start_time: l.actual_start_time,
+        effective_start_time: l.effective_start_time,
+      })));
+      console.log('[StaffMainPage] Trainings after transform:', allLessons.map(t => ({
+        id: t.id,
+        time: t.time,
+        section: t.section_name,
+      })));
+      
       setTrainings(allLessons);
     } catch (error) {
       console.error('Error loading data:', error);
