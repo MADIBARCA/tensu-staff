@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, Filter, Plus, Info, AlertCircle } from 'lucide-react';
+import { Search, Filter, Plus, AlertTriangle, MessageCircle } from 'lucide-react';
 import { useI18n } from '@/i18n/i18n';
 import { useTelegram } from '@/hooks/useTelegram';
 import { SectionCard } from './SectionCard';
@@ -33,6 +33,7 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingSection, setEditingSection] = useState<Section | null>(null);
   const [sectionsStats, setSectionsStats] = useState<GetSectionsStatsResponse | null>(null);
+  const [showLimitsModal, setShowLimitsModal] = useState(false);
 
   const coaches = employees.filter(e => e.role === 'coach');
 
@@ -108,59 +109,17 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
   const hasActiveFilters = filters.club_id || filters.coach_id;
 
   const canCreateMore = sectionsStats ? sectionsStats.remaining_sections > 0 : true;
-  const isAtLimit = sectionsStats ? sectionsStats.total_sections >= sectionsStats.max_sections : false;
+
+  const handleCreateClick = () => {
+    if (!canCreateMore) {
+      setShowLimitsModal(true);
+    } else {
+      setShowCreateModal(true);
+    }
+  };
 
   return (
     <div className="space-y-4">
-      {/* Section Limits Info */}
-      {sectionsStats && (
-        <div className={`rounded-lg p-4 border-2 ${
-          isAtLimit 
-            ? 'bg-red-50 border-red-200' 
-            : sectionsStats.remaining_sections <= 2
-            ? 'bg-orange-50 border-orange-200'
-            : 'bg-blue-50 border-blue-200'
-        }`}>
-          <div className="flex items-start gap-3">
-            <div className={`p-2 rounded-full ${
-              isAtLimit 
-                ? 'bg-red-100 text-red-600' 
-                : sectionsStats.remaining_sections <= 2
-                ? 'bg-orange-100 text-orange-600'
-                : 'bg-blue-100 text-blue-600'
-            }`}>
-              {isAtLimit ? <AlertCircle size={20} /> : <Info size={20} />}
-            </div>
-            <div className="flex-1">
-              <h4 className={`font-semibold mb-1 ${
-                isAtLimit 
-                  ? 'text-red-900' 
-                  : sectionsStats.remaining_sections <= 2
-                  ? 'text-orange-900'
-                  : 'text-blue-900'
-              }`}>
-                {isAtLimit 
-                  ? 'Лимит секций достигнут'
-                  : `Доступно секций: ${sectionsStats.remaining_sections} из ${sectionsStats.max_sections}`
-                }
-              </h4>
-              <p className={`text-sm ${
-                isAtLimit 
-                  ? 'text-red-700' 
-                  : sectionsStats.remaining_sections <= 2
-                  ? 'text-orange-700'
-                  : 'text-blue-700'
-              }`}>
-                {isAtLimit 
-                  ? `Вы использовали все доступные секции (${sectionsStats.total_sections}/${sectionsStats.max_sections}). Для создания новых секций обратитесь к администратору.`
-                  : `Создано секций: ${sectionsStats.total_sections}. Осталось доступно: ${sectionsStats.remaining_sections}.`
-                }
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Search and Filter Bar */}
       <div className="flex gap-2">
         <div className="flex-1 relative">
@@ -182,14 +141,8 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
           <Filter size={20} />
         </button>
         <button
-          onClick={() => setShowCreateModal(true)}
-          disabled={!canCreateMore}
-          className={`flex items-center gap-1 px-3 py-2 text-sm rounded-lg transition-colors ${
-            canCreateMore
-              ? 'bg-blue-500 text-white hover:bg-blue-600'
-              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-          }`}
-          title={!canCreateMore ? 'Лимит секций достигнут' : ''}
+          onClick={handleCreateClick}
+          className="flex items-center gap-1 px-3 py-2 text-sm rounded-lg transition-colors bg-blue-500 text-white hover:bg-blue-600"
         >
           <Plus size={18} />
           {t('management.sections.create')}
@@ -293,6 +246,69 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
           onClose={() => setEditingSection(null)}
           onRefresh={handleEditClosed}
         />
+      )}
+
+      {/* Section Limits Modal */}
+      {showLimitsModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-sm rounded-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-8 text-center">
+              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertTriangle className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-white">
+                Лимит секций достигнут
+              </h3>
+            </div>
+            
+            {/* Content */}
+            <div className="p-6">
+              <p className="text-gray-600 text-center mb-4">
+                Вы достигли максимального количества секций. Для увеличения лимита свяжитесь с администратором.
+              </p>
+              
+              {sectionsStats && (
+                <div className="bg-gray-50 rounded-xl p-4 mb-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm text-gray-500">Создано секций</span>
+                    <span className="font-semibold text-gray-900">{sectionsStats.total_sections}</span>
+                  </div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm text-gray-500">Максимум</span>
+                    <span className="font-semibold text-gray-900">{sectionsStats.max_sections}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">Доступно</span>
+                    <span className="font-semibold text-amber-600">{sectionsStats.remaining_sections}</span>
+                  </div>
+                </div>
+              )}
+              
+              <div className="bg-blue-50 rounded-xl p-4 mb-6">
+                <p className="text-sm text-blue-800 text-center">
+                  Свяжитесь с нами для увеличения лимита
+                </p>
+                <a
+                  href="https://t.me/admintensu"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 mt-3 text-blue-600 font-medium hover:text-blue-700"
+                >
+                  <MessageCircle size={18} />
+                  @admintensu
+                </a>
+              </div>
+              
+              <button
+                onClick={() => setShowLimitsModal(false)}
+                className="w-full px-4 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors"
+              >
+                Закрыть
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
