@@ -318,9 +318,44 @@ export default function ManagementPage() {
       
       // Reload all data to get fresh state from server
       await loadData();
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Error creating invitation:', error);
-      window.Telegram?.WebApp?.showAlert(t('management.employees.errors.addFailed'));
+      
+      // Parse error to show appropriate message
+      let errorMessage = t('management.employees.errors.addFailed');
+      
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { status?: number; data?: { detail?: string } } };
+        const status = axiosError.response?.status;
+        const detail = axiosError.response?.data?.detail;
+        
+        // 409 Conflict - staff already exists or invitation already sent
+        if (status === 409) {
+          // Check if the error message indicates the staff already exists
+          if (detail) {
+            const lowerDetail = detail.toLowerCase();
+            if (lowerDetail.includes('already') || lowerDetail.includes('уже') || lowerDetail.includes('exists') || lowerDetail.includes('существует')) {
+              errorMessage = t('management.employees.errors.staffAlreadyExists');
+            } else if (lowerDetail.includes('invitation') || lowerDetail.includes('приглашение')) {
+              errorMessage = t('management.employees.errors.invitationAlreadySent');
+            } else {
+              errorMessage = t('management.employees.errors.staffAlreadyExists');
+            }
+          } else {
+            errorMessage = t('management.employees.errors.staffAlreadyExists');
+          }
+        } else if (status === 400) {
+          // Bad request - validation error
+          if (detail) {
+            errorMessage = detail;
+          }
+        } else if (status === 403) {
+          // Forbidden - no permission
+          errorMessage = t('management.employees.errors.noPermission');
+        }
+      }
+      
+      window.Telegram?.WebApp?.showAlert(errorMessage);
     }
   };
 
