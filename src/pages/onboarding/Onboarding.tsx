@@ -232,7 +232,7 @@ export default function OnboardingPage() {
                     t('onboarding.getPhoneButton')
                   )}
                 </button>
-              ) : (
+              ) : !showInvitationAlert ? (
                 <button
                   onClick={() => navigate("/staff/main")}
                   disabled={isLoading}
@@ -250,7 +250,7 @@ export default function OnboardingPage() {
                     t('onboarding.continueButton')
                   )}
                 </button>
-              )}
+              ) : null}
 
               <p className="text-xs text-gray-400 text-center">
                 {t('onboarding.privacyNotice')}

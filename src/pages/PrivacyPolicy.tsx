@@ -83,10 +83,10 @@ export default function PrivacyPolicy() {
               <p className="text-sm text-gray-600">{t('privacy.contact.text')}</p>
               <button
                 type="button"
-                onClick={() => openTelegramLink('https://t.me/admintensu')}
+                onClick={() => openTelegramLink('https://t.me/tensuadmin')}
                 className="inline-flex items-center justify-center px-4 py-2 bg-white border border-gray-200 rounded-lg text-blue-600 font-medium hover:bg-gray-50 transition-colors"
               >
-                @admintensu
+                @tensuadmin
               </button>
             </div>
           </div>

@@ -694,13 +694,13 @@ export default function ProfilePage() {
                     {t('profile.limits.contactSupport')}
                   </p>
                   <a
-                    href="https://t.me/admintensu"
+                    href="https://t.me/tensuadmin"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center justify-center gap-2 mt-3 text-blue-600 font-medium hover:text-blue-700"
                   >
                     <MessageCircle size={18} />
-                    @admintensu
+                    @tensuadmin
                   </a>
                 </div>
                 
