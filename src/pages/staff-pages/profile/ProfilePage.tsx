@@ -320,23 +320,8 @@ export default function ProfilePage() {
       }
     } catch (error: unknown) {
       console.error('Error creating club:', error);
-      
-      // Extract error message from backend response
-      let errorMessage = t('profile.errors.createFailed');
-      
-      if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as { response?: { data?: { detail?: string | { msg?: string }[] } } };
-        const detail = axiosError.response?.data?.detail;
-        
-        if (typeof detail === 'string') {
-          errorMessage = detail;
-        } else if (Array.isArray(detail) && detail[0]?.msg) {
-          errorMessage = detail[0].msg;
-        }
-      }
-      
-      window.Telegram?.WebApp?.showAlert(errorMessage);
-      throw error; // Re-throw to let modal know it failed
+      // Re-throw to let modal handle the error display
+      throw error;
     } finally {
       setIsCreatingClub(false);
     }

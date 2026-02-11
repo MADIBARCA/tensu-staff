@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useRef, useEffect } from 'react';
 import clsx from 'clsx';
 import { X, Plus, Clock, Loader2, Upload, Trash2, Image as ImageIcon } from 'lucide-react';
@@ -11,6 +12,13 @@ import { ImageCropModal } from '@/components/ImageCropModal';
 import { uploadOptimizedBlob, processImageWithCrop, type ClubImageUploadResult } from '@/lib/storageUpload';
 import { optimizeImage } from '@/lib/imageOptimization';
 import type { Area } from 'react-easy-crop';
+
+type BackendErrorField = 'name' | 'description' | 'city' | 'address' | 'phone' | 'telegram_url' | 'instagram_url' | 'whatsapp_url' | 'working_hours_start' | 'working_hours_end' | 'tags' | 'logo_url' | 'cover_url';
+
+interface BackendValidationError {
+  field?: BackendErrorField;
+  message: string;
+}
 
 interface CreateClubModalProps {
   onClose: () => void;
@@ -42,6 +50,7 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [customTag, setCustomTag] = useState('');
   const [loading, setLoading] = useState(false);
+  const [submitError, setSubmitError] = useState<string>(''); // General error message from backend
 
   // Image upload state
   const [clubKey] = useState(() => `tmp-${Date.now()}`);
@@ -149,8 +158,98 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
+  // Parse backend error and map to form fields
+  const parseBackendError = (error: unknown): BackendValidationError => {
+    if (!error || typeof error !== 'object') {
+      return { message: t('profile.errors.createFailed') };
+    }
+    
+    const axiosError = error as { response?: { data?: { detail?: string | { msg?: string; loc?: string[] }[] }; status?: number } };
+    const detail = axiosError.response?.data?.detail;
+    const status = axiosError.response?.status;
+    
+    // Handle validation errors (422)
+    if (status === 422 && Array.isArray(detail) && detail.length > 0) {
+      const firstError = detail[0];
+      const message = firstError.msg || t('profile.errors.createFailed');
+      
+      // Try to extract field name from loc array (e.g., ['body', 'name'])
+      if (firstError.loc && Array.isArray(firstError.loc)) {
+        const fieldName = firstError.loc[firstError.loc.length - 1] as BackendErrorField;
+        // Map backend field names to form field names
+        const fieldMapping: Record<string, string> = {
+          'name': 'name',
+          'description': 'description',
+          'city': 'city',
+          'address': 'address',
+          'phone': 'phone',
+          'telegram_url': 'telegram_link',
+          'instagram_url': 'instagram_link',
+          'whatsapp_url': 'whatsapp_link',
+          'working_hours_start': 'working_hours_start',
+          'working_hours_end': 'working_hours_end',
+          'tags': 'tags',
+          'logo_url': 'logo_url',
+          'cover_url': 'cover_url',
+        };
+        const formField = fieldMapping[fieldName];
+        if (formField) {
+          return { field: fieldName, message };
+        }
+      }
+      return { message };
+    }
+    
+    // Handle string detail
+    if (typeof detail === 'string') {
+      // Try to detect field from error message
+      const lowerDetail = detail.toLowerCase();
+      if (lowerDetail.includes('name') || lowerDetail.includes('название')) {
+        return { field: 'name', message: detail };
+      }
+      if (lowerDetail.includes('phone') || lowerDetail.includes('телефон')) {
+        return { field: 'phone', message: detail };
+      }
+      if (lowerDetail.includes('city') || lowerDetail.includes('город')) {
+        return { field: 'city', message: detail };
+      }
+      if (lowerDetail.includes('address') || lowerDetail.includes('адрес')) {
+        return { field: 'address', message: detail };
+      }
+      if (lowerDetail.includes('telegram')) {
+        return { field: 'telegram_url', message: detail };
+      }
+      if (lowerDetail.includes('instagram')) {
+        return { field: 'instagram_url', message: detail };
+      }
+      if (lowerDetail.includes('whatsapp')) {
+        return { field: 'whatsapp_url', message: detail };
+      }
+      if (lowerDetail.includes('limit') || lowerDetail.includes('лимит')) {
+        return { message: detail };
+      }
+      return { message: detail };
+    }
+    
+    // Handle 409 Conflict (duplicate)
+    if (status === 409) {
+      return { message: t('profile.createClub.errors.clubAlreadyExists') };
+    }
+    
+    // Handle 403 Forbidden (limit reached)
+    if (status === 403) {
+      return { message: t('profile.createClub.errors.limitReached') };
+    }
+    
+    return { message: t('profile.errors.createFailed') };
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Clear previous errors
+    setSubmitError('');
+    
     if (!validate()) return;
     
     setLoading(true);
@@ -166,8 +265,6 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
           if (parsed) formattedPhone = parsed.format('E.164');
         }
       } catch (err) {
-        // keep original
-      }
 
       const normalizeTelegram = (val?: string) => {
         if (!val) return undefined;
@@ -207,7 +304,33 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
 
       await onCreate(payload);
     } catch (error) {
-      // Error handling is done in the parent component
+      // Parse backend error and show in modal
+      const parsedError = parseBackendError(error);
+      
+      if (parsedError.field) {
+        // Map backend field to form field name
+        const fieldMapping: Record<string, string> = {
+          'name': 'name',
+          'description': 'description',
+          'city': 'city',
+          'address': 'address',
+          'phone': 'phone',
+          'telegram_url': 'telegram_link',
+          'instagram_url': 'instagram_link',
+          'whatsapp_url': 'whatsapp_link',
+          'working_hours_start': 'working_hours_start',
+          'working_hours_end': 'working_hours_end',
+          'tags': 'tags',
+          'logo_url': 'logo',
+          'cover_url': 'cover',
+        };
+        const formFieldName = fieldMapping[parsedError.field] || parsedError.field;
+        setErrors(prev => ({ ...prev, [formFieldName]: parsedError.message }));
+      }
+      
+      // Always set general error message
+      setSubmitError(parsedError.message);
+      
       console.error('Error creating club:', error);
     } finally {
       setLoading(false);
@@ -425,6 +548,28 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="flex-1 p-4 space-y-4">
+          {/* General Error Message */}
+          {submitError && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+              <div className="flex-shrink-0 w-6 h-6 bg-red-100 rounded-full flex items-center justify-center">
+                <X size={14} className="text-red-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-red-800">
+                  {t('profile.createClub.errors.createError')}
+                </p>
+                <p className="text-sm text-red-600 mt-1">{submitError}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSubmitError('')}
+                className="flex-shrink-0 p-1 text-red-400 hover:text-red-600 transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          )}
+
           {/* Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
