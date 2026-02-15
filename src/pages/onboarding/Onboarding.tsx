@@ -210,7 +210,15 @@ export default function OnboardingPage() {
               {showInvitationAlert && (
                 <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl">
                   <p className="text-sm font-medium text-center">
-                    {t('onboarding.notStaff')}
+                    {t('onboarding.notStaff')}{' '}
+                    <a 
+                      href="https://t.me/tensuadmin" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-600 underline hover:text-blue-800"
+                    >
+                      {t('onboarding.notStaff.link')}
+                    </a>
                   </p>
                 </div>
               )}

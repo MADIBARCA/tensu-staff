@@ -13,7 +13,8 @@ const RU: Dict = {
   'onboarding.getPhoneButton': 'Получить номер из Telegram',
   'onboarding.continueButton': 'Продолжить',
   'onboarding.privacyNotice': 'Нажимая кнопку, вы соглашаетесь с политикой конфиденциальности',
-  'onboarding.notStaff': 'Вы не являетесь тренером или администратором клуба. Пожалуйста, свяжитесь с вашим клубом для получения доступа.',
+  'onboarding.notStaff': 'У вас нет приглашения для управления клубом. Пожалуйста, свяжитесь с администратором клуба или напишите нам в телеграм.',
+  'onboarding.notStaff.link': '@tensuadmin',
   
   // Navigation
   'nav.home': 'Главная',
@@ -873,7 +874,8 @@ const KK: Dict = {
   'onboarding.getPhoneButton': 'Telegram-нан нөмір алу',
   'onboarding.continueButton': 'Жалғастыру',
   'onboarding.privacyNotice': 'Батырманы басу арқылы құпиялылық саясатымен келісесіз',
-  'onboarding.notStaff': 'Сіз клубтың жаттықтырушысы немесе әкімшісі емессіз. Қол жеткізу үшін клубыңызбен хабарласыңыз.',
+  'onboarding.notStaff': 'Сізде клубты басқаруға шақыру жоқ. Клуб әкімшісімен байланысыңыз немесе бізге телеграмда жазыңыз.',
+  'onboarding.notStaff.link': '@tensuadmin',
   
   // Navigation
   'nav.home': 'Басты бет',
@@ -1734,7 +1736,8 @@ const EN: Dict = {
   'onboarding.getPhoneButton': 'Get number from Telegram',
   'onboarding.continueButton': 'Continue',
   'onboarding.privacyNotice': 'By clicking, you agree to the privacy policy',
-  'onboarding.notStaff': 'You are not a coach or club administrator. Please contact your club for access.',
+  'onboarding.notStaff': 'You do not have an invitation to manage the club. Please contact the club administrator or write to us on Telegram.',
+  'onboarding.notStaff.link': '@tensuadmin',
 
   // Home - Role Summary
   'home.roleSummary.clubCount': '{count} clubs',
