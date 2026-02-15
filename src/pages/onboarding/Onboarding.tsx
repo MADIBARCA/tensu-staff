@@ -147,10 +147,9 @@ export default function OnboardingPage() {
           navigate("/staff/main");
         }
       } catch (err: any) {
-        if (err.response?.status === 404 || err.response?.status === 403) {
-          setShowInvitationAlert(true);
-        }
-        console.error("Staff creation error:", err);
+        // Показываем alert при любой ошибке (нет invitation, доступ запрещён и т.д.)
+        setShowInvitationAlert(true);
+        console.error("Staff creation error:", err.response?.status, err);
       } finally {
         setIsLoading(false);
         sendData({ fullName, phone, avatar });
@@ -181,13 +180,6 @@ export default function OnboardingPage() {
           ${showCard ? "opacity-95 translate-y-0" : "opacity-0 translate-y-10"}
         `}
       >
-        {showInvitationAlert && (
-          <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4 rounded-lg">
-            <p className="text-sm">
-              {t('onboarding.notStaff')}
-            </p>
-          </div>
-        )}
         <div className="overflow-hidden w-full">
           <div className="flex transition-transform duration-500 ease-in-out">
             <div className="flex-shrink-0 w-full bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl p-8 space-y-6">
@@ -211,6 +203,23 @@ export default function OnboardingPage() {
                 <div className="bg-gray-50 rounded-xl p-4 text-center">
                   <p className="text-sm text-gray-500">{t('onboarding.yourPhone')}</p>
                   <p className="text-lg font-semibold text-gray-800">{phone}</p>
+                </div>
+              )}
+
+              {/* Alert - нет приглашения */}
+              {showInvitationAlert && (
+                <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl">
+                  <p className="text-sm font-medium text-center">
+                    {t('onboarding.notStaff')}{' '}
+                    <a 
+                      href="https://t.me/tensuadmin" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-600 underline hover:text-blue-800"
+                    >
+                      {t('onboarding.notStaff.link')}
+                    </a>
+                  </p>
                 </div>
               )}
 
