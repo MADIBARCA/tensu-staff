@@ -265,6 +265,8 @@ export const CreateClubModal: React.FC<CreateClubModalProps> = ({
           if (parsed) formattedPhone = parsed.format('E.164');
         }
       } catch (err) {
+        // Ignore parse errors, use original phone
+      }
 
       const normalizeTelegram = (val?: string) => {
         if (!val) return undefined;

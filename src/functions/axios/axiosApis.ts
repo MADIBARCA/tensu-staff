@@ -1,6 +1,6 @@
 import axios, { type AxiosRequestConfig, type Method, type AxiosResponse } from "axios";
 
-export const apiUrl = "https://api.tensu.kz/api/v1"; 
+export const apiUrl = import.meta.env.VITE_API_URL || "https://api-test.tensu.kz/api/v1"; 
 
 export const headersFunction = (accessToken: string | null, contentType?: string) => {
   return {
